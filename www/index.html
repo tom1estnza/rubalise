@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10312B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rubalise">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Rubalise, plan de course trail</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF2EE; --surface:#F8FBF9; --ink:#10312B; --ink2:#4A625C; --line:#C7D5CE;
+  --accent:#1E6F8E; --accent-ink:#FFFFFF; --live:#C2125F; --ok:#2B7A4B; --warn:#9A5B00; --fill:#D3E3DB;
+  --f-body:'Barlow',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-num:'Barlow Semi Condensed','Barlow',system-ui,'Arial Narrow',sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1F1B; --surface:#132B25; --ink:#E5F0EB; --ink2:#9CB5AC; --line:#294640;
+    --accent:#6CC0E0; --accent-ink:#0D1F1B; --live:#FF6BB0; --ok:#6FD398; --warn:#F0B050; --fill:#1B3B34;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1F1B; --surface:#132B25; --ink:#E5F0EB; --ink2:#9CB5AC; --line:#294640;
+  --accent:#6CC0E0; --accent-ink:#0D1F1B; --live:#FF6BB0; --ok:#6FD398; --warn:#F0B050; --fill:#1B3B34;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45}
+.app{max-width:680px;margin:0 auto;padding:12px 16px 112px}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.brand{display:flex;align-items:center;gap:10px;font:700 20px var(--f-num);letter-spacing:.01em}
+.tape{display:inline-block;width:30px;height:12px;border-radius:2px;background:repeating-linear-gradient(135deg,var(--live) 0 6px,var(--bg) 6px 12px);border:1px solid var(--live)}
+.proto{font-size:13px;color:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
+
+h1{font:700 34px/1.05 var(--f-num);margin:24px 0 12px}
+h2{font:600 21px/1.2 var(--f-num);margin:0 0 10px}
+h3{font:600 19px/1.2 var(--f-num);margin:0 0 6px;display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+p{margin:0 0 10px}
+small{font-size:13px;color:var(--ink2)}
+.sec{border-top:1px solid var(--line);margin-top:28px;padding-top:20px}
+.lead{color:var(--ink2);max-width:60ch}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0}
+.km{font:500 15px var(--f-num);color:var(--ink2)}
+.t{font-family:var(--f-num);font-weight:600;font-variant-numeric:tabular-nums;font-size:1.08em}
+.jd{font-size:11px;color:var(--ink2);margin-left:2px}
+.ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--live)}
+.note{font-size:14px;color:var(--ink2);max-width:62ch}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:8px;border:1.5px solid var(--ink);background:transparent;font-weight:600;cursor:pointer;touch-action:manipulation;text-align:center}
+.btn:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;opacity:0}
+button{touch-action:manipulation}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.quiet{border-color:var(--line);font-weight:500}
+.btn.small{min-height:36px;padding:0 12px;font-size:14px}
+.icon{min-width:44px;min-height:44px;border:0;background:transparent;font-size:24px;color:var(--ink2);cursor:pointer}
+
+.fld{display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--ink2)}
+.fld input,.fld textarea,.in{min-height:44px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);font-size:16px;color:var(--ink);width:100%}
+textarea.in{min-height:88px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+input[type=range]{width:100%;accent-color:var(--accent);min-height:32px}
+.chk{flex-direction:row;align-items:center;gap:8px;min-height:44px;color:var(--ink)}
+.chk input{width:22px;height:22px;min-height:0;accent-color:var(--accent)}
+
+.race-name{font:700 clamp(22px,6.2vw,30px)/1.15 var(--f-num);text-overflow:ellipsis;width:100%;border:0;border-bottom:2px solid var(--line);background:transparent;padding:6px 0;color:var(--ink);border-radius:0}
+.stats{display:flex;flex-wrap:wrap;gap:6px 18px;margin:10px 0 0}
+.stats div{display:flex;flex-direction:column-reverse}
+.stats dt{font-size:13px;color:var(--ink2)}
+.stats dd{margin:0;font:700 24px/1.1 var(--f-num)}
+.chart{margin:14px -4px 0}
+.chart svg{display:block;width:100%;height:auto}
+.pf-area{fill:var(--fill)}
+.pf-line{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linejoin:round}
+.pf-grid{stroke:var(--line);stroke-width:1}
+.pf-dash{stroke:var(--ink2);stroke-width:1;stroke-dasharray:3 3}
+.pf-txt{fill:var(--ink2);font:500 11px var(--f-num)}
+.pf-num{fill:var(--ink);font:600 12px var(--f-num)}
+.pf-stn{stroke:var(--accent);stroke-width:2}
+.pf-live{stroke:var(--live);stroke-width:2}
+@media (prefers-reduced-motion: no-preference){
+  .pf-line.draw{stroke-dasharray:1000;stroke-dashoffset:1000;animation:draw 1.4s ease-out forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+}
+.legend{font-size:13px;color:var(--ink2);display:flex;gap:2px 16px;flex-wrap:wrap;margin-top:4px}
+
+.stn{list-style:none;padding:14px 0;border-bottom:1px solid var(--line)}
+.stn:last-child{border-bottom:0}
+.stn-head{display:flex;align-items:center;gap:8px}
+.stn-n{font:700 18px var(--f-num);min-width:22px;color:var(--accent)}
+.stn-name{flex:1;font:600 19px var(--f-num);border:0;border-bottom:1.5px solid var(--line);background:transparent;min-height:44px;padding:4px 0;border-radius:0;color:var(--ink)}
+.stn-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:8px}
+.stn-grid .chk{grid-column:1 / -1}
+.stn-times{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;font-size:15px}
+ul.plain{list-style:none;padding:0;margin:0}
+.tblwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th{font-weight:500;color:var(--ink2);text-align:left;font-size:13px;padding:6px 8px 6px 0;border-bottom:1.5px solid var(--line)}
+td{padding:10px 8px 10px 0;border-bottom:1px solid var(--line);vertical-align:top;font-variant-numeric:tabular-nums}
+td small{display:block}
+
+.crew{border-left:4px solid var(--accent);padding:2px 0 2px 14px;margin:0 0 26px}
+.crew.passed{border-left-color:var(--line);opacity:.75}
+.win{font-size:16px}
+.items{list-style:none;padding:0;margin:8px 0}
+.items li{display:flex;align-items:center;gap:6px;min-height:40px}
+.items label{flex:1;display:flex;align-items:center;gap:10px}
+.items input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.chip{min-height:36px;padding:0 12px;border-radius:999px;border:1.5px solid var(--line);background:transparent;font-size:14px;cursor:pointer}
+.addrow{display:flex;gap:8px;margin-top:6px}
+.addrow .in{flex:1}
+
+.clock{font:700 60px/1 var(--f-num);font-variant-numeric:tabular-nums}
+.status{font-size:16px;color:var(--ink2);margin:4px 0 0}
+.sum{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:14px}
+.sum div{display:flex;flex-direction:column-reverse}
+.sum dt{font-size:13px;color:var(--ink2)}
+.sum dd{margin:0;font:700 26px/1.1 var(--f-num)}
+.pts{list-style:none;margin:0;padding:0 0 0 22px;position:relative}
+.pts::before{content:"";position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:var(--line)}
+.pt{position:relative;padding:10px 0 14px}
+.pt::before{content:"";position:absolute;left:-22px;top:15px;width:14px;height:14px;border-radius:50%;background:var(--bg);border:2px solid var(--ink2)}
+.pt.done::before{background:var(--ink);border-color:var(--ink)}
+.pt.next::before{background:var(--live);border-color:var(--live);box-shadow:0 0 0 4px color-mix(in srgb,var(--live) 25%,transparent)}
+.pt-main{font:600 18px var(--f-num)}
+.pt-times{display:flex;flex-wrap:wrap;gap:2px 18px;font-size:15px;margin-top:2px}
+.pt-times span small{margin-right:4px}
+
+.rating{display:flex;gap:8px;margin:6px 0 14px}
+.rating button{flex:1;min-height:48px;border-radius:8px;border:1.5px solid var(--line);background:transparent;font:600 18px var(--f-num);cursor:pointer}
+.rating button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.journal{list-style:none;padding:0;margin:0}
+.journal li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.code{font-family:ui-monospace,Menlo,monospace;font-size:12px;min-height:96px}
+
+.tabs{position:fixed;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(4,1fr);background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+.tabbtn{min-height:58px;border:0;background:transparent;font-weight:600;font-size:15px;color:var(--ink2);cursor:pointer}
+.tabbtn[aria-current="page"]{color:var(--ink);box-shadow:inset 0 3px 0 var(--live)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:15px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:6;max-width:92vw;text-align:center}
+.toast.on{opacity:1}
+.empty{padding-top:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><span class="tape" aria-hidden="true"></span><span>Rubalise</span></div>
+    <span class="proto">Prototype</span>
+  </header>
+  <main id="view"></main>
+</div>
+<nav class="tabs" aria-label="Sections">
+  <button class="tabbtn" data-tab="plan">Plan</button>
+  <button class="tabbtn" data-tab="assist">Assistance</button>
+  <button class="tabbtn" data-tab="live">En course</button>
+  <button class="tabbtn" data-tab="diary">Carnet</button>
+</nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+
+// <core>
+const RT=6371;
+function hav(a,b){const r=Math.PI/180,dLat=(b.lat-a.lat)*r,dLon=(b.lon-a.lon)*r;const s=Math.sin(dLat/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLon/2)**2;return 2*RT*Math.asin(Math.sqrt(s));}
+function cumDist(pts){const c=[0];for(let i=1;i<pts.length;i++)c.push(c[i-1]+hav(pts[i-1],pts[i]));return c;}
+function interp(xs,ys,x){const n=xs.length;if(x<=xs[0])return ys[0];if(x>=xs[n-1])return ys[n-1];let lo=0,hi=n-1;while(hi-lo>1){const m=(lo+hi)>>1;if(xs[m]<=x)lo=m;else hi=m;}const t=(x-xs[lo])/((xs[hi]-xs[lo])||1);return ys[lo]+(ys[hi]-ys[lo])*t;}
+function buildProfile(pts){
+  const cum=cumDist(pts),total=cum[cum.length-1];
+  const N=Math.min(220,Math.max(2,pts.length));
+  const d=[],e=[];let j=0;
+  for(let k=0;k<N;k++){
+    const target=total*k/(N-1);
+    while(j<cum.length-2&&cum[j+1]<target)j++;
+    const span=(cum[j+1]-cum[j])||1e-9;
+    const t=Math.min(1,Math.max(0,(target-cum[j])/span));
+    d.push(Math.round(target*1000)/1000);
+    e.push(pts[j].ele+(pts[j+1].ele-pts[j].ele)*t);
+  }
+  const sm=e.map((v,i)=>{let s=0,c=0;for(let q=-2;q<=2;q++){const x=e[i+q];if(x!==undefined){s+=x;c++;}}return s/c;});
+  return {d,e:sm.map(Math.round)};
+}
+function profileStats(p){let up=0,down=0;for(let i=1;i<p.e.length;i++){const dz=p.e[i]-p.e[i-1];if(dz>0)up+=dz;else down-=dz;}return {km:p.d[p.d.length-1],up:Math.round(up),down:Math.round(down),min:Math.min(...p.e),max:Math.max(...p.e)};}
+function legStats(p,a,b){
+  const ea=interp(p.d,p.e,a),eb=interp(p.d,p.e,b);let up=0,down=0,prev=ea;
+  for(let i=0;i<p.d.length;i++){if(p.d[i]>a&&p.d[i]<b){const dz=p.e[i]-prev;if(dz>0)up+=dz;else down-=dz;prev=p.e[i];}}
+  const dz=eb-prev;if(dz>0)up+=dz;else down-=dz;
+  return {up:Math.round(up),down:Math.round(down)};
+}
+function gradeFactor(i){
+  if(i>=0){const c=155.4*i**5-30.4*i**4-43.3*i**3+46.3*i**2+19.5*i+3.6;return Math.min(3.4,c/3.6);}
+  const a=-i;return a<=0.10?1-1.5*a:0.85+(a-0.10)*2.5;
+}
+function unitCum(p,drift){
+  const n=p.d.length,tot=p.d[n-1],U=[0];
+  for(let i=1;i<n;i++){
+    const dk=p.d[i]-p.d[i-1];if(dk<=0){U.push(U[i-1]);continue;}
+    const g=Math.max(-0.4,Math.min(0.4,(p.e[i]-p.e[i-1])/(dk*1000)));
+    const mid=((p.d[i]+p.d[i-1])/2)/tot;
+    U.push(U[i-1]+dk*gradeFactor(g)*(1+(drift/100)*Math.pow(mid,1.5)));
+  }
+  return U;
+}
+function parseHM(s){const m=/^\s*(\d{1,3})\s*[:hH]\s*(\d{1,2})?\s*$/.exec(s||'');if(!m)return null;const h=+m[1],mi=+(m[2]||0);if(mi>59)return null;return h*60+mi;}
+function parseClock(s){const m=/^(\d{1,2}):(\d{2})$/.exec(s||'');if(!m)return null;return (+m[1])*60+(+m[2]);}
+function pad2(n){return String(n).padStart(2,'0');}
+function fmtHM(min){const m=Math.round(min);return Math.floor(m/60)+':'+pad2(m%60);}
+function fmtDur(min){const m=Math.round(Math.max(0,min));return Math.floor(m/60)+'h'+pad2(m%60);}
+function fmtClock(min){const m=Math.round(min);const day=Math.floor(m/1440);const r=((m%1440)+1440)%1440;return {s:pad2(Math.floor(r/60))+':'+pad2(r%60),day};}
+function fmtPace(x){let m=Math.floor(x),s=Math.round((x-m)*60);if(s===60){m++;s=0;}return m+':'+pad2(s);}
+function model(race){
+  const p=race.profile,tot=p.d[p.d.length-1];
+  const U=unitCum(p,+race.drift||0);
+  const stations=race.stations.slice().sort((a,b)=>a.km-b.km).filter(s=>s.km>0&&s.km<tot);
+  const target=parseHM(race.target)||0;
+  const stopsTotal=stations.length*(+race.stopMin||0);
+  const moving=Math.max(1,target-stopsTotal);
+  const basePace=moving/U[U.length-1];
+  const M=km=>interp(p.d,U,km)*basePace;
+  return {p,tot,U,stations,target,basePace,M,moving,stopsTotal,startMin:parseClock(race.start)||0};
+}
+function timeline(race,m,opts){
+  opts=opts||{};
+  const mult=opts.mult||1;
+  const pts=opts.plan?{}:(race.points||{});
+  const stop=Math.max(0,+race.stopMin||0);
+  const seq=m.stations.map(s=>({id:s.id,name:s.name||'Ravito',km:s.km,stop:stop,st:s,isFinish:false}))
+    .concat([{id:'finish',name:'Arrivée',km:m.tot,stop:0,st:null,isFinish:true}]);
+  let ref=-1;seq.forEach((s,i)=>{if(pts[s.id]!=null)ref=i;});
+  let Dref=m.startMin,dref=0,Mref=0,f=1;
+  if(ref>=0){
+    const s=seq[ref],A=pts[s.id];
+    Dref=A+s.stop;dref=s.km;Mref=m.M(s.km);
+    const Mact=A-m.startMin-ref*stop;
+    const r=Mref>0?Mact/Mref:1;
+    f=Math.max(0.6,Math.min(2.5,1+(r-1)*0.6));
+  }
+  const stopsBetween=km=>{let c=0;for(const s of seq){if(!s.isFinish&&s.km>dref&&s.km<km)c++;}return c*stop;};
+  const T=km=>Dref+(m.M(km)-Mref)*f*mult+stopsBetween(km);
+  const Tplan=km=>{let c=0;for(const s of seq){if(!s.isFinish&&s.km<km)c++;}return m.startMin+m.M(km)+c*stop;};
+  const rows=seq.map((s,i)=>{
+    const plannedArr=Tplan(s.km);
+    const actual=pts[s.id]!=null?pts[s.id]:null;
+    const adjArr=actual!=null?actual:(i<ref?plannedArr:T(s.km));
+    let bar=null;const bs=s.isFinish?race.finishBarrier:(s.st&&s.st.barrier);
+    if(bs){let b=parseClock(bs);if(b!=null){while(b<m.startMin)b+=1440;bar=b;}}
+    return {id:s.id,name:s.name,km:s.km,stop:s.stop,isFinish:s.isFinish,st:s.st,index:i,plannedArr,actual,adjArr,dep:adjArr+s.stop,barrier:bar,margin:bar!=null?bar-adjArr:null};
+  });
+  function kmAt(now){
+    if(ref>=0&&now<=Dref)return dref;
+    if(ref<0&&now<=m.startMin)return 0;
+    let lo=dref,hi=m.tot;
+    if(now>=T(hi))return hi;
+    for(let k=0;k<40;k++){const mid=(lo+hi)/2;if(T(mid)<now)lo=mid;else hi=mid;}
+    return hi;
+  }
+  return {rows,ref,f,kmAt};
+}
+function legs(race,m){
+  const tl=timeline(race,m,{plan:true}),out=[];
+  let pk=0,pd=m.startMin,pn='Départ';
+  tl.rows.forEach(r=>{out.push(Object.assign({from:pn,to:r.name,km0:pk,km1:r.km,km:r.km-pk,dur:r.adjArr-pd},legStats(m.p,pk,r.km)));pk=r.km;pd=r.dep;pn=r.name;});
+  return out;
+}
+function demoProfile(){
+  const keys=[[0,1000],[4,1100],[11,1900],[15,1700],[19,1250],[24,1500],[27,2050],[31,1700],[34,1100],[38,1180],[42.2,1000]];
+  const xs=keys.map(k=>k[0]),ys=keys.map(k=>k[1]);const n=200,tot=42.2,d=[],e=[];
+  for(let i=0;i<n;i++){const km=tot*i/(n-1);d.push(Math.round(km*1000)/1000);e.push(Math.round(interp(xs,ys,km)+12*Math.sin(km*2.3)));}
+  return {d,e};
+}
+// </core>
+
+// ---------- stockage ----------
+const KEY='rubalise:v1';
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&typeof s==='object')return Object.assign({race:null,journal:[]},s);}}catch(e){}return {race:null,journal:[]};}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+let state=load();
+let tab='plan',animateNext=true,importOpen=false,gpxPasteOpen=false,shareCode='',toastTimer=null,renderTimer=null;
+
+// ---------- utilitaires ----------
+const root=document.getElementById('view');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const km1=n=>(Math.round(n*10)/10).toFixed(1).replace('.',',');
+const nf=n=>Math.round(n).toLocaleString('fr-FR');
+function clk(min){const c=fmtClock(min);return '<span class="t">'+c.s+'</span>'+(c.day!==0?'<span class="jd">J'+(c.day>0?'+':'')+c.day+'</span>':'');}
+function mcls(mn){return mn>=45?'ok':mn>=15?'warn':'bad';}
+function mfmt(mn){return (mn>=0?'+':'−')+Math.abs(Math.round(mn))+' min';}
+function dsign(mn){const r=Math.round(mn);return (r>0?'+':r<0?'−':'')+Math.abs(r)+' min';}
+function flash(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),3200);}
+function commit(){save();clearTimeout(renderTimer);render();}
+function schedule(){save();clearTimeout(renderTimer);renderTimer=setTimeout(render,220);}
+function nowClock(){const d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60;}
+function nowMin(r){
+  const d=new Date(),clock=nowClock();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')){
+    const a=r.date.split('-').map(Number);
+    const days=Math.round((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-Date.UTC(a[0],a[1]-1,a[2]))/86400000);
+    return days*1440+clock;
+  }
+  return clock;
+}
+function fmtTyped(raw,final){
+  let d=String(raw).replace(/\D/g,'').slice(0,4);
+  if(final&&d.length&&d.length<=2)d=d+'00';
+  if(d.length<=2)return d;
+  let h=d.slice(0,-2),m=d.slice(-2);
+  if(final&&+m>59)m='59';
+  return h+':'+m;
+}
+function gpxPick(cls,text){return '<label class="btn '+cls+'"><input class="sr" type="file" data-gpx><span>'+text+'</span></label>';}
+function gpxPaste(){
+  return '<div class="row"><button class="btn quiet small" data-act="show-gpx-paste">Le fichier ne s’ouvre pas ? Coller son contenu</button></div>'
+   +(gpxPasteOpen?'<textarea class="in code" id="gpxbox" placeholder="Colle ici tout le texte du fichier GPX" aria-label="Contenu du fichier GPX"></textarea><div class="row"><button class="btn primary" data-act="do-gpx-paste">Importer ce tracé</button></div>':'');
+}
+function copyText(txt,done){
+  const fb=()=>{const box=document.getElementById('codebox');let ok=false;if(box){try{box.focus();box.select();box.setSelectionRange(0,box.value.length);ok=document.execCommand('copy');}catch(e){}}done(ok);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){try{navigator.clipboard.writeText(txt).then(()=>done(true),fb);}catch(e){fb();}}else fb();
+}
+function hhmmNow(){const d=new Date();return pad2(d.getHours())+':'+pad2(d.getMinutes());}
+function chartW(){return Math.max(280,Math.min(680,root.clientWidth||340));}
+
+// ---------- création de course ----------
+function newRace(profile,name,stations){
+  const r={name:name||'Ma course',date:'',start:'06:00',target:'',stopMin:3,drift:10,finishBarrier:'',carbs:60,water:500,gelG:25,profile:profile,stations:(stations||[]).sort((a,b)=>a.km-b.km),points:{},diary:{rating:0,nutrition:'',learn:'',gear:''}};
+  autoTarget(r);return r;
+}
+function autoTarget(r){const U=unitCum(r.profile,r.drift);const t=6.5*U[U.length-1]+r.stations.length*r.stopMin;r.target=fmtHM(Math.round(t/5)*5);}
+function demoRace(){
+  const st=[
+    {id:uid(),name:'Col des Granges',km:11.2,access:false,barrier:'',items:[]},
+    {id:uid(),name:'Fond du Vallon',km:19.5,access:true,barrier:'',items:[]},
+    {id:uid(),name:'Crête de l’Aigle',km:27.4,access:false,barrier:'',items:[]},
+    {id:uid(),name:'Village de Saint-Aubin',km:34.6,access:true,barrier:'',items:[]}
+  ];
+  const r=newRace(demoProfile(),'Trail de démonstration',st);
+  const m=model(r),tl=timeline(r,m,{plan:true});
+  r.stations.forEach(s=>{const row=tl.rows.find(x=>x.id===s.id);if(row&&s.access)s.barrier=fmtClock(row.adjArr+75).s;});
+  r.finishBarrier=fmtClock(tl.rows[tl.rows.length-1].adjArr+60).s;
+  return r;
+}
+
+// ---------- import GPX ----------
+function parseGPX(text){
+  const doc=new DOMParser().parseFromString(text,'application/xml');
+  if(doc.getElementsByTagName('parsererror').length)throw new Error('Fichier illisible. Vérifie que c’est bien un GPX.');
+  let nodes=Array.prototype.slice.call(doc.getElementsByTagName('trkpt'));
+  if(nodes.length<2)nodes=Array.prototype.slice.call(doc.getElementsByTagName('rtept'));
+  if(nodes.length<2)throw new Error('Aucune trace trouvée dans ce fichier.');
+  const pts=[];let withEle=0,last=0;
+  nodes.forEach(n=>{
+    const lat=parseFloat(n.getAttribute('lat')),lon=parseFloat(n.getAttribute('lon'));
+    if(isNaN(lat)||isNaN(lon))return;
+    const el=n.getElementsByTagName('ele')[0];let ele=el?parseFloat(el.textContent):NaN;
+    if(isNaN(ele))ele=last;else{withEle++;last=ele;}
+    pts.push({lat,lon,ele});
+  });
+  if(pts.length<2)throw new Error('Trace vide.');
+  if(withEle<pts.length*0.5)throw new Error('Ce fichier ne contient pas d’altitude, impossible de calculer le dénivelé.');
+  const cum=cumDist(pts),total=cum[cum.length-1];
+  if(total<1)throw new Error('Tracé trop court (moins de 1 km).');
+  const profile=buildProfile(pts);
+  const wps=[];
+  Array.prototype.slice.call(doc.getElementsByTagName('wpt')).forEach(w=>{
+    const lat=parseFloat(w.getAttribute('lat')),lon=parseFloat(w.getAttribute('lon'));if(isNaN(lat)||isNaN(lon))return;
+    let best=1e9,bi=0;for(let i=0;i<pts.length;i+=Math.max(1,Math.floor(pts.length/3000))){const dd=hav({lat,lon},pts[i]);if(dd<best){best=dd;bi=i;}}
+    const nm=w.getElementsByTagName('name')[0];
+    if(best<0.3&&cum[bi]>0.5&&cum[bi]<total-0.5)wps.push({name:nm?nm.textContent.trim().slice(0,60):'Ravito',km:cum[bi]});
+  });
+  wps.sort((a,b)=>a.km-b.km);
+  const ded=[];wps.forEach(w=>{if(!ded.length||w.km-ded[ded.length-1].km>0.3)ded.push(w);});
+  const trk=doc.getElementsByTagName('trk')[0];
+  const tn=trk?trk.getElementsByTagName('name')[0]:null;
+  return {profile,waypoints:ded.slice(0,12),name:tn?tn.textContent.trim().slice(0,80):''};
+}
+function loadGPXText(text,fname){
+  try{
+    const res=parseGPX(String(text));
+    const name=res.name||String(fname||'Ma course').replace(/\.gpx$/i,'');
+    const st=res.waypoints.map(w=>({id:uid(),name:w.name||'Ravito',km:Math.round(w.km*10)/10,access:true,barrier:'',items:[]}));
+    state.race=newRace(res.profile,name,st);
+    animateNext=true;tab='plan';gpxPasteOpen=false;commit();window.scrollTo(0,0);
+    flash(st.length?st.length+' point(s) de passage repris du GPX. Supprime ceux en trop.':'GPX importé. Ajoute tes ravitos ci-dessous.');
+  }catch(err){flash(err.message||'Import impossible.');}
+}
+function importGPX(file){
+  const fr=new FileReader();
+  fr.onload=()=>loadGPXText(fr.result,file.name);
+  fr.onerror=()=>flash('Lecture du fichier impossible. Essaie « Coller son contenu ».');
+  fr.readAsText(file);
+}
+
+// ---------- partage ----------
+function exportCode(r){const c=JSON.parse(JSON.stringify(r));delete c.points;delete c.diary;return 'RUB1.'+btoa(unescape(encodeURIComponent(JSON.stringify({v:1,race:c}))));}
+function importCode(code){
+  code=String(code||'').trim();
+  if(code.indexOf('RUB1.')!==0)throw new Error('Code non reconnu.');
+  let o;try{o=JSON.parse(decodeURIComponent(escape(atob(code.slice(5)))));}catch(e){throw new Error('Code illisible ou incomplet.');}
+  const r=o&&o.race;
+  if(!r||!r.profile||!Array.isArray(r.profile.d)||!Array.isArray(r.profile.e)||r.profile.d.length!==r.profile.e.length||r.profile.d.length<2||!Array.isArray(r.stations))throw new Error('Code invalide.');
+  const d=r.profile.d.map(Number),e=r.profile.e.map(Number);
+  if(d.concat(e).some(x=>!isFinite(x)))throw new Error('Code invalide.');
+  const clean={
+    name:String(r.name||'Course partagée').slice(0,80),date:/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')?r.date:'',
+    start:/^\d{1,2}:\d{2}$/.test(r.start||'')?r.start:'06:00',target:String(r.target||'').slice(0,8),
+    stopMin:Math.max(0,Math.min(60,+r.stopMin||0)),drift:Math.max(0,Math.min(40,+r.drift||0)),
+    finishBarrier:/^\d{1,2}:\d{2}$/.test(r.finishBarrier||'')?r.finishBarrier:'',
+    carbs:Math.max(0,Math.min(200,+r.carbs||0)),water:Math.max(0,Math.min(2000,+r.water||0)),gelG:Math.max(0,Math.min(100,+r.gelG||0)),
+    profile:{d,e},points:{},diary:{rating:0,nutrition:'',learn:'',gear:''},
+    stations:r.stations.slice(0,30).map(s=>({id:String(s.id||uid()).slice(0,12),name:String(s.name||'Ravito').slice(0,80),km:Math.max(0,+s.km||0),access:!!s.access,barrier:/^\d{1,2}:\d{2}$/.test(s.barrier||'')?s.barrier:'',
+      items:Array.isArray(s.items)?s.items.slice(0,30).map(it=>({t:String(it.t||'').slice(0,80),done:false})):[]}))
+  };
+  clean.stations.sort((a,b)=>a.km-b.km);
+  return clean;
+}
+
+// ---------- graphique de profil ----------
+function profileSVG(m,tl,opt){
+  const W=opt.w,H=opt.h||200,L=46,R=10,T=24,B=24,p=m.p,tot=m.tot;
+  const minE=Math.min(...p.e),maxE=Math.max(...p.e),pad=Math.max(20,(maxE-minE)*0.1),y0=minE-pad,y1=maxE+pad;
+  const X=k=>L+(k/tot)*(W-L-R),Y=e=>H-B-((e-y0)/(y1-y0))*(H-T-B);
+  let line='';p.d.forEach((k,i)=>{line+=(i?'L':'M')+X(k).toFixed(1)+','+Y(p.e[i]).toFixed(1);});
+  const area=line+'L'+X(tot).toFixed(1)+','+(H-B)+'L'+X(0).toFixed(1)+','+(H-B)+'Z';
+  const step=tot>70?10:tot>28?5:2;
+  let g='';
+  [maxE,minE].forEach(v=>{const rv=Math.round(v/10)*10;g+='<line class="pf-grid" x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v).toFixed(1)+'" y2="'+Y(v).toFixed(1)+'"/><text class="pf-txt" x="'+(L-6)+'" y="'+(Y(v)+4).toFixed(1)+'" text-anchor="end">'+rv+' m</text>';});
+  let lastK=0;for(let k=0;k<=tot+0.001;k+=step)lastK=k;
+  for(let k=0;k<=tot+0.001;k+=step){g+='<text class="pf-txt" x="'+X(k).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle">'+k+(k===lastK?' km':'')+'</text>';}
+  let s='';let n=0;
+  tl.rows.forEach(r=>{
+    if(r.isFinish)return;n++;
+    const x=X(r.km),y=Y(interp(p.d,p.e,r.km));
+    s+='<line class="pf-dash" x1="'+x.toFixed(1)+'" x2="'+x.toFixed(1)+'" y1="'+(T-6)+'" y2="'+(H-B)+'"/>';
+    s+='<circle class="pf-stn" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="5" fill="'+(r.st&&r.st.access?'var(--accent)':'var(--bg)')+'"/>';
+    s+='<text class="pf-num" x="'+x.toFixed(1)+'" y="'+(T-10)+'" text-anchor="middle">'+n+'</text>';
+  });
+  let live='';
+  if(opt.kmNow!=null){
+    const x=X(opt.kmNow),y=Y(interp(p.d,p.e,opt.kmNow));
+    live='<line class="pf-live" x1="'+x.toFixed(1)+'" x2="'+x.toFixed(1)+'" y1="'+(T-6)+'" y2="'+(H-B)+'"/><circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="7" fill="var(--live)" stroke="var(--bg)" stroke-width="2.5"/>';
+  }
+  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Profil d’élévation du parcours"><path class="pf-area" d="'+area+'"/><path class="pf-line'+(opt.anim?' draw':'')+'" pathLength="1000" d="'+line+'"/>'+g+s+live+'</svg>';
+}
+
+// ---------- vues ----------
+function needRace(){
+  return '<section class="empty"><h1>Commence par ton plan</h1><p class="lead">Cet onglet s’appuie sur le parcours que tu prépares dans « Plan ».</p><button class="btn primary" data-tab="plan">Aller au plan</button></section>';
+}
+function emptyPlan(){
+  return '<section class="empty"><h1>Prépare ta course, puis suis-la en direct.</h1>'
+  +'<p class="lead">Importe le tracé GPX : Rubalise calcule tes heures de passage, ton plan de nutrition et ce que ton assistance doit préparer à chaque ravito.</p>'
+  +'<div class="row">'+gpxPick('primary','Importer un fichier GPX')+'<button class="btn" data-act="demo">Essayer avec une course démo</button></div>'+gpxPaste()
+  +'<p class="note">Tes données restent dans ce navigateur. Rien n’est envoyé nulle part.</p></section>';
+}
+function renderPlan(){
+  const r=state.race;if(!r)return emptyPlan();
+  const m=model(r),st=profileStats(m.p),tl=timeline(r,m,{plan:true});
+  const okT=m.target>m.stopsTotal+1;
+  const svg=profileSVG(m,tl,{w:chartW(),anim:animateNext});animateNext=false;
+  const byId={};tl.rows.forEach(x=>byId[x.id]=x);
+  const fin=tl.rows[tl.rows.length-1];
+  const stn=r.stations.map((s,i)=>{
+    const row=byId[s.id];
+    const times=row
+      ?'<span>Arrivée '+clk(row.adjArr)+'</span><span>Repart '+clk(row.dep)+'</span>'+(row.margin!=null?'<span class="'+mcls(row.margin)+'">Marge sur la barrière '+mfmt(row.margin)+'</span>':'')
+      :'<span class="warn">Hors du parcours : choisis un km entre 0 et '+km1(m.tot)+'</span>';
+    return '<li class="stn"><div class="stn-head"><span class="stn-n">'+(i+1)+'</span>'
+      +'<input class="stn-name" data-s="'+s.id+'" data-f="name" value="'+esc(s.name)+'" placeholder="Nom du ravito" aria-label="Nom du ravito '+(i+1)+'">'
+      +'<button class="icon" data-act="del-station" data-id="'+s.id+'" aria-label="Supprimer le ravito '+esc(s.name)+'">×</button></div>'
+      +'<div class="stn-grid"><label class="fld"><span>Kilomètre</span><input type="number" inputmode="decimal" step="0.1" min="0" data-s="'+s.id+'" data-f="km" value="'+s.km+'"></label>'
+      +'<label class="fld"><span>Barrière horaire</span><input type="time" data-s="'+s.id+'" data-f="barrier" value="'+esc(s.barrier)+'"></label>'
+      +'<label class="fld chk"><input type="checkbox" data-s="'+s.id+'" data-f="access"'+(s.access?' checked':'')+'><span>Accès pour l’assistance</span></label></div>'
+      +'<div class="stn-times">'+times+'</div></li>';
+  }).join('');
+  const L=legs(r,m);
+  const legRows=L.map(l=>{
+    const c=Math.round(l.dur/60*r.carbs/5)*5,w=Math.round(l.dur/60*r.water/50)*50,g=r.gelG>0?Math.round(c/r.gelG*10)/10:0;
+    return '<tr><td>'+esc(l.from)+' – '+esc(l.to)+'<small>'+km1(l.km)+' km, +'+l.up+' m</small></td><td>'+fmtDur(l.dur)+'</td><td>'+c+' g'+(r.gelG>0?'<small>≈ '+String(g).replace('.',',')+' gels</small>':'')+'</td><td>'+nf(w)+' ml</td></tr>';
+  }).join('');
+  return '<section>'
+  +'<input class="race-name" data-r="name" value="'+esc(r.name)+'" aria-label="Nom de la course" placeholder="Nom de la course">'
+  +'<div class="chart">'+svg+'</div>'
+  +'<div class="legend"><span>Cercle plein : accès assistance</span><span>Cercle vide : sans accès</span></div>'
+  +'<dl class="stats"><div><dt>Distance</dt><dd>'+km1(st.km)+' km</dd></div><div><dt>Dénivelé positif</dt><dd>+'+nf(st.up)+' m</dd></div><div><dt>Dénivelé négatif</dt><dd>−'+nf(st.down)+' m</dd></div></dl>'
+  +'</section>'
+
+  +'<section class="sec"><h2>Objectif</h2>'
+  +'<div class="grid2"><label class="fld"><span>Temps visé, arrêts compris (h:mm)</span><input data-r="target" value="'+esc(r.target)+'" inputmode="numeric" maxlength="5" autocomplete="off" placeholder="7:30"></label>'
+  +'<label class="fld"><span>Arrêt moyen par ravito (min)</span><input type="number" inputmode="numeric" min="0" max="60" data-r="stopMin" data-num value="'+r.stopMin+'"></label>'
+  +'<label class="fld"><span>Date de la course</span><input type="date" data-r="date" value="'+esc(r.date)+'"></label>'
+  +'<label class="fld"><span>Heure de départ</span><input type="time" data-r="start" value="'+esc(r.start)+'"></label></div>'
+  +'<label class="fld" style="margin-top:12px"><span>Ralentissement en fin de course : <b id="driftv">+'+r.drift+' %</b></span><input type="range" min="0" max="30" step="1" data-r="drift" data-num value="'+r.drift+'"></label>'
+  +(okT?'<p style="margin-top:12px">Ton allure équivalente sur le plat est de <b class="t">'+fmtPace(m.basePace)+' /km</b>, pour '+fmtDur(m.moving)+' en mouvement.</p>'
+       :'<p class="warn" style="margin-top:12px">Saisis un temps visé réaliste au format h:mm, par exemple 7:30.</p>')
+  +'</section>'
+
+  +'<section class="sec"><h2>Ravitaillements</h2>'
+  +'<ul class="plain">'+stn
+  +'<li class="stn finish"><div class="stn-head"><span class="stn-n" aria-hidden="true">&nbsp;</span><span class="stn-name" style="border:0;display:flex;align-items:center">Arrivée</span></div>'
+  +'<div class="stn-grid"><label class="fld"><span>Kilomètre</span><input value="'+km1(m.tot)+'" disabled></label><label class="fld"><span>Barrière horaire</span><input type="time" data-r="finishBarrier" value="'+esc(r.finishBarrier)+'"></label></div>'
+  +'<div class="stn-times"><span>Arrivée '+clk(fin.adjArr)+'</span>'+(fin.margin!=null?'<span class="'+mcls(fin.margin)+'">Marge sur la barrière '+mfmt(fin.margin)+'</span>':'')+'</div></li></ul>'
+  +'<button class="btn" data-act="add-station">Ajouter un ravitaillement</button></section>'
+
+  +'<section class="sec"><h2>Nutrition</h2>'
+  +'<div class="grid3"><label class="fld"><span>Glucides (g/h)</span><input type="number" inputmode="numeric" min="0" data-r="carbs" data-num value="'+r.carbs+'"></label>'
+  +'<label class="fld"><span>Eau (ml/h)</span><input type="number" inputmode="numeric" min="0" step="50" data-r="water" data-num value="'+r.water+'"></label>'
+  +'<label class="fld"><span>Un gel (g)</span><input type="number" inputmode="numeric" min="0" data-r="gelG" data-num value="'+r.gelG+'"></label></div>'
+  +'<div class="tblwrap" style="margin-top:12px"><table><thead><tr><th>Tronçon</th><th>Durée</th><th>Glucides</th><th>Eau</th></tr></thead><tbody>'+legRows+'</tbody></table></div></section>'
+
+  +'<section class="sec"><p class="note">Les temps viennent d’un modèle simplifié : la pente ralentit à la montée, accélère un peu à la descente, et la fatigue ralentit la fin. Compare avec tes sorties longues et ajuste l’objectif et le ralentissement.</p>'
+  +'<div class="row">'+gpxPick('quiet','Nouvelle course (remplace celle-ci)')+'</div>'+gpxPaste()+'</section>';
+}
+function renderAssist(){
+  const r=state.race;if(!r)return needRace();
+  const m=model(r),tlN=timeline(r,m,{}),tlO=timeline(r,m,{mult:0.92}),tlP=timeline(r,m,{mult:1.12}),L=legs(r,m);
+  const rows=tlN.rows;
+  const withAccess=rows.filter(x=>!x.isFinish&&x.st.access);
+  const without=rows.filter(x=>!x.isFinish&&!x.st.access);
+  const cards=withAccess.map(x=>{
+    const i=x.index,early=tlO.rows[i].adjArr,late=tlP.rows[i].adjArr,passed=x.actual!=null,next=L[i+1];
+    const c=Math.round(next.dur/60*r.carbs/5)*5,w=Math.round(next.dur/60*r.water/50)*50;
+    const items=(x.st.items||[]).map((it,k)=>'<li><label><input type="checkbox" data-act="toggle-item" data-id="'+x.id+'" data-k="'+k+'"'+(it.done?' checked':'')+'><span>'+esc(it.t)+'</span></label><button class="icon" style="min-width:40px;min-height:40px;font-size:20px" data-act="del-item" data-id="'+x.id+'" data-k="'+k+'" aria-label="Retirer '+esc(it.t)+'">×</button></li>').join('');
+    const chips=['Bidons pleins','Gels','Haut sec','Frontale'].map(t=>'<button class="chip" data-act="chip" data-id="'+x.id+'" data-t="'+t+'">'+t+'</button>').join('');
+    return '<article class="crew'+(passed?' passed':'')+'"><h3><span>'+esc(x.name)+'</span><span class="km">km '+km1(x.km)+'</span></h3>'
+      +(passed?'<p class="win">Le coureur est passé à '+clk(x.actual)+'.</p>'
+              :'<p class="win">Passage estimé entre '+clk(early)+' et '+clk(late)+'.<br>Être sur place avant <b>'+clk(early-15)+'</b>.</p>')
+      +(x.margin!=null&&!passed?'<p class="'+mcls(x.margin)+'">Marge sur la barrière : '+mfmt(x.margin)+'</p>':'')
+      +'<p>Pour les '+km1(next.km)+' km suivants (+'+next.up+' m, −'+next.down+' m, environ '+fmtDur(next.dur)+') : prévoir <b>'+c+' g de glucides</b> et <b>'+nf(w)+' ml d’eau</b>.</p>'
+      +'<ul class="items">'+items+'</ul><div class="chips">'+chips+'</div>'
+      +'<div class="addrow"><input class="in" id="add-'+x.id+'" data-add="'+x.id+'" placeholder="Autre article à préparer" aria-label="Ajouter un article pour '+esc(x.name)+'"><button class="btn small" data-act="add-item" data-id="'+x.id+'">Ajouter</button></div></article>';
+  }).join('');
+  const fin=rows[rows.length-1],finE=tlO.rows[rows.length-1].adjArr,finL=tlP.rows[rows.length-1].adjArr;
+  return '<section class="empty"><h1>Équipe d’assistance</h1>'
+  +'<p class="lead">Fenêtres de passage (course 8 % plus rapide ou 12 % plus lente que prévu), ce qu’il faut préparer et ce qu’il faut remplir à chaque ravito.</p></section>'
+  +(cards||'<p class="note">Aucun ravito avec accès assistance. Coche « Accès pour l’assistance » dans l’onglet Plan.</p>')
+  +(without.length?'<p class="note">Sans accès assistance : '+without.map(x=>esc(x.name)).join(', ')+'.</p>':'')
+  +'<section class="sec"><h2>Pour les supporters à l’arrivée</h2><p>'+(fin.actual!=null?'Arrivée pointée à '+clk(fin.actual)+'.':'Arrivée estimée entre '+clk(finE)+' et '+clk(finL)+'.')+'</p></section>'
+  +'<section class="sec"><h2>Partager le plan avec l’équipe</h2>'
+  +'<p class="note">Copie le code et envoie-le par message. Ton équipe le colle ici pour retrouver ton plan. Ce prototype ne synchronise pas les pointages en direct entre appareils.</p>'
+  +'<div class="row"><button class="btn" data-act="copy-code">Copier le code du plan</button><button class="btn quiet" data-act="show-import">Coller un code reçu</button></div>'
+  +(shareCode?'<textarea class="in code" readonly aria-label="Code du plan" id="codebox">'+esc(shareCode)+'</textarea>':'')
+  +(importOpen?'<textarea class="in code" id="importbox" placeholder="Colle le code ici" aria-label="Code à importer"></textarea><div class="row"><button class="btn primary" data-act="do-import">Importer ce plan</button></div><p class="note">L’import remplace la course actuelle sur cet appareil.</p>':'')
+  +'</section>';
+}
+function renderLive(){
+  const r=state.race;if(!r)return needRace();
+  const m=model(r),tl=timeline(r,m,{}),plan=timeline(r,m,{plan:true});
+  const now=nowMin(r),rows=tl.rows;
+  const fin=rows[rows.length-1],finPlan=plan.rows[rows.length-1];
+  const delta=fin.adjArr-finPlan.adjArr;
+  const nextIdx=rows.findIndex(x=>x.actual==null);
+  const finished=nextIdx===-1,started=now>=m.startMin;
+  let status;
+  if(finished)status='Arrivée pointée.';
+  else if(!started){const d=m.startMin-now;status='Départ dans '+(d>=1440?Math.floor(d/1440)+' j ':'')+fmtDur(d%1440)+'.';}
+  else status='En course depuis '+fmtDur(now-m.startMin)+'.';
+  const kmNow=started?tl.kmAt(now):null;
+  const svg=profileSVG(m,tl,{w:chartW(),kmNow:kmNow});
+  const anyPoint=rows.some(x=>x.actual!=null);
+  const list=rows.map((x,i)=>{
+    const cls=x.actual!=null?'done':(i===nextIdx?'next':'todo');
+    let times;
+    if(x.actual!=null)times='<span><small>Pointé</small>'+clk(x.actual)+'</span><span><small>Prévu</small>'+clk(x.plannedArr)+'</span><span class="'+(x.actual-x.plannedArr>5?'warn':'ok')+'">'+dsign(x.actual-x.plannedArr)+'</span>';
+    else times='<span><small>Prévu</small>'+clk(x.plannedArr)+'</span><span><small>Estimé</small>'+clk(x.adjArr)+'</span>'+(x.margin!=null?'<span class="'+mcls(x.margin)+'">Marge '+mfmt(x.margin)+'</span>':'');
+    return '<li class="pt '+cls+'"><div class="pt-main">'+esc(x.name)+' <span class="km">km '+km1(x.km)+'</span></div><div class="pt-times">'+times+'</div></li>';
+  }).join('');
+  let next='';
+  if(!finished){
+    const x=rows[nextIdx];
+    next='<section class="sec"><h2>Prochain point : '+esc(x.name)+'</h2><p>Estimé à '+clk(x.adjArr)+', au km '+km1(x.km)+'.</p>'
+      +'<div class="row"><label class="fld" style="flex:1;min-width:140px"><span>Heure de passage</span><input type="time" id="pt-time" value="'+hhmmNow()+'"></label>'
+      +'<button class="btn primary" data-act="point">Pointer le passage</button></div></section>';
+  }
+  return '<section class="empty"><div class="clock" id="clock">'+fmtClock(nowClock()).s+'</div><p class="status">'+status+'</p>'
+  +'<dl class="sum"><div><dt>Arrivée estimée</dt><dd>'+clk(fin.adjArr)+'</dd></div><div><dt>Prévue</dt><dd>'+clk(finPlan.adjArr)+'</dd></div>'
+  +(anyPoint?'<div><dt>Écart</dt><dd class="'+(delta>5?'warn':'ok')+'">'+dsign(delta)+'</dd></div>':'')+'</dl>'
+  +(anyPoint?'':'<p class="note" style="margin-top:10px">Aucun passage pointé : l’estimation suit le plan. Sans date de course, on suppose qu’elle a lieu aujourd’hui.</p>')
+  +'<div class="chart">'+svg+'</div>'
+  +(kmNow!=null?'<div class="legend"><span style="color:var(--live)">Point rose : position estimée, km '+km1(kmNow)+'</span></div>':'')
+  +'</section>'
+  +next
+  +'<section class="sec"><h2>Passages</h2><ol class="pts">'+list+'</ol>'
+  +'<div class="row">'
+  +(anyPoint?'<button class="btn quiet" data-act="undo">Annuler le dernier pointage</button><button class="btn quiet" data-act="clear-points">Effacer les pointages</button>':'<button class="btn quiet" data-act="simulate">Simuler un coureur 10 % plus lent</button>')
+  +'</div><p class="note">À chaque pointage, les heures suivantes sont recalculées : le retard ou l’avance pris jusque-là se répercute en partie sur la suite.</p></section>';
+}
+function renderDiary(){
+  const r=state.race;if(!r)return needRace()+renderJournal();
+  const m=model(r),tl=timeline(r,m,{}),plan=timeline(r,m,{plan:true});
+  const done=tl.rows.filter(x=>x.actual!=null);
+  const finRow=tl.rows[tl.rows.length-1];
+  const d=r.diary||{rating:0,nutrition:'',learn:'',gear:''};
+  const table=done.length?'<div class="tblwrap"><table><thead><tr><th>Point</th><th>Prévu</th><th>Réel</th><th>Écart</th></tr></thead><tbody>'
+    +done.map(x=>'<tr><td>'+esc(x.name)+'<small>km '+km1(x.km)+'</small></td><td>'+clk(x.plannedArr)+'</td><td>'+clk(x.actual)+'</td><td class="'+(x.actual-x.plannedArr>5?'warn':'ok')+'">'+dsign(x.actual-x.plannedArr)+'</td></tr>').join('')
+    +'</tbody></table></div>':'<p class="note">Les passages pointés dans « En course » apparaîtront ici, comparés au plan.</p>';
+  const actualTotal=finRow.actual!=null?finRow.actual-m.startMin:null;
+  const rate=['Dur','Moyen','Bien','Très bien','Top'].map((t,i)=>'<button data-act="rating" data-v="'+(i+1)+'" aria-pressed="'+(d.rating===i+1)+'" aria-label="'+(i+1)+' sur 5, '+t+'">'+(i+1)+'</button>').join('');
+  return '<section class="empty"><h1>Carnet de course</h1><p class="lead">'+esc(r.name)+'</p>'
+  +(actualTotal!=null?'<dl class="sum"><div><dt>Temps réel</dt><dd>'+fmtDur(actualTotal)+'</dd></div><div><dt>Objectif</dt><dd>'+fmtDur(m.target)+'</dd></div><div><dt>Écart</dt><dd class="'+(actualTotal-m.target>5?'warn':'ok')+'">'+dsign(actualTotal-m.target)+'</dd></div></dl>':'')
+  +'</section>'
+  +'<section class="sec"><h2>Prévu et réel</h2>'+table+'</section>'
+  +'<section class="sec"><h2>Ton ressenti</h2><div class="rating" role="group" aria-label="Ressenti de 1 à 5">'+rate+'</div>'
+  +'<label class="fld"><span>Ce que tu as vraiment mangé et bu</span><textarea class="in" data-diary="nutrition">'+esc(d.nutrition)+'</textarea></label>'
+  +'<label class="fld" style="margin-top:12px"><span>Matériel utilisé</span><textarea class="in" data-diary="gear">'+esc(d.gear)+'</textarea></label>'
+  +'<label class="fld" style="margin-top:12px"><span>Ce que tu referas ou changeras</span><textarea class="in" data-diary="learn">'+esc(d.learn)+'</textarea></label>'
+  +'<div class="row"><button class="btn primary" data-act="archive">Archiver dans le carnet</button></div>'
+  +'<p class="note">L’archivage garde un résumé de la course dans la liste ci-dessous et remet à zéro les pointages et le ressenti.</p></section>'
+  +renderJournal();
+}
+function renderJournal(){
+  const j=state.journal||[];if(!j.length)return '';
+  return '<section class="sec"><h2>Courses archivées</h2><ul class="journal">'+j.map(e=>'<li><div><b>'+esc(e.name)+'</b><br><small>'+(e.date?esc(e.date)+', ':'')+km1(e.km)+' km, +'+nf(e.up)+' m'+(e.actual!=null?', réel '+fmtDur(e.actual)+' pour un objectif de '+fmtDur(e.planned):', objectif '+fmtDur(e.planned))+(e.rating?', ressenti '+e.rating+'/5':'')+'</small>'+(e.learn?'<br><small>'+esc(e.learn)+'</small>':'')+'</div><button class="icon" data-act="del-journal" data-id="'+e.id+'" aria-label="Supprimer '+esc(e.name)+' du carnet">×</button></li>').join('')+'</ul></section>';
+}
+
+// ---------- rendu ----------
+function render(top){
+  document.querySelectorAll('.tabbtn').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false'));
+  const y=window.scrollY;
+  let html='';
+  try{
+    html=tab==='plan'?renderPlan():tab==='assist'?renderAssist():tab==='live'?renderLive():renderDiary();
+  }catch(err){html='<section class="empty"><h1>Oups</h1><p class="lead">Un calcul a échoué : '+esc(err.message)+'.</p><button class="btn" data-act="demo">Recharger la course démo</button></section>';}
+  root.innerHTML=html;
+  window.scrollTo(0,top?0:y);
+}
+
+// ---------- actions ----------
+function act(b){
+  const a=b.dataset.act,r=state.race;
+  if(a==='show-gpx-paste'){gpxPasteOpen=!gpxPasteOpen;commit();return;}
+  if(a==='do-gpx-paste'){const bx=document.getElementById('gpxbox');if(!bx||!bx.value.trim()){flash('Colle d’abord le contenu du GPX.');return;}loadGPXText(bx.value,'Ma course');return;}
+  if(a==='demo'){state.race=demoRace();animateNext=true;tab='plan';commit();window.scrollTo(0,0);return;}
+  if(a==='show-import'){importOpen=!importOpen;shareCode='';commit();return;}
+  if(a==='do-import'){
+    const box=document.getElementById('importbox');
+    try{state.race=importCode(box?box.value:'');importOpen=false;animateNext=true;tab='plan';commit();window.scrollTo(0,0);flash('Plan importé.');}
+    catch(err){flash(err.message);}
+    return;
+  }
+  if(a==='del-journal'){state.journal=(state.journal||[]).filter(x=>x.id!==b.dataset.id);commit();return;}
+  if(!r)return;
+  if(a==='add-station'){
+    const m=model(r),last=r.stations.length?r.stations[r.stations.length-1].km:0;
+    const km=Math.round(((last+m.tot)/2)*10)/10;
+    r.stations.push({id:uid(),name:'Ravito '+(r.stations.length+1),km,access:true,barrier:'',items:[]});
+    r.stations.sort((x,y)=>x.km-y.km);commit();return;
+  }
+  if(a==='del-station'){r.stations=r.stations.filter(s=>s.id!==b.dataset.id);delete r.points[b.dataset.id];commit();return;}
+  if(a==='add-item'||a==='chip'){
+    const s=r.stations.find(x=>x.id===b.dataset.id);if(!s)return;
+    let t=a==='chip'?b.dataset.t:(document.getElementById('add-'+b.dataset.id)||{value:''}).value.trim();
+    if(!t)return;s.items=s.items||[];s.items.push({t:t.slice(0,80),done:false});commit();return;
+  }
+  if(a==='del-item'){const s=r.stations.find(x=>x.id===b.dataset.id);if(s&&s.items){s.items.splice(+b.dataset.k,1);commit();}return;}
+  if(a==='copy-code'){
+    shareCode=exportCode(r);importOpen=false;commit();
+    copyText(shareCode,ok=>flash(ok?'Code copié. Envoie-le à ton équipe.':'Copie automatique impossible : le code est affiché ci-dessous, sélectionne-le.'));
+    return;
+  }
+  if(a==='point'){
+    const m=model(r),tl=timeline(r,m,{}),idx=tl.rows.findIndex(x=>x.actual==null);if(idx<0)return;
+    const inp=document.getElementById('pt-time');let min=parseClock(inp&&inp.value);
+    if(min==null){flash('Saisis une heure de passage.');return;}
+    const lastDone=tl.rows.filter(x=>x.actual!=null).map(x=>x.actual).pop();
+    const floor=lastDone!=null?lastDone:m.startMin;
+    while(min<floor-5)min+=1440;
+    r.points[tl.rows[idx].id]=min;commit();flash('Passage pointé : '+tl.rows[idx].name+'.');return;
+  }
+  if(a==='undo'){
+    const m=model(r),tl=timeline(r,m,{});let k=-1;tl.rows.forEach((x,i)=>{if(x.actual!=null)k=i;});
+    if(k>=0){delete r.points[tl.rows[k].id];commit();}return;
+  }
+  if(a==='clear-points'){r.points={};commit();return;}
+  if(a==='simulate'){
+    const m=model(r),tl=timeline(r,m,{plan:true}),stop=+r.stopMin||0;
+    r.points={};
+    tl.rows.slice(0,Math.min(3,tl.rows.length-1)).forEach((x,i)=>{r.points[x.id]=Math.round(m.startMin+m.M(x.km)*1.10+i*stop);});
+    commit();flash('Pointages simulés pour les 3 premiers points.');return;
+  }
+  if(a==='rating'){r.diary=r.diary||{};r.diary.rating=(r.diary.rating===+b.dataset.v)?0:+b.dataset.v;commit();return;}
+  if(a==='archive'){
+    const m=model(r),tl=timeline(r,m,{}),st=profileStats(m.p),fin=tl.rows[tl.rows.length-1],d=r.diary||{};
+    state.journal=state.journal||[];
+    state.journal.unshift({id:uid(),name:r.name,date:r.date,km:st.km,up:st.up,planned:m.target,actual:fin.actual!=null?fin.actual-m.startMin:null,rating:d.rating||0,learn:(d.learn||'').slice(0,160)});
+    r.points={};r.diary={rating:0,nutrition:'',learn:'',gear:''};commit();flash('Course archivée dans le carnet.');return;
+  }
+}
+document.addEventListener('click',e=>{
+  const tb=e.target.closest('[data-tab]');
+  if(tb){tab=tb.dataset.tab;shareCode='';importOpen=false;gpxPasteOpen=false;clearTimeout(renderTimer);render(true);return;}
+  const b=e.target.closest('button[data-act]');
+  if(b)act(b);
+});
+document.addEventListener('change',e=>{
+  const t=e.target,r=state.race;
+  if(t.dataset&&t.dataset.gpx!==undefined){const f=t.files&&t.files[0];if(f)importGPX(f);return;}
+  if(!r)return;
+  if(t.dataset.act==='toggle-item'){const s=r.stations.find(x=>x.id===t.dataset.id);if(s&&s.items[+t.dataset.k]){s.items[+t.dataset.k].done=t.checked;save();}return;}
+  if(t.dataset.add){
+    const s=r.stations.find(x=>x.id===t.dataset.add),v=t.value.trim();
+    if(s&&v){s.items=s.items||[];s.items.push({t:v.slice(0,80),done:false});schedule();}
+    return;
+  }
+  if(t.dataset.diary){r.diary=r.diary||{};r.diary[t.dataset.diary]=t.value;save();return;}
+  const sid=t.dataset.s;
+  if(sid){
+    const s=r.stations.find(x=>x.id===sid);if(!s)return;const f=t.dataset.f;
+    if(f==='access')s.access=t.checked;
+    else if(f==='km'){let v=parseFloat(String(t.value).replace(',','.'));if(isNaN(v))v=s.km;s.km=Math.max(0,Math.round(v*10)/10);}
+    else s[f]=t.value;
+    r.stations.sort((x,y)=>x.km-y.km);schedule();return;
+  }
+  const rf=t.dataset.r;
+  if(rf){
+    let v=t.value;
+    if(rf==='target'){v=fmtTyped(v,true);t.value=v;}
+    if(t.dataset.num!==undefined){v=parseFloat(v);if(isNaN(v)||v<0)v=0;}
+    r[rf]=v;schedule();
+  }
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset&&t.dataset.r==='target'){t.value=fmtTyped(t.value,false);return;}
+  if(t.dataset&&t.dataset.r==='drift'){const o=document.getElementById('driftv');if(o)o.textContent='+'+t.value+' %';}
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.add){e.target.blur();}
+});
+let rz=null,lastW=0;
+window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{const w=root.clientWidth;if(w!==lastW&&(tab==='plan'||tab==='live')){lastW=w;render();}},180);});
+setInterval(()=>{
+  if(tab!=='live'||!state.race)return;
+  const ae=document.activeElement;
+  if(ae&&root.contains(ae)&&/INPUT|TEXTAREA/.test(ae.tagName))return;
+  render();
+},30000);
+
+lastW=root.clientWidth;
+render(true);
+})();
+</script>
+<script>
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && location.hostname!=='localhost' && location.hostname!=='127.0.0.1'){
+  window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
+}
+</script>
+</body>
+</html>
