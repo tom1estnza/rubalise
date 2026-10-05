@@ -155,6 +155,9 @@ td small{display:block}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:15px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:6;max-width:92vw;text-align:center}
 .toast.on{opacity:1}
 .empty{padding-top:8px}
+.code-big{display:inline-block;font:700 44px/1 var(--f-num);letter-spacing:.14em;margin:10px 0 6px;padding:14px 18px;border:2px dashed var(--live);border-radius:8px;color:var(--ink);user-select:all}
+fieldset.lock{border:0;margin:0;padding:0;min-width:0}
+fieldset.lock:disabled{opacity:.9}
 </style>
 </head>
 <body>
@@ -305,8 +308,8 @@ function mcls(mn){return mn>=45?'ok':mn>=15?'warn':'bad';}
 function mfmt(mn){return (mn>=0?'+':'−')+Math.abs(Math.round(mn))+' min';}
 function dsign(mn){const r=Math.round(mn);return (r>0?'+':r<0?'−':'')+Math.abs(r)+' min';}
 function flash(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),3200);}
-function commit(){save();clearTimeout(renderTimer);render();}
-function schedule(){save();clearTimeout(renderTimer);renderTimer=setTimeout(render,220);}
+function commit(){save();clearTimeout(renderTimer);render();maybePush();}
+function schedule(){save();clearTimeout(renderTimer);renderTimer=setTimeout(render,220);maybePush();}
 function nowClock(){const d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60;}
 function nowMin(r){
   const d=new Date(),clock=nowClock();
@@ -407,28 +410,200 @@ function importGPX(file){
   fr.readAsText(file);
 }
 
-// ---------- partage ----------
-function exportCode(r){const c=JSON.parse(JSON.stringify(r));delete c.points;delete c.diary;return 'RUB1.'+btoa(unescape(encodeURIComponent(JSON.stringify({v:1,race:c}))));}
-function importCode(code){
-  code=String(code||'').trim();
-  if(code.indexOf('RUB1.')!==0)throw new Error('Code non reconnu.');
-  let o;try{o=JSON.parse(decodeURIComponent(escape(atob(code.slice(5)))));}catch(e){throw new Error('Code illisible ou incomplet.');}
-  const r=o&&o.race;
-  if(!r||!r.profile||!Array.isArray(r.profile.d)||!Array.isArray(r.profile.e)||r.profile.d.length!==r.profile.e.length||r.profile.d.length<2||!Array.isArray(r.stations))throw new Error('Code invalide.');
+// ---------- plan partageable ----------
+const PLAN_KEYS=['name','date','start','target','stopMin','drift','finishBarrier','carbs','water','gelG'];
+function planObj(r,withItems){
+  const o={};PLAN_KEYS.forEach(k=>{o[k]=r[k];});
+  o.profile=r.profile;
+  o.stations=r.stations.map(s=>{const x={id:s.id,name:s.name,km:s.km,access:!!s.access,barrier:s.barrier||''};if(withItems)x.items=(s.items||[]).map(i=>({t:i.t,done:false}));return x;});
+  return o;
+}
+function planJSON(r){return JSON.stringify(planObj(r,false));}
+function exportCode(r){return 'RUB1.'+btoa(unescape(encodeURIComponent(JSON.stringify({v:1,race:planObj(r,true)}))));}
+function sanitizeRace(r){
+  if(!r||!r.profile||!Array.isArray(r.profile.d)||!Array.isArray(r.profile.e)||r.profile.d.length!==r.profile.e.length||r.profile.d.length<2||!Array.isArray(r.stations))throw new Error('Données de course invalides.');
   const d=r.profile.d.map(Number),e=r.profile.e.map(Number);
-  if(d.concat(e).some(x=>!isFinite(x)))throw new Error('Code invalide.');
+  if(d.concat(e).some(x=>!isFinite(x)))throw new Error('Données de course invalides.');
+  const hm=/^\d{1,2}:\d{2}$/;
   const clean={
     name:String(r.name||'Course partagée').slice(0,80),date:/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')?r.date:'',
-    start:/^\d{1,2}:\d{2}$/.test(r.start||'')?r.start:'06:00',target:String(r.target||'').slice(0,8),
+    start:hm.test(r.start||'')?r.start:'06:00',target:String(r.target||'').slice(0,8),
     stopMin:Math.max(0,Math.min(60,+r.stopMin||0)),drift:Math.max(0,Math.min(40,+r.drift||0)),
-    finishBarrier:/^\d{1,2}:\d{2}$/.test(r.finishBarrier||'')?r.finishBarrier:'',
+    finishBarrier:hm.test(r.finishBarrier||'')?r.finishBarrier:'',
     carbs:Math.max(0,Math.min(200,+r.carbs||0)),water:Math.max(0,Math.min(2000,+r.water||0)),gelG:Math.max(0,Math.min(100,+r.gelG||0)),
     profile:{d,e},points:{},diary:{rating:0,nutrition:'',learn:'',gear:''},
-    stations:r.stations.slice(0,30).map(s=>({id:String(s.id||uid()).slice(0,12),name:String(s.name||'Ravito').slice(0,80),km:Math.max(0,+s.km||0),access:!!s.access,barrier:/^\d{1,2}:\d{2}$/.test(s.barrier||'')?s.barrier:'',
+    stations:r.stations.slice(0,30).map(s=>({id:String(s.id||uid()).replace(/[^A-Za-z0-9]/g,'').slice(0,12)||uid(),name:String(s.name||'Ravito').slice(0,80),km:Math.max(0,+s.km||0),access:!!s.access,barrier:hm.test(s.barrier||'')?s.barrier:'',
       items:Array.isArray(s.items)?s.items.slice(0,30).map(it=>({t:String(it.t||'').slice(0,80),done:false})):[]}))
   };
   clean.stations.sort((a,b)=>a.km-b.km);
   return clean;
+}
+function importCode(code){
+  code=String(code||'').trim();
+  if(code.indexOf('RUB1.')!==0)throw new Error('Code non reconnu.');
+  let o;try{o=JSON.parse(decodeURIComponent(escape(atob(code.slice(5)))));}catch(e){throw new Error('Code illisible ou incomplet.');}
+  return sanitizeRace(o&&o.race);
+}
+
+// ---------- suivi en direct (Firebase, API REST) ----------
+const FB={apiKey:'AIzaSyCUW5CSnC--LZeZTc7g7kPIYznm8R_PAg4',projectId:'rubalise'};
+const AUTH_KEY='rubalise:auth';
+let authState=null;try{authState=JSON.parse(localStorage.getItem(AUTH_KEY)||'null');}catch(e){}
+let syncing=false,resync=false,pushTimer=null;
+function setAuth(a){authState=a;try{localStorage.setItem(AUTH_KEY,JSON.stringify(a));}catch(e){}}
+async function fetchJSON(url,opt){
+  let res;
+  try{res=await fetch(url,opt);}catch(e){const er=new Error('Pas de connexion à Firebase.');er.network=true;throw er;}
+  let data=null;try{data=await res.json();}catch(e){}
+  if(!res.ok){
+    const er=new Error((data&&data.error&&(data.error.message||data.error.status))||('Erreur '+res.status));
+    er.status=res.status;throw er;
+  }
+  return data;
+}
+async function getToken(){
+  const now=Date.now();
+  if(authState&&authState.idToken&&authState.expiresAt-now>60000)return authState.idToken;
+  if(authState&&authState.refreshToken){
+    try{
+      const r=await fetchJSON('https://securetoken.googleapis.com/v1/token?key='+FB.apiKey,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(authState.refreshToken)});
+      setAuth({idToken:r.id_token,refreshToken:r.refresh_token,expiresAt:now+(+r.expires_in)*1000,uid:r.user_id});
+      return authState.idToken;
+    }catch(e){if(e.network)throw e;}
+  }
+  const r=await fetchJSON('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+FB.apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({returnSecureToken:true})});
+  setAuth({idToken:r.idToken,refreshToken:r.refreshToken,expiresAt:now+(+r.expiresIn)*1000,uid:r.localId});
+  return authState.idToken;
+}
+async function fsReq(method,path,body,query){
+  const tok=await getToken();
+  const url='https://firestore.googleapis.com/v1/projects/'+FB.projectId+'/databases/(default)/documents/'+path+(query||'');
+  return fetchJSON(url,{method:method,headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+}
+function genCode(){
+  const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789',b=new Uint8Array(6);let s='';
+  try{crypto.getRandomValues(b);}catch(e){for(let i=0;i<6;i++)b[i]=Math.floor(Math.random()*256);}
+  for(let i=0;i<6;i++)s+=A[b[i]%A.length];
+  return s;
+}
+function ptsToFields(pts){const f={};Object.keys(pts||{}).forEach(id=>{f['p_'+id]={integerValue:String(Math.round(pts[id]))};});return f;}
+function pstr(o){return JSON.stringify(Object.keys(o||{}).sort().map(k=>[k,o[k]]));}
+function mergePlan(r,p){
+  const keep={};r.stations.forEach(s=>{keep[s.id]=s.items||[];});
+  PLAN_KEYS.forEach(k=>{r[k]=p[k];});
+  r.profile=p.profile;
+  r.stations=p.stations.map(s=>Object.assign({},s,{items:keep[s.id]||[]}));
+}
+function applyRemote(r,doc){
+  const before=pstr(r.points)+'|'+r.sync.lastPlan;
+  const f=doc.fields||{};
+  const mf=(f.points&&f.points.mapValue&&f.points.mapValue.fields)||{};
+  const merged={};
+  Object.keys(mf).forEach(k=>{
+    if(k.indexOf('p_')!==0)return;
+    const v=mf[k],n=v.integerValue!=null?+v.integerValue:(v.doubleValue!=null?+v.doubleValue:NaN);
+    if(isFinite(n))merged[k.slice(2)]=n;
+  });
+  const pend=r.pending||{};
+  Object.keys(pend).forEach(id=>{if(pend[id]==null)delete merged[id];else merged[id]=pend[id];});
+  r.points=merged;
+  if(r.sync.role!=='owner'&&f.plan&&f.plan.stringValue&&f.plan.stringValue!==r.sync.lastPlan){
+    try{mergePlan(r,sanitizeRace(JSON.parse(f.plan.stringValue)));r.sync.lastPlan=f.plan.stringValue;}catch(e){}
+  }
+  return before!==pstr(r.points)+'|'+r.sync.lastPlan;
+}
+async function startShare(r){
+  await getToken();
+  for(let t=0;t<4;t++){
+    const code=genCode();
+    const fields={owner:{stringValue:authState.uid||''},plan:{stringValue:planJSON(r)},points:{mapValue:{fields:ptsToFields(r.points)}},updatedAt:{integerValue:String(Date.now())}};
+    try{
+      await fsReq('POST','courses',{fields:fields},'?documentId='+code);
+      r.sync={code:code,role:'owner',lastPlan:planJSON(r),lastSync:Date.now(),error:''};r.pending={};
+      return code;
+    }catch(e){if(e.status===409)continue;throw e;}
+  }
+  throw new Error('Impossible de créer un code libre, réessaie.');
+}
+async function joinCourse(raw){
+  const code=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(code.length!==6)throw new Error('Le code comporte 6 caractères.');
+  let doc;
+  try{doc=await fsReq('GET','courses/'+code);}catch(e){if(e.status===404)throw new Error('Code inconnu.');throw e;}
+  const f=doc.fields||{};
+  if(!f.plan||!f.plan.stringValue)throw new Error('Course introuvable.');
+  const race=sanitizeRace(JSON.parse(f.plan.stringValue));
+  race.sync={code:code,role:'member',lastPlan:f.plan.stringValue,lastSync:Date.now(),error:''};race.pending={};
+  applyRemote(race,doc);
+  return race;
+}
+function queuePoint(r,id,val){if(!r.sync)return;r.pending=r.pending||{};r.pending[id]=val;}
+function ago(ms){const s=Math.max(0,Math.round((Date.now()-ms)/1000));return s<60?s+' s':Math.round(s/60)+' min';}
+function syncText(r){
+  const sy=r.sync;if(!sy)return '';const n=Object.keys(r.pending||{}).length;
+  let t='Suivi en direct, code '+sy.code+' : '+(sy.error?'injoignable pour le moment ('+sy.error+').':(sy.lastSync?'synchronisé il y a '+ago(sy.lastSync)+'.':'synchronisation en cours.'));
+  if(n)t+=' '+n+' pointage'+(n>1?'s':'')+' en attente d’envoi.';
+  return t;
+}
+function updateSyncUI(){const el=document.getElementById('syncstat'),r=state.race;if(el&&r&&r.sync)el.textContent=syncText(r);}
+function typing(){const ae=document.activeElement;return !!(ae&&root.contains(ae)&&/INPUT|TEXTAREA/.test(ae.tagName));}
+async function syncNow(){
+  const r=state.race;if(!r||!r.sync)return;
+  if(syncing){resync=true;return;}
+  syncing=true;let changed=false;
+  try{
+    const owner=r.sync.role==='owner',pj=owner?planJSON(r):null,dirty=owner&&pj!==r.sync.lastPlan;
+    const pend=Object.assign({},r.pending||{}),keys=Object.keys(pend);
+    if(dirty||keys.length){
+      const fields={},mask=[];
+      if(dirty){fields.plan={stringValue:pj};mask.push('plan');}
+      if(keys.length){
+        const mf={};
+        keys.forEach(id=>{mask.push('points.p_'+id);if(pend[id]!=null)mf['p_'+id]={integerValue:String(Math.round(pend[id]))};});
+        fields.points={mapValue:{fields:mf}};
+      }
+      fields.updatedAt={integerValue:String(Date.now())};mask.push('updatedAt');
+      await fsReq('PATCH','courses/'+r.sync.code,{fields:fields},'?'+mask.map(m=>'updateMask.fieldPaths='+encodeURIComponent(m)).join('&'));
+      if(dirty)r.sync.lastPlan=pj;
+      keys.forEach(id=>{if(r.pending&&r.pending[id]===pend[id])delete r.pending[id];});
+    }
+    const doc=await fsReq('GET','courses/'+r.sync.code);
+    if(state.race===r&&r.sync){changed=applyRemote(r,doc);r.sync.lastSync=Date.now();r.sync.error='';}
+  }catch(e){
+    if(r.sync)r.sync.error=e.network?'hors ligne':(e.status===403?'accès refusé, vérifie les règles Firestore':(e.message||'erreur'));
+  }finally{
+    syncing=false;save();
+    if(changed&&state.race===r&&!typing())render();else updateSyncUI();
+    if(resync){resync=false;setTimeout(syncNow,150);}
+  }
+}
+function syncSoon(){setTimeout(syncNow,60);}
+function maybePush(){
+  const r=state.race;
+  if(r&&r.sync&&r.sync.role==='owner'&&planJSON(r)!==r.sync.lastPlan){clearTimeout(pushTimer);pushTimer=setTimeout(syncNow,1200);}
+}
+function fbErr(e){
+  if(e.network)return 'Impossible de joindre Firebase. Vérifie ta connexion (le suivi en direct ne marche pas dans l’aperçu web de Claude, seulement dans l’appli installée).';
+  if(e.status===403)return 'Accès refusé par Firebase : vérifie que les règles sont publiées et que la connexion Anonyme est activée.';
+  return e.message||'Erreur Firebase.';
+}
+function joinForm(label){
+  return '<div class="row"><label class="fld" style="flex:1;min-width:150px"><span>'+(label||'Tu suis un coureur ? Saisis son code')+'</span><input class="in" id="joincode" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="K7Q2MX"></label><button class="btn" data-act="join">Rejoindre</button></div>';
+}
+function syncPanel(r){
+  const sy=r.sync;
+  if(sy){
+    const owner=sy.role==='owner';
+    return '<section class="sec"><h2>Suivi en direct</h2>'
+      +'<p class="lead">'+(owner?'Donne ce code à ton assistance et à tes supporters : ils le saisissent dans leur appli pour suivre ta course et pointer tes passages.':'Tu suis cette course. Tes pointages sont envoyés à toute l’équipe.')+'</p>'
+      +'<div class="code-big" aria-label="Code de la course">'+esc(sy.code)+'</div>'
+      +'<p class="note" id="syncstat">'+esc(syncText(r))+'</p>'
+      +'<div class="row"><button class="btn" data-act="copy-live-code">Copier le code</button><button class="btn quiet" data-act="sync-now">Synchroniser maintenant</button><button class="btn quiet" data-act="stop-sync">'+(owner?'Arrêter le partage':'Quitter ce suivi')+'</button></div></section>';
+  }
+  return '<section class="sec"><h2>Suivi en direct</h2>'
+    +'<p class="note">Crée un code de course : ton assistance et tes supporters le saisissent dans leur appli, voient tes heures de passage se recalculer en direct et peuvent pointer tes passages. Rien n’est envoyé tant que tu ne crées pas de code.</p>'
+    +'<div class="row"><button class="btn primary" data-act="share-live">Partager en direct</button><button class="btn quiet small" data-act="sync-test">Tester la connexion</button></div>'
+    +joinForm()+'</section>';
 }
 
 // ---------- graphique de profil ----------
@@ -461,13 +636,13 @@ function profileSVG(m,tl,opt){
 
 // ---------- vues ----------
 function needRace(){
-  return '<section class="empty"><h1>Commence par ton plan</h1><p class="lead">Cet onglet s’appuie sur le parcours que tu prépares dans « Plan ».</p><button class="btn primary" data-tab="plan">Aller au plan</button></section>';
+  return '<section class="empty"><h1>Commence par ton plan</h1><p class="lead">Cet onglet s’appuie sur le parcours que tu prépares dans « Plan ».</p><button class="btn primary" data-tab="plan">Aller au plan</button>'+joinForm()+'</section>';
 }
 function emptyPlan(){
   return '<section class="empty"><h1>Prépare ta course, puis suis-la en direct.</h1>'
   +'<p class="lead">Importe le tracé GPX : Rubalise calcule tes heures de passage, ton plan de nutrition et ce que ton assistance doit préparer à chaque ravito.</p>'
-  +'<div class="row">'+gpxPick('primary','Importer un fichier GPX')+'<button class="btn" data-act="demo">Essayer avec une course démo</button></div>'+gpxPaste()
-  +'<p class="note">Tes données restent dans ce navigateur. Rien n’est envoyé nulle part.</p></section>';
+  +'<div class="row">'+gpxPick('primary','Importer un fichier GPX')+'<button class="btn" data-act="demo">Essayer avec une course démo</button></div>'+gpxPaste()+joinForm()
+  +'<p class="note">Tes données restent sur ton téléphone. Elles ne sont envoyées que si tu partages une course en direct.</p></section>';
 }
 function renderPlan(){
   const r=state.race;if(!r)return emptyPlan();
@@ -494,7 +669,9 @@ function renderPlan(){
     const c=Math.round(l.dur/60*r.carbs/5)*5,w=Math.round(l.dur/60*r.water/50)*50,g=r.gelG>0?Math.round(c/r.gelG*10)/10:0;
     return '<tr><td>'+esc(l.from)+' – '+esc(l.to)+'<small>'+km1(l.km)+' km, +'+l.up+' m</small></td><td>'+fmtDur(l.dur)+'</td><td>'+c+' g'+(r.gelG>0?'<small>≈ '+String(g).replace('.',',')+' gels</small>':'')+'</td><td>'+nf(w)+' ml</td></tr>';
   }).join('');
-  return '<section>'
+  const member=!!(r.sync&&r.sync.role==='member');
+  return (member?'<p class="note" style="margin-top:12px">Plan fourni par le coureur (code '+esc(r.sync.code)+'). Il se met à jour automatiquement.</p>':'')
+  +'<fieldset class="lock"'+(member?' disabled':'')+'><section>'
   +'<input class="race-name" data-r="name" value="'+esc(r.name)+'" aria-label="Nom de la course" placeholder="Nom de la course">'
   +'<div class="chart">'+svg+'</div>'
   +'<div class="legend"><span>Cercle plein : accès assistance</span><span>Cercle vide : sans accès</span></div>'
@@ -524,8 +701,10 @@ function renderPlan(){
   +'<label class="fld"><span>Un gel (g)</span><input type="number" inputmode="numeric" min="0" data-r="gelG" data-num value="'+r.gelG+'"></label></div>'
   +'<div class="tblwrap" style="margin-top:12px"><table><thead><tr><th>Tronçon</th><th>Durée</th><th>Glucides</th><th>Eau</th></tr></thead><tbody>'+legRows+'</tbody></table></div></section>'
 
+  +'</fieldset>'
   +'<section class="sec"><p class="note">Les temps viennent d’un modèle simplifié : la pente ralentit à la montée, accélère un peu à la descente, et la fatigue ralentit la fin. Compare avec tes sorties longues et ajuste l’objectif et le ralentissement.</p>'
-  +'<div class="row">'+gpxPick('quiet','Nouvelle course (remplace celle-ci)')+'</div>'+gpxPaste()+'</section>';
+  +(member?'<div class="row"><button class="btn quiet" data-act="stop-sync">Quitter ce suivi</button></div></section>'
+          :'<div class="row">'+gpxPick('quiet','Nouvelle course (remplace celle-ci)')+'</div>'+gpxPaste()+'</section>');
 }
 function renderAssist(){
   const r=state.race;if(!r)return needRace();
@@ -549,10 +728,11 @@ function renderAssist(){
   const fin=rows[rows.length-1],finE=tlO.rows[rows.length-1].adjArr,finL=tlP.rows[rows.length-1].adjArr;
   return '<section class="empty"><h1>Équipe d’assistance</h1>'
   +'<p class="lead">Fenêtres de passage (course 8 % plus rapide ou 12 % plus lente que prévu), ce qu’il faut préparer et ce qu’il faut remplir à chaque ravito.</p></section>'
+  +syncPanel(r)
   +(cards||'<p class="note">Aucun ravito avec accès assistance. Coche « Accès pour l’assistance » dans l’onglet Plan.</p>')
   +(without.length?'<p class="note">Sans accès assistance : '+without.map(x=>esc(x.name)).join(', ')+'.</p>':'')
   +'<section class="sec"><h2>Pour les supporters à l’arrivée</h2><p>'+(fin.actual!=null?'Arrivée pointée à '+clk(fin.actual)+'.':'Arrivée estimée entre '+clk(finE)+' et '+clk(finL)+'.')+'</p></section>'
-  +'<section class="sec"><h2>Partager le plan avec l’équipe</h2>'
+  +'<section class="sec"><h2>Sans connexion : partager le plan par code</h2>'
   +'<p class="note">Copie le code et envoie-le par message. Ton équipe le colle ici pour retrouver ton plan. Ce prototype ne synchronise pas les pointages en direct entre appareils.</p>'
   +'<div class="row"><button class="btn" data-act="copy-code">Copier le code du plan</button><button class="btn quiet" data-act="show-import">Coller un code reçu</button></div>'
   +(shareCode?'<textarea class="in code" readonly aria-label="Code du plan" id="codebox">'+esc(shareCode)+'</textarea>':'')
@@ -588,7 +768,7 @@ function renderLive(){
       +'<div class="row"><label class="fld" style="flex:1;min-width:140px"><span>Heure de passage</span><input type="time" id="pt-time" value="'+hhmmNow()+'"></label>'
       +'<button class="btn primary" data-act="point">Pointer le passage</button></div></section>';
   }
-  return '<section class="empty"><div class="clock" id="clock">'+fmtClock(nowClock()).s+'</div><p class="status">'+status+'</p>'
+  return '<section class="empty"><div class="clock" id="clock">'+fmtClock(nowClock()).s+'</div><p class="status">'+status+'</p>'+(r.sync?'<p class="note" id="syncstat" style="margin-top:6px">'+esc(syncText(r))+'</p>':'')
   +'<dl class="sum"><div><dt>Arrivée estimée</dt><dd>'+clk(fin.adjArr)+'</dd></div><div><dt>Prévue</dt><dd>'+clk(finPlan.adjArr)+'</dd></div>'
   +(anyPoint?'<div><dt>Écart</dt><dd class="'+(delta>5?'warn':'ok')+'">'+dsign(delta)+'</dd></div>':'')+'</dl>'
   +(anyPoint?'':'<p class="note" style="margin-top:10px">Aucun passage pointé : l’estimation suit le plan. Sans date de course, on suppose qu’elle a lieu aujourd’hui.</p>')
@@ -598,7 +778,7 @@ function renderLive(){
   +next
   +'<section class="sec"><h2>Passages</h2><ol class="pts">'+list+'</ol>'
   +'<div class="row">'
-  +(anyPoint?'<button class="btn quiet" data-act="undo">Annuler le dernier pointage</button><button class="btn quiet" data-act="clear-points">Effacer les pointages</button>':'<button class="btn quiet" data-act="simulate">Simuler un coureur 10 % plus lent</button>')
+  +(anyPoint?'<button class="btn quiet" data-act="undo">Annuler le dernier pointage</button>'+((!r.sync||r.sync.role==='owner')?'<button class="btn quiet" data-act="clear-points">Effacer les pointages</button>':''):(r.sync?'':'<button class="btn quiet" data-act="simulate">Simuler un coureur 10 % plus lent</button>'))
   +'</div><p class="note">À chaque pointage, les heures suivantes sont recalculées : le retard ou l’avance pris jusque-là se répercute en partie sur la suite.</p></section>';
 }
 function renderDiary(){
@@ -654,8 +834,27 @@ function act(b){
     catch(err){flash(err.message);}
     return;
   }
+  if(a==='join'){
+    const bx=document.getElementById('joincode');
+    flash('Connexion au suivi…');
+    joinCourse(bx?bx.value:'').then(race=>{state.race=race;animateNext=true;tab='live';commit();window.scrollTo(0,0);flash('Course rejointe : '+race.name+'.');}).catch(e=>flash(fbErr(e)));
+    return;
+  }
+  if(a==='sync-test'){flash('Test de connexion…');getToken().then(()=>flash('Connexion Firebase OK.')).catch(e=>flash(fbErr(e)));return;}
   if(a==='del-journal'){state.journal=(state.journal||[]).filter(x=>x.id!==b.dataset.id);commit();return;}
   if(!r)return;
+  if(a==='share-live'){
+    flash('Création du suivi en direct…');
+    startShare(r).then(code=>{commit();flash('Suivi créé. Code : '+code);}).catch(e=>flash(fbErr(e)));
+    return;
+  }
+  if(a==='sync-now'){flash('Synchronisation…');syncNow();return;}
+  if(a==='stop-sync'){delete r.sync;r.pending={};commit();flash('Suivi en direct arrêté sur cet appareil.');return;}
+  if(a==='copy-live-code'){
+    const c=r.sync&&r.sync.code;if(!c)return;
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(c).then(()=>flash('Code copié : '+c),()=>flash('Code : '+c));}else flash('Code : '+c);
+    return;
+  }
   if(a==='add-station'){
     const m=model(r),last=r.stations.length?r.stations[r.stations.length-1].km:0;
     const km=Math.round(((last+m.tot)/2)*10)/10;
@@ -681,13 +880,13 @@ function act(b){
     const lastDone=tl.rows.filter(x=>x.actual!=null).map(x=>x.actual).pop();
     const floor=lastDone!=null?lastDone:m.startMin;
     while(min<floor-5)min+=1440;
-    r.points[tl.rows[idx].id]=min;commit();flash('Passage pointé : '+tl.rows[idx].name+'.');return;
+    r.points[tl.rows[idx].id]=min;queuePoint(r,tl.rows[idx].id,min);commit();syncSoon();flash('Passage pointé : '+tl.rows[idx].name+'.');return;
   }
   if(a==='undo'){
     const m=model(r),tl=timeline(r,m,{});let k=-1;tl.rows.forEach((x,i)=>{if(x.actual!=null)k=i;});
-    if(k>=0){delete r.points[tl.rows[k].id];commit();}return;
+    if(k>=0){delete r.points[tl.rows[k].id];queuePoint(r,tl.rows[k].id,null);commit();syncSoon();}return;
   }
-  if(a==='clear-points'){r.points={};commit();return;}
+  if(a==='clear-points'){Object.keys(r.points).forEach(id=>queuePoint(r,id,null));r.points={};commit();syncSoon();return;}
   if(a==='simulate'){
     const m=model(r),tl=timeline(r,m,{plan:true}),stop=+r.stopMin||0;
     r.points={};
@@ -699,6 +898,7 @@ function act(b){
     const m=model(r),tl=timeline(r,m,{}),st=profileStats(m.p),fin=tl.rows[tl.rows.length-1],d=r.diary||{};
     state.journal=state.journal||[];
     state.journal.unshift({id:uid(),name:r.name,date:r.date,km:st.km,up:st.up,planned:m.target,actual:fin.actual!=null?fin.actual-m.startMin:null,rating:d.rating||0,learn:(d.learn||'').slice(0,160)});
+    if(r.sync){delete r.sync;r.pending={};}
     r.points={};r.diary={rating:0,nutrition:'',learn:'',gear:''};commit();flash('Course archivée dans le carnet.');return;
   }
 }
@@ -752,8 +952,17 @@ setInterval(()=>{
   render();
 },30000);
 
+setInterval(()=>{
+  const r=state.race;if(!r||!r.sync||document.hidden)return;
+  const age=Date.now()-(r.sync.lastSync||0),every=(tab==='live')?10000:30000;
+  if(age>=every||Object.keys(r.pending||{}).length)syncNow();
+},5000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncNow();});
+window.addEventListener('online',()=>syncNow());
+
 lastW=root.clientWidth;
 render(true);
+if(state.race&&state.race.sync)syncSoon();
 })();
 </script>
 <script>
