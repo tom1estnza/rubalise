@@ -1,0 +1,6 @@
+{
+  "appId": "fr.rubalise.app",
+  "appName": "Rubalise",
+  "webDir": "www",
+  "server": { "androidScheme": "https" }
+}
