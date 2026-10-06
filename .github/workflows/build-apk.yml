@@ -23,8 +23,27 @@ jobs:
       - name: Installer les dépendances
         run: npm install
 
+      - name: Assembler le pont natif (suivi GPS en arrière-plan)
+        continue-on-error: true
+        run: npx esbuild native-src/native.js --bundle --minify --format=iife --outfile=www/native.js
+
       - name: Créer le projet Android
         run: npx cap add android
+
+      - name: Autorisations Android (localisation, notification)
+        run: |
+          python3 - <<'PY'
+          p = 'android/app/src/main/AndroidManifest.xml'
+          s = open(p, encoding='utf-8').read()
+          perms = ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION', 'FOREGROUND_SERVICE',
+                   'FOREGROUND_SERVICE_LOCATION', 'POST_NOTIFICATIONS', 'WAKE_LOCK']
+          add = ''.join('    <uses-permission android:name="android.permission.%s" />\n' % x
+                        for x in perms if 'android.permission.%s"' % x not in s)
+          assert '</manifest>' in s
+          s = s.replace('</manifest>', add + '</manifest>')
+          open(p, 'w', encoding='utf-8').write(s)
+          print(add or 'rien à ajouter')
+          PY
 
       - name: Générer les icônes
         continue-on-error: true
