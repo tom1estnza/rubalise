@@ -23,14 +23,14 @@ jobs:
       - name: Installer les dépendances
         run: npm install
 
-      - name: Assembler le pont natif (suivi GPS en arrière-plan)
+      - name: Assembler le pont natif (localisation, connexion Google)
         continue-on-error: true
         run: npx esbuild native-src/native.js --bundle --minify --format=iife --outfile=www/native.js
 
       - name: Créer le projet Android
         run: npx cap add android
 
-      - name: Autorisations Android (localisation, notification)
+      - name: Autorisations et lien de retour Android
         run: |
           python3 - <<'PY'
           p = 'android/app/src/main/AndroidManifest.xml'
@@ -41,8 +41,21 @@ jobs:
                         for x in perms if 'android.permission.%s"' % x not in s)
           assert '</manifest>' in s
           s = s.replace('</manifest>', add + '</manifest>')
+          # Lien de retour de la connexion Google : fr.rubalise.app://
+          if 'custom_url_scheme' not in s and 'android:scheme="fr.rubalise.app"' not in s:
+              flt = ('            <intent-filter>\n'
+                     '                <action android:name="android.intent.action.VIEW" />\n'
+                     '                <category android:name="android.intent.category.DEFAULT" />\n'
+                     '                <category android:name="android.intent.category.BROWSABLE" />\n'
+                     '                <data android:scheme="fr.rubalise.app" />\n'
+                     '            </intent-filter>\n')
+              assert '</activity>' in s
+              s = s.replace('</activity>', flt + '        </activity>', 1)
+              print('lien fr.rubalise.app:// ajouté')
+          else:
+              print('lien de retour déjà présent')
           open(p, 'w', encoding='utf-8').write(s)
-          print(add or 'rien à ajouter')
+          print(add or 'permissions déjà présentes')
           PY
 
       - name: Générer les icônes
@@ -51,6 +64,17 @@ jobs:
 
       - name: Copier l'appli dans le projet Android
         run: npx cap sync android
+
+      - name: Clé de signature fixe
+        run: |
+          if [ -f keystore/debug.keystore ] && keytool -list -keystore keystore/debug.keystore -storepass android -alias androiddebugkey >/dev/null 2>&1; then
+            mkdir -p ~/.android
+            cp keystore/debug.keystore ~/.android/debug.keystore
+            echo "Clé de signature fixe installée."
+            keytool -list -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey | grep -i "SHA1" || true
+          else
+            echo "Clé fixe absente ou illisible : clé automatique utilisée."
+          fi
 
       - name: Compiler l'APK
         working-directory: android
