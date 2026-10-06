@@ -155,6 +155,42 @@ td small{display:block}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:15px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:6;max-width:92vw;text-align:center}
 .toast.on{opacity:1}
 .empty{padding-top:8px}
+[hidden]{display:none!important}
+body.noscroll{overflow:hidden}
+.btn.danger{border-color:var(--live);color:var(--live)}
+.btn.danger.fill{background:var(--live);border-color:var(--live);color:var(--accent-ink)}
+.menu{position:fixed;z-index:15;min-width:250px;max-width:calc(100vw - 24px);background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:6px}
+.menu-head{padding:10px 12px 10px;border-bottom:1px solid var(--line);margin-bottom:4px;display:flex;flex-direction:column;gap:2px}
+.menu-head b{font:600 18px var(--f-num)}
+.menu button{display:flex;width:100%;min-height:48px;align-items:center;padding:0 12px;border:0;background:transparent;border-radius:8px;font-size:16px;text-align:left;cursor:pointer;color:var(--ink)}
+.menu button:hover,.menu button:focus-visible{background:var(--fill)}
+.menu .dng{color:var(--live)}
+.menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.modal{position:fixed;inset:0;z-index:40;background:rgba(8,18,15,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-card{background:var(--surface);border-radius:14px;padding:20px;max-width:420px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.modal-card h2{margin-bottom:8px}
+.back{margin:4px 0 0;min-height:40px;padding:0;border:0;background:transparent;color:var(--accent);font-weight:600;font-size:16px;cursor:pointer}
+details{border-top:1px solid var(--line);padding:6px 0}
+details:last-of-type{border-bottom:1px solid var(--line)}
+summary{font:600 18px var(--f-num);cursor:pointer;min-height:44px;display:flex;align-items:center}
+details p,details ol{margin:4px 0 10px;color:var(--ink);max-width:62ch}
+.stn.hl{background:color-mix(in srgb,var(--accent) 16%,transparent);border-radius:8px}
+.pf-hit{cursor:pointer;outline:none}
+.pf-hit:focus-visible .pf-stn{stroke:var(--live);stroke-width:3}
+.land{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:hidden}
+.land-inner{position:absolute;display:flex;flex-direction:column;padding:8px 14px;box-sizing:border-box}
+.land:not(.rotated) .land-inner{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
+.land-top{display:flex;align-items:center;gap:12px;flex:none}
+.land-top b{font:700 18px var(--f-num)}
+.land-hint{font-size:13px;color:var(--ink2);flex:1}
+.land-body{flex:1;display:flex;gap:12px;min-height:0;margin-top:6px}
+.land-chart{flex:1;min-width:0;min-height:0;position:relative}
+.land-chart svg{position:absolute;left:0;top:0;width:100%;height:100%}
+.land-card{flex:none;width:min(320px,44%);overflow:auto;border-left:1px solid var(--line);padding-left:12px;font-size:15px}
+.land-card h3{font-size:20px}
+.land-card ul{margin:4px 0 8px;padding-left:18px}
+.land .pf-txt{font-size:13px}
+.land .pf-num{font-size:15px}
 .tabs.five .tabbtn{font-size:13px;padding:0 2px}
 #acct.run{min-width:38px;width:38px;padding:0;border-radius:50%;font-weight:700;font-size:16px}
 .stack{display:flex;flex-direction:column;gap:12px;max-width:420px;margin:14px 0}
@@ -181,6 +217,15 @@ fieldset.lock:disabled{opacity:.9}
   <button class="tabbtn" data-tab="runner" hidden>Coureur</button>
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="menu" id="menu" role="menu" hidden></div>
+<div class="modal" id="modal" hidden><div class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="mtitle" aria-describedby="mtext">
+  <h2 id="mtitle"></h2><p id="mtext"></p>
+  <div class="row"><button class="btn quiet" data-mact="cancel">Annuler</button><button class="btn primary" data-mact="ok">Confirmer</button></div>
+</div></div>
+<div class="land" id="land" hidden><div class="land-inner" id="landin">
+  <div class="land-top"><b>Profil du parcours</b><span class="land-hint" id="landhint">Touche un point pour voir le ravito.</span><button class="btn quiet small" data-act="land-close">Fermer</button></div>
+  <div class="land-body"><div class="land-chart" id="landchart"></div><aside class="land-card" id="landcard" hidden></aside></div>
+</div></div>
 
 <script>
 (function(){
@@ -339,9 +384,15 @@ function effMethod(pf,maxEff){
 
 // ---------- stockage ----------
 const KEY='rubalise:v1';
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&typeof s==='object')return Object.assign({race:null,journal:[],profile:defaultProfile(),profileDirty:false},s);}}catch(e){}return {race:null,journal:[],profile:defaultProfile(),profileDirty:false};}
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&typeof s==='object')return Object.assign({race:null,journal:[],profile:defaultProfile(),prefs:defaultPrefs(),profileDirty:false},s);}}catch(e){}return {race:null,journal:[],profile:defaultProfile(),prefs:defaultPrefs(),profileDirty:false};}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function defaultPrefs(){return {theme:'auto',defStop:3,defCarbs:60,defWater:500,defGel:25};}
 let state=load();
+state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
+const APP_VERSION='0.4';
+function prefv(k){return (state.prefs&&state.prefs[k]!=null)?state.prefs[k]:defaultPrefs()[k];}
+function applyTheme(){const t=state.prefs.theme,el=document.documentElement;if(t==='light'||t==='dark')el.setAttribute('data-theme',t);else el.removeAttribute('data-theme');}
+applyTheme();
 let tab='plan',animateNext=true,importOpen=false,gpxPasteOpen=false,shareCode='',toastTimer=null,renderTimer=null;
 
 // ---------- utilitaires ----------
@@ -389,7 +440,7 @@ function chartW(){return Math.max(280,Math.min(680,root.clientWidth||340));}
 
 // ---------- création de course ----------
 function newRace(profile,name,stations){
-  const r={name:name||'Ma course',date:'',start:'06:00',target:'',stopMin:3,drift:10,finishBarrier:'',carbs:60,water:500,gelG:25,profile:profile,stations:(stations||[]).sort((a,b)=>a.km-b.km),points:{},diary:{rating:0,nutrition:'',learn:'',gear:''}};
+  const r={name:name||'Ma course',date:'',start:'06:00',target:'',stopMin:prefv('defStop'),drift:10,finishBarrier:'',carbs:prefv('defCarbs'),water:prefv('defWater'),gelG:prefv('defGel'),profile:profile,stations:(stations||[]).sort((a,b)=>a.km-b.km),points:{},diary:{rating:0,nutrition:'',learn:'',gear:''}};
   autoTarget(r);return r;
 }
 function autoTarget(r){const U=unitCum(r.profile,r.drift);const t=6.5*U[U.length-1]+r.stations.length*r.stopMin;r.target=fmtHM(Math.round(t/5)*5);}
@@ -705,7 +756,12 @@ function updateChrome(){
   const nav=document.querySelector('.tabs');if(nav)nav.classList.toggle('five',run);
   const rb=document.querySelector('.tabbtn[data-tab="runner"]');if(rb)rb.hidden=!run;
   const ab=document.getElementById('acct');
-  if(ab){ab.dataset.tab=run?'runner':'login';ab.classList.toggle('run',run);ab.textContent=run?authState.email.charAt(0).toUpperCase():'Se connecter';ab.setAttribute('aria-label',run?'Mon espace coureur':'Se connecter');}
+  if(ab){
+    if(run){ab.removeAttribute('data-tab');ab.dataset.act='menu';ab.setAttribute('aria-haspopup','menu');ab.setAttribute('aria-expanded',String(menuOpen));}
+    else{ab.dataset.tab='login';ab.removeAttribute('data-act');ab.removeAttribute('aria-haspopup');ab.removeAttribute('aria-expanded');}
+    ab.classList.toggle('run',run);ab.textContent=run?authState.email.charAt(0).toUpperCase():'Se connecter';
+    ab.setAttribute('aria-label',run?'Menu du compte':'Se connecter');
+  }
 }
 function renderLogin(){
   const up=loginMode==='up';
@@ -771,6 +827,182 @@ function renderRunner(){
   +'<section class="sec"><h2>Mon compte</h2><p>'+esc(authState&&authState.email||'')+'</p><div class="row"><button class="btn quiet" data-act="sign-out">Se déconnecter</button></div></section>';
 }
 
+// ---------- menu du profil, fenêtre de confirmation, pages ----------
+let menuOpen=false,prevTab='plan',exportText='',modalOk=null,landOpen=false,landSel=null,landFrom='plan',landFs=false;
+const MAIN_TABS=['plan','assist','live','diary','runner'];
+function go(page){if(MAIN_TABS.indexOf(tab)>=0)prevTab=tab;tab=page;shareCode='';importOpen=false;gpxPasteOpen=false;clearTimeout(renderTimer);render(true);}
+function toggleMenu(){if(menuOpen)closeMenu();else openMenu();}
+function openMenu(){
+  if(!isRunner())return;
+  const m=document.getElementById('menu'),ab=document.getElementById('acct'),pf=state.profile||{},em=authState.email||'';
+  const it=(k,l,c)=>'<button role="menuitem" data-menu="'+k+'"'+(c?' class="'+c+'"':'')+'>'+l+'</button>';
+  m.innerHTML='<div class="menu-head"><b>'+esc(pf.first||em.split('@')[0])+'</b><small>'+esc(em)+'</small></div>'
+    +it('runner','Mon espace coureur')+it('settings','Paramètres du compte')+it('prefs','Préférences')+it('help','Aide et à propos')+'<hr>'+it('signout','Se déconnecter','dng');
+  const rc=ab.getBoundingClientRect();
+  m.style.top=(rc.bottom+8)+'px';m.style.right=Math.max(8,window.innerWidth-rc.right)+'px';
+  m.hidden=false;menuOpen=true;ab.setAttribute('aria-expanded','true');
+  const f=m.querySelector('button');if(f)f.focus();
+}
+function closeMenu(){const m=document.getElementById('menu');if(m)m.hidden=true;menuOpen=false;const ab=document.getElementById('acct');if(ab&&ab.dataset.act==='menu')ab.setAttribute('aria-expanded','false');}
+function askConfirm(o){
+  modalOk=o.onOk||null;
+  document.getElementById('mtitle').textContent=o.title||'Confirmer';
+  document.getElementById('mtext').textContent=o.text||'';
+  const ok=document.querySelector('#modal [data-mact="ok"]');
+  ok.textContent=o.okLabel||'Confirmer';ok.className='btn '+(o.danger?'danger fill':'primary');
+  document.getElementById('modal').hidden=false;
+  document.querySelector('#modal [data-mact="cancel"]').focus();
+}
+function closeModal(){document.getElementById('modal').hidden=true;modalOk=null;}
+function backBtn(){return '<button class="back" data-act="back">‹ Retour</button>';}
+
+function renderSettings(){
+  if(!isRunner())return renderLogin();
+  const pf=state.profile||defaultProfile();
+  return backBtn()+'<section class="empty"><h1>Paramètres du compte</h1></section>'
+  +'<section class="sec"><h2>Identité</h2><p>E-mail : <b>'+esc(authState.email)+'</b></p>'
+  +'<label class="fld"><span>Prénom</span><input data-p="first" value="'+esc(pf.first)+'" autocomplete="given-name"></label>'
+  +'<p class="note" id="profstat">'+(state.profileDirty?'Modifications en attente d’enregistrement.':'')+'</p></section>'
+  +'<section class="sec"><h2>Sécurité</h2><div class="stack">'
+  +'<label class="fld"><span>Nouveau mot de passe (6 caractères minimum)</span><input class="in" id="newpw" type="password" autocomplete="new-password"></label>'
+  +'<button class="btn" data-act="change-pw">Changer le mot de passe</button>'
+  +'<button class="btn quiet small" data-act="auth-reset-self">Recevoir un lien de réinitialisation par e-mail</button></div></section>'
+  +'<section class="sec"><h2>Mes données</h2><p class="note">Tu peux récupérer une copie de ton profil, de ton carnet et de ta course en cours, ou effacer les données stockées sur cet appareil (celles de ton compte ne sont pas touchées).</p>'
+  +'<div class="row"><button class="btn" data-act="export-data">Exporter mes données</button><button class="btn quiet" data-act="clear-device">Effacer les données de cet appareil</button></div>'
+  +(exportText?'<textarea class="in code" readonly id="exportbox" aria-label="Export de mes données">'+esc(exportText)+'</textarea><div class="row"><button class="btn small" data-act="copy-export">Copier</button></div>':'')+'</section>'
+  +'<section class="sec"><h2>Supprimer mon compte</h2><p class="note">Supprime définitivement ton compte, ton profil enregistré et la course que tu partages en direct. Cette action est irréversible.</p>'
+  +'<div class="row"><button class="btn danger" data-act="delete-account">Supprimer mon compte</button></div></section>';
+}
+function renderPrefs(){
+  const p=state.prefs,fld=(l,k)=>'<label class="fld"><span>'+l+'</span><input type="number" inputmode="numeric" min="0" data-pref="'+k+'" value="'+p[k]+'"></label>';
+  return backBtn()+'<section class="empty"><h1>Préférences</h1></section>'
+  +'<section class="sec"><h2>Apparence</h2><div class="rating" role="group" aria-label="Thème">'
+  +[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(o=>'<button data-act="set-theme" data-v="'+o[0]+'" aria-pressed="'+(p.theme===o[0])+'" style="font-size:16px">'+o[1]+'</button>').join('')+'</div>'
+  +'<p class="note">« Automatique » suit le réglage clair ou sombre de ton téléphone.</p></section>'
+  +'<section class="sec"><h2>Nouvelle course</h2><p class="note">Valeurs proposées quand tu crées un plan. Tu peux les modifier course par course.</p>'
+  +'<div class="grid2">'+fld('Arrêt moyen par ravito (min)','defStop')+fld('Glucides (g/h)','defCarbs')+fld('Eau (ml/h)','defWater')+fld('Un gel (g)','defGel')+'</div></section>';
+}
+function renderHelp(){
+  return backBtn()+'<section class="empty"><h1>Aide et à propos</h1></section>'
+  +'<section>'
+  +'<details><summary>Importer un parcours GPX</summary><p>Dans l’onglet Plan, appuie sur « Importer un fichier GPX » et choisis le fichier. Si le sélecteur ne l’ouvre pas, utilise « Coller son contenu » : ouvre le GPX dans un éditeur de texte, copie tout et colle-le. L’organisateur de la course fournit en général le GPX, sinon tu peux l’exporter depuis ta montre ou ton application de suivi.</p></details>'
+  +'<details><summary>Partager une course en direct</summary><ol><li>Connecte-toi (rond en haut à droite).</li><li>Onglet Assistance, « Partager en direct » : un code de 6 caractères apparaît.</li><li>Ton assistance et tes supporters saisissent ce code dans « Rejoindre », sans compte.</li></ol></details>'
+  +'<details><summary>Pointer un passage</summary><p>Dans l’onglet En course, indique l’heure de passage au ravito et appuie sur « Pointer le passage ». Les heures suivantes se recalculent chez tout le monde. Sans réseau, le pointage est gardé sur le téléphone et envoyé dès que le signal revient.</p></details>'
+  +'<details><summary>Vue horizontale du profil</summary><p>Sur le Plan ou En course, appuie sur « Vue horizontale », puis sur un point numéroté du profil : tu vois le nom du ravito, l’heure d’arrivée prévue et le matériel à prévoir, avec un lien pour le modifier.</p></details>'
+  +'<details><summary>Zones d’allure et de fréquence cardiaque</summary><p>Elles sont calculées dans l’espace coureur à partir de ta performance de référence (indice de forme de Daniels) et de tes fréquences cardiaques (réserve cardiaque de Karvonen, pourcentage de la FC max ou FC de seuil). Les allures sont données sur terrain plat.</p></details>'
+  +'<details><summary>Installer une mise à jour</summary><p>Télécharge le nouvel APK compilé sur GitHub et installe-le par-dessus l’ancien : tes données sont conservées.</p></details>'
+  +'<details><summary>À propos</summary><p>Rubalise, version '+APP_VERSION+' (prototype). Les heures de passage sont des estimations : elles ne remplacent ni ton expérience, ni les barrières horaires officielles de l’organisateur, à vérifier avant le départ.</p></details>'
+  +'</section>';
+}
+function exportMyData(){
+  const r=state.race,o={exporteLe:new Date().toISOString(),compte:isRunner()?authState.email:null,profil:state.profile,carnet:state.journal,preferences:state.prefs};
+  if(r){o.courseEnCours=Object.assign(planObj(r,true),{pointages:r.points,ressenti:r.diary});}
+  return JSON.stringify(o,null,2);
+}
+async function changePassword(pw){
+  if(pw.length<6){flash('Mot de passe trop court (6 caractères minimum).');return;}
+  try{
+    const r=await authRequest('update',{idToken:await getToken(),password:pw,returnSecureToken:true});
+    storeSession(r,authState.email);flash('Mot de passe modifié.');
+    const el=document.getElementById('newpw');if(el)el.value='';
+  }catch(e){
+    const m=String(e.message||'');
+    flash((m.indexOf('CREDENTIAL_TOO_OLD')>=0||m.indexOf('TOKEN_EXPIRED')>=0)?'Pour des raisons de sécurité, déconnecte-toi puis reconnecte-toi, et réessaie.':authErr(e));
+  }
+}
+async function deleteCloudRace(r){
+  if(r&&r.sync&&r.sync.role==='owner'){try{await fsReq('DELETE','courses/'+r.sync.code);return true;}catch(e){return false;}}
+  return true;
+}
+async function deleteRaceNow(){
+  const r=state.race;if(!r)return;
+  const okCloud=await deleteCloudRace(r);
+  state.race=null;landOpen&&closeLand();commit();
+  flash(okCloud?'Course supprimée.':'Course supprimée sur ce téléphone (le suivi en ligne n’a pas pu être supprimé, réessaie avec du réseau).');
+}
+function resetPlanNow(){
+  const r=state.race;if(!r)return;
+  if(r.sync){Object.keys(r.points||{}).forEach(id=>queuePoint(r,id,null));}
+  r.date='';r.start='06:00';r.stopMin=prefv('defStop');r.drift=10;r.finishBarrier='';r.carbs=prefv('defCarbs');r.water=prefv('defWater');r.gelG=prefv('defGel');
+  r.stations=[];r.points={};r.diary={rating:0,nutrition:'',learn:'',gear:''};autoTarget(r);
+  commit();syncSoon();flash('Plan réinitialisé. Le tracé GPX est conservé.');
+}
+async function deleteAccountNow(){
+  const uid=authState.uid,r=state.race;
+  try{
+    await deleteCloudRace(r);
+    try{await fsReq('DELETE','users/'+uid);}catch(e){if(e.status!==404)throw e;}
+    await authRequest('delete',{idToken:await getToken()});
+  }catch(e){flash(authErr(e));return;}
+  if(r&&r.sync&&r.sync.role==='owner'){delete r.sync;r.pending={};}
+  setAuth(null);state.profile=defaultProfile();state.profileDirty=false;exportText='';tab='plan';commit();window.scrollTo(0,0);flash('Compte supprimé.');
+}
+
+// ---------- vue horizontale du profil ----------
+function landDims(){const portrait=window.innerHeight>window.innerWidth;return {portrait:portrait,w:portrait?window.innerHeight:window.innerWidth,h:portrait?window.innerWidth:window.innerHeight};}
+function openLand(){
+  if(!state.race)return;
+  landOpen=true;landSel=null;landFrom=tab;landFs=false;
+  document.getElementById('land').hidden=false;document.body.classList.add('noscroll');
+  try{
+    const el=document.getElementById('land'),p=el.requestFullscreen&&el.requestFullscreen();
+    if(p&&p.then)p.then(()=>{landFs=true;try{screen.orientation.lock('landscape').catch(()=>{});}catch(e){}}).catch(()=>{});
+  }catch(e){}
+  renderLand();
+}
+function closeLand(){
+  landOpen=false;landSel=null;
+  document.getElementById('land').hidden=true;document.body.classList.remove('noscroll');
+  try{if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();}catch(e){}
+  try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{});}catch(e){}
+  landFs=false;
+}
+function landCardHTML(r,m,tl,L,row){
+  const next=L[row.index+1],st=row.st,items=st.items||[];
+  const c=Math.round(next.dur/60*r.carbs/5)*5,w=Math.round(next.dur/60*r.water/50)*50;
+  const member=!!(r.sync&&r.sync.role==='member');
+  let t='<h3><span>'+(row.index+1)+'. '+esc(row.name)+'</span></h3><p class="km" style="margin:0 0 8px">km '+km1(row.km)+'</p>';
+  t+='<p>Arrivée prévue <b>'+clk(row.plannedArr)+'</b>';
+  if(row.actual!=null)t+='<br>Passé à <b>'+clk(row.actual)+'</b>';
+  else if(Math.abs(row.adjArr-row.plannedArr)>=1)t+='<br>Estimée <b>'+clk(row.adjArr)+'</b>';
+  t+='<br>Repart vers <b>'+clk(row.dep)+'</b></p>';
+  if(row.margin!=null)t+='<p class="'+mcls(row.margin)+'">Marge sur la barrière : '+mfmt(row.margin)+'</p>';
+  t+='<p style="margin-bottom:2px"><b>Matériel à prévoir</b></p>';
+  if(!st.access)t+='<p class="note">Pas d’accès pour l’assistance à ce ravito.</p>';
+  else if(items.length)t+='<ul>'+items.map(i=>'<li>'+(i.done?'✓ ':'')+esc(i.t)+'</li>').join('')+'</ul>';
+  else t+='<p class="note">Aucun article pour l’instant.</p>';
+  t+='<p>Pour les '+km1(next.km)+' km suivants : <b>'+c+' g</b> de glucides et <b>'+nf(w)+' ml</b> d’eau.</p>';
+  t+='<div class="row"><button class="btn primary small" data-act="land-edit" data-id="'+row.id+'">'+(member?'Voir ce ravito':'Modifier ce ravito')+'</button></div>';
+  return t;
+}
+function renderLand(){
+  if(!landOpen)return;
+  const r=state.race;if(!r){closeLand();return;}
+  const wrap=document.getElementById('land'),inn=document.getElementById('landin'),d=landDims();
+  wrap.classList.toggle('rotated',d.portrait);
+  if(d.portrait)inn.style.cssText='width:'+d.w+'px;height:'+d.h+'px;left:'+window.innerWidth+'px;top:0;transform:rotate(90deg);transform-origin:0 0;';
+  else inn.style.cssText='left:0;top:0;width:100%;height:100%;';
+  const m=model(r),tl=timeline(r,m,{}),L=legs(r,m),card=document.getElementById('landcard');
+  const row=landSel?tl.rows.find(x=>x.id===landSel&&!x.isFinish):null;
+  if(row){card.hidden=false;card.innerHTML=landCardHTML(r,m,tl,L,row);}else{landSel=null;card.hidden=true;card.innerHTML='';}
+  document.getElementById('landhint').textContent=(d.portrait?'Tourne ton téléphone. ':'')+'Touche un point numéroté.';
+  const ch=document.getElementById('landchart'),w=Math.max(200,ch.offsetWidth),h=Math.max(120,ch.offsetHeight);
+  let kmNow=null;if(landFrom==='live'){const now=nowMin(r);if(now>=m.startMin)kmNow=tl.kmAt(now);}
+  ch.innerHTML=profileSVG(m,tl,{w:w,h:h,kmNow:kmNow,hit:true,sel:landSel});
+}
+function openStation(id){
+  const wasFs=!!document.fullscreenElement;
+  if(landOpen)closeLand();
+  tab='plan';render(true);
+  const focusIt=()=>{
+    const el=document.getElementById('stn-'+id);if(!el)return;
+    el.scrollIntoView({block:'center'});el.classList.add('hl');
+    setTimeout(()=>el.classList.remove('hl'),2600);
+    const inp=el.querySelector('.stn-name');if(inp&&!inp.closest('fieldset:disabled'))inp.focus({preventScroll:true});
+  };
+  if(wasFs)setTimeout(focusIt,450);else focusIt();
+}
+
 function syncPanel(r){
   const sy=r.sync;
   if(sy){
@@ -794,7 +1026,7 @@ function syncPanel(r){
 
 // ---------- graphique de profil ----------
 function profileSVG(m,tl,opt){
-  const W=opt.w,H=opt.h||200,L=46,R=10,T=24,B=24,p=m.p,tot=m.tot;
+  const W=opt.w,H=opt.h||200,L=(opt.hit?60:46),R=10,T=24,B=24,p=m.p,tot=m.tot;
   const minE=Math.min(...p.e),maxE=Math.max(...p.e),pad=Math.max(20,(maxE-minE)*0.1),y0=minE-pad,y1=maxE+pad;
   const X=k=>L+(k/tot)*(W-L-R),Y=e=>H-B-((e-y0)/(y1-y0))*(H-T-B);
   let line='';p.d.forEach((k,i)=>{line+=(i?'L':'M')+X(k).toFixed(1)+','+Y(p.e[i]).toFixed(1);});
@@ -809,7 +1041,14 @@ function profileSVG(m,tl,opt){
     if(r.isFinish)return;n++;
     const x=X(r.km),y=Y(interp(p.d,p.e,r.km));
     s+='<line class="pf-dash" x1="'+x.toFixed(1)+'" x2="'+x.toFixed(1)+'" y1="'+(T-6)+'" y2="'+(H-B)+'"/>';
-    s+='<circle class="pf-stn" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="5" fill="'+(r.st&&r.st.access?'var(--accent)':'var(--bg)')+'"/>';
+    const fillc=(r.st&&r.st.access?'var(--accent)':'var(--bg)');
+    if(opt.hit){
+      const sel=opt.sel===r.id;
+      s+='<g class="pf-hit" data-hit="'+r.id+'" role="button" tabindex="0" aria-label="Ravito '+n+', '+esc(r.name)+', kilomètre '+km1(r.km)+'"><circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="20" fill="transparent"/>'
+        +'<circle class="pf-stn" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(sel?10:7)+'" fill="'+fillc+'"'+(sel?' style="stroke:var(--live);stroke-width:3.5px"':'')+'/></g>';
+    }else{
+      s+='<circle class="pf-stn" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="5" fill="'+fillc+'"/>';
+    }
     s+='<text class="pf-num" x="'+x.toFixed(1)+'" y="'+(T-10)+'" text-anchor="middle">'+n+'</text>';
   });
   let live='';
@@ -842,7 +1081,7 @@ function renderPlan(){
     const times=row
       ?'<span>Arrivée '+clk(row.adjArr)+'</span><span>Repart '+clk(row.dep)+'</span>'+(row.margin!=null?'<span class="'+mcls(row.margin)+'">Marge sur la barrière '+mfmt(row.margin)+'</span>':'')
       :'<span class="warn">Hors du parcours : choisis un km entre 0 et '+km1(m.tot)+'</span>';
-    return '<li class="stn"><div class="stn-head"><span class="stn-n">'+(i+1)+'</span>'
+    return '<li class="stn" id="stn-'+s.id+'"><div class="stn-head"><span class="stn-n">'+(i+1)+'</span>'
       +'<input class="stn-name" data-s="'+s.id+'" data-f="name" value="'+esc(s.name)+'" placeholder="Nom du ravito" aria-label="Nom du ravito '+(i+1)+'">'
       +'<button class="icon" data-act="del-station" data-id="'+s.id+'" aria-label="Supprimer le ravito '+esc(s.name)+'">×</button></div>'
       +'<div class="stn-grid"><label class="fld"><span>Kilomètre</span><input type="number" inputmode="decimal" step="0.1" min="0" data-s="'+s.id+'" data-f="km" value="'+s.km+'"></label>'
@@ -861,6 +1100,7 @@ function renderPlan(){
   +'<input class="race-name" data-r="name" value="'+esc(r.name)+'" aria-label="Nom de la course" placeholder="Nom de la course">'
   +'<div class="chart">'+svg+'</div>'
   +'<div class="legend"><span>Cercle plein : accès assistance</span><span>Cercle vide : sans accès</span></div>'
+  +'<div class="row" style="margin:8px 0 0"><button class="btn quiet small" data-act="land-open">Vue horizontale</button></div>'
   +'<dl class="stats"><div><dt>Distance</dt><dd>'+km1(st.km)+' km</dd></div><div><dt>Dénivelé positif</dt><dd>+'+nf(st.up)+' m</dd></div><div><dt>Dénivelé négatif</dt><dd>−'+nf(st.down)+' m</dd></div></dl>'
   +'</section>'
 
@@ -889,8 +1129,11 @@ function renderPlan(){
 
   +'</fieldset>'
   +'<section class="sec"><p class="note">Les temps viennent d’un modèle simplifié : la pente ralentit à la montée, accélère un peu à la descente, et la fatigue ralentit la fin. Compare avec tes sorties longues et ajuste l’objectif et le ralentissement.</p>'
-  +(member?'<div class="row"><button class="btn quiet" data-act="stop-sync">Quitter ce suivi</button></div></section>'
-          :'<div class="row">'+gpxPick('quiet','Nouvelle course (remplace celle-ci)')+'</div>'+gpxPaste()+'</section>');
+  +'<div class="row">'+(member?'<button class="btn quiet" data-act="stop-sync">Quitter ce suivi</button>':gpxPick('quiet','Remplacer par un autre GPX'))+'</div>'+(member?'':gpxPaste())+'</section>'
+  +'<section class="sec"><h2>Réinitialiser</h2>'
+  +(member?'':'<p class="note">« Réinitialiser le plan » remet l’objectif, les ravitos, la nutrition et les pointages à zéro. Le tracé GPX est conservé.</p>')
+  +'<p class="note">« Supprimer la course » efface le tracé GPX et tout le plan : tu reviens à l’écran de départ, sans avoir à en importer un autre.</p>'
+  +'<div class="row">'+(member?'':'<button class="btn danger" data-act="reset-plan">Réinitialiser le plan</button>')+'<button class="btn danger" data-act="delete-race">Supprimer la course</button></div></section>';
 }
 function renderAssist(){
   const r=state.race;if(!r)return needRace();
@@ -960,7 +1203,7 @@ function renderLive(){
   +(anyPoint?'':'<p class="note" style="margin-top:10px">Aucun passage pointé : l’estimation suit le plan. Sans date de course, on suppose qu’elle a lieu aujourd’hui.</p>')
   +'<div class="chart">'+svg+'</div>'
   +(kmNow!=null?'<div class="legend"><span style="color:var(--live)">Point rose : position estimée, km '+km1(kmNow)+'</span></div>':'')
-  +'</section>'
+  +'<div class="row" style="margin:8px 0 0"><button class="btn quiet small" data-act="land-open">Vue horizontale</button></div></section>'
   +next
   +'<section class="sec"><h2>Passages</h2><ol class="pts">'+list+'</ol>'
   +'<div class="row">'
@@ -1002,7 +1245,7 @@ function render(top){
   let html='';
   try{
     updateChrome();
-    html=tab==='plan'?renderPlan():tab==='assist'?renderAssist():tab==='live'?renderLive():tab==='login'?renderLogin():tab==='runner'?(isRunner()?renderRunner():renderLogin()):renderDiary();
+    html=tab==='plan'?renderPlan():tab==='assist'?renderAssist():tab==='live'?renderLive():tab==='login'?renderLogin():tab==='runner'?(isRunner()?renderRunner():renderLogin()):tab==='settings'?renderSettings():tab==='prefs'?renderPrefs():tab==='help'?renderHelp():renderDiary();
   }catch(err){html='<section class="empty"><h1>Oups</h1><p class="lead">Un calcul a échoué : '+esc(err.message)+'.</p><button class="btn" data-act="demo">Recharger la course démo</button></section>';}
   root.innerHTML=html;
   window.scrollTo(0,top?0:y);
@@ -1011,6 +1254,20 @@ function render(top){
 // ---------- actions ----------
 function act(b){
   const a=b.dataset.act,r=state.race;
+  if(a==='menu'){toggleMenu();return;}
+  if(a==='back'){tab=prevTab||'plan';render(true);return;}
+  if(a==='land-open'){openLand();return;}
+  if(a==='land-close'){closeLand();return;}
+  if(a==='land-edit'){openStation(b.dataset.id);return;}
+  if(a==='set-theme'){state.prefs.theme=b.dataset.v;save();applyTheme();commit();return;}
+  if(a==='auth-reset-self'){resetPassword(authState.email).then(()=>flash('E-mail de réinitialisation envoyé.')).catch(e=>flash(authErr(e)));return;}
+  if(a==='change-pw'){changePassword((document.getElementById('newpw')||{}).value||'');return;}
+  if(a==='export-data'){exportText=exportMyData();commit();return;}
+  if(a==='copy-export'){const bx=document.getElementById('exportbox');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(exportText).then(()=>flash('Données copiées.'),()=>flash('Sélectionne le texte pour le copier.'));}else if(bx){bx.select();flash('Sélectionne le texte pour le copier.');}return;}
+  if(a==='clear-device'){askConfirm({title:'Effacer les données de cet appareil ?',text:'La course en cours, le carnet et le profil mémorisés sur ce téléphone seront supprimés. Les données de ton compte ne sont pas touchées.',okLabel:'Effacer',danger:true,onOk:()=>{state.race=null;state.journal=[];state.profile=defaultProfile();state.profileDirty=false;exportText='';commit();flash('Données de l’appareil effacées.');}});return;}
+  if(a==='delete-account'){askConfirm({title:'Supprimer ton compte ?',text:'Ton compte, ton profil enregistré et la course que tu partages en direct seront supprimés définitivement.',okLabel:'Supprimer mon compte',danger:true,onOk:deleteAccountNow});return;}
+  if(a==='reset-plan'&&r){askConfirm({title:'Réinitialiser le plan ?',text:'L’objectif, les ravitos, la nutrition et les pointages repartent de zéro. Le tracé GPX est conservé.'+(r.sync?' Les pointages partagés seront aussi effacés pour toute l’équipe.':''),okLabel:'Réinitialiser',danger:true,onOk:resetPlanNow});return;}
+  if(a==='delete-race'&&r){askConfirm({title:'Supprimer la course ?',text:'Le tracé GPX et tout le plan seront supprimés.'+(r.sync&&r.sync.role==='owner'?' Le suivi en direct sera arrêté et la course supprimée du serveur.':''),okLabel:'Supprimer',danger:true,onOk:deleteRaceNow});return;}
   if(a==='show-gpx-paste'){gpxPasteOpen=!gpxPasteOpen;commit();return;}
   if(a==='do-gpx-paste'){const bx=document.getElementById('gpxbox');if(!bx||!bx.value.trim()){flash('Colle d’abord le contenu du GPX.');return;}loadGPXText(bx.value,'Ma course');return;}
   if(a==='demo'){state.race=demoRace();animateNext=true;tab='plan';commit();window.scrollTo(0,0);return;}
@@ -1104,14 +1361,30 @@ function act(b){
   }
 }
 document.addEventListener('click',e=>{
+  const ma=e.target.closest('[data-mact]');
+  if(ma){const f=(ma.dataset.mact==='ok')?modalOk:null;closeModal();if(f)f();return;}
+  if(!document.getElementById('modal').hidden&&e.target.id==='modal'){closeModal();return;}
+  const hit=e.target.closest('[data-hit]');
+  if(hit&&landOpen){landSel=(landSel===hit.dataset.hit)?null:hit.dataset.hit;renderLand();return;}
+  const mi=e.target.closest('[data-menu]');
+  if(mi){
+    const k=mi.dataset.menu;closeMenu();
+    if(k==='signout')signOutRunner();else go(k);
+    return;
+  }
+  if(menuOpen&&!e.target.closest('#menu')&&!e.target.closest('#acct'))closeMenu();
   const tb=e.target.closest('[data-tab]');
-  if(tb){tab=tb.dataset.tab;shareCode='';importOpen=false;gpxPasteOpen=false;clearTimeout(renderTimer);render(true);return;}
+  if(tb){if(MAIN_TABS.indexOf(tab)>=0&&tb.dataset.tab!==tab)prevTab=tab;tab=tb.dataset.tab;shareCode='';importOpen=false;gpxPasteOpen=false;clearTimeout(renderTimer);render(true);return;}
   const b=e.target.closest('button[data-act]');
   if(b)act(b);
 });
 document.addEventListener('change',e=>{
   const t=e.target,r=state.race;
   if(t.dataset&&t.dataset.gpx!==undefined){const f=t.files&&t.files[0];if(f)importGPX(f);return;}
+  if(t.dataset&&t.dataset.pref){
+    const k=t.dataset.pref;let v=parseFloat(String(t.value).replace(',','.'));if(!isFinite(v)||v<0)v=defaultPrefs()[k];
+    state.prefs[k]=v;t.value=v;save();return;
+  }
   if(t.dataset&&t.dataset.p){
     const k=t.dataset.p;let v=t.value;
     if(k==='refTime'){v=fmtTypedTime(v,true);t.value=v;}
@@ -1152,7 +1425,16 @@ document.addEventListener('input',e=>{
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.add){e.target.blur();}
   if(e.key==='Enter'&&e.target.id==='authpass'){doAuth();}
+  if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.hit&&landOpen){e.preventDefault();landSel=(landSel===e.target.dataset.hit)?null:e.target.dataset.hit;renderLand();}
+  if(e.key==='Escape'){
+    if(!document.getElementById('modal').hidden)closeModal();
+    else if(landOpen)closeLand();
+    else if(menuOpen){closeMenu();const ab=document.getElementById('acct');if(ab)ab.focus();}
+  }
 });
+document.addEventListener('fullscreenchange',()=>{if(landOpen&&landFs&&!document.fullscreenElement)closeLand();else renderLand();});
+window.addEventListener('orientationchange',()=>setTimeout(renderLand,250));
+window.addEventListener('resize',()=>{if(landOpen)renderLand();if(menuOpen)closeMenu();});
 let rz=null,lastW=0;
 window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{const w=root.clientWidth;if(w!==lastW&&(tab==='plan'||tab==='live')){lastW=w;render();}},180);});
 setInterval(()=>{
