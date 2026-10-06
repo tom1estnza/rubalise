@@ -229,6 +229,7 @@ fieldset.lock:disabled{opacity:.9}
   <div class="land-body"><div class="land-chart" id="landchart"></div><aside class="land-card" id="landcard" hidden></aside></div>
 </div></div>
 
+<script src="native.js"></script>
 <script>
 (function(){
 'use strict';
@@ -241,7 +242,7 @@ function interp(xs,ys,x){const n=xs.length;if(x<=xs[0])return ys[0];if(x>=xs[n-1
 function buildProfile(pts){
   const cum=cumDist(pts),total=cum[cum.length-1];
   const N=Math.min(220,Math.max(2,pts.length));
-  const d=[],e=[];let j=0;
+  const d=[],e=[],la=[],lo=[];let j=0;
   for(let k=0;k<N;k++){
     const target=total*k/(N-1);
     while(j<cum.length-2&&cum[j+1]<target)j++;
@@ -249,9 +250,11 @@ function buildProfile(pts){
     const t=Math.min(1,Math.max(0,(target-cum[j])/span));
     d.push(Math.round(target*1000)/1000);
     e.push(pts[j].ele+(pts[j+1].ele-pts[j].ele)*t);
+    la.push(Math.round((pts[j].lat+(pts[j+1].lat-pts[j].lat)*t)*1e5)/1e5);
+    lo.push(Math.round((pts[j].lon+(pts[j+1].lon-pts[j].lon)*t)*1e5)/1e5);
   }
   const sm=e.map((v,i)=>{let s=0,c=0;for(let q=-2;q<=2;q++){const x=e[i+q];if(x!==undefined){s+=x;c++;}}return s/c;});
-  return {d,e:sm.map(Math.round)};
+  return {d,e:sm.map(Math.round),la,lo};
 }
 function profileStats(p){let up=0,down=0;for(let i=1;i<p.e.length;i++){const dz=p.e[i]-p.e[i-1];if(dz>0)up+=dz;else down-=dz;}return {km:p.d[p.d.length-1],up:Math.round(up),down:Math.round(down),min:Math.min(...p.e),max:Math.max(...p.e)};}
 function legStats(p,a,b){
@@ -348,8 +351,26 @@ function legs(race,m){
 function demoProfile(){
   const keys=[[0,1000],[4,1100],[11,1900],[15,1700],[19,1250],[24,1500],[27,2050],[31,1700],[34,1100],[38,1180],[42.2,1000]];
   const xs=keys.map(k=>k[0]),ys=keys.map(k=>k[1]);const n=200,tot=42.2,d=[],e=[];
-  for(let i=0;i<n;i++){const km=tot*i/(n-1);d.push(Math.round(km*1000)/1000);e.push(Math.round(interp(xs,ys,km)+12*Math.sin(km*2.3)));}
-  return {d,e};
+  const la=[],lo=[];
+  for(let i=0;i<n;i++){const km=tot*i/(n-1);d.push(Math.round(km*1000)/1000);e.push(Math.round(interp(xs,ys,km)+12*Math.sin(km*2.3)));la.push(Math.round((45+0.004*Math.sin(km/3))*1e5)/1e5);lo.push(Math.round((3+km*0.0127)*1e5)/1e5);}
+  return {d,e,la,lo};
+}
+function matchKm(profile,lat,lon,hintKm){
+  const la=profile.la,lo=profile.lo,d=profile.d;
+  if(!la||!lo||la.length!==d.length||d.length<2)return null;
+  const cl=Math.cos(lat*Math.PI/180),cands=[];
+  for(let i=1;i<d.length;i++){
+    const ax=(lo[i-1]-lon)*cl*111320,ay=(la[i-1]-lat)*110540,bx=(lo[i]-lon)*cl*111320,by=(la[i]-lat)*110540;
+    const dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy;
+    let t=L2>0?-(ax*dx+ay*dy)/L2:0;t=Math.max(0,Math.min(1,t));
+    const px=ax+t*dx,py=ay+t*dy;
+    cands.push({km:d[i-1]+(d[i]-d[i-1])*t,dist:Math.sqrt(px*px+py*py)});
+  }
+  const best=a=>a.reduce((m,c)=>(!m||c.dist<m.dist)?c:m,null);
+  let b=null;
+  if(hintKm!=null){const w=best(cands.filter(c=>c.km>=hintKm-1&&c.km<=hintKm+25));if(w&&w.dist<=300)b=w;}
+  if(!b){const g=best(cands);if(g&&g.dist<=300)b=g;}
+  return b;
 }
 function vdotFrom(distM,tMin){const v=distM/tMin;const pct=0.8+0.1894393*Math.exp(-0.012778*tMin)+0.2989558*Math.exp(-0.1932605*tMin);const vo2=-4.6+0.182258*v+0.000104*v*v;return vo2/pct;}
 function paceAtVO2(vo2){const a=0.000104,b=0.182258,c=-(4.6+vo2);const v=(-b+Math.sqrt(b*b-4*a*c))/(2*a);return 1000/v;}
@@ -401,7 +422,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function defaultPrefs(){return {theme:'auto',defStop:3,defCarbs:60,defWater:500,defGel:25};}
 let state=load();
 state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
-const APP_VERSION='0.5.1';
+const APP_VERSION='0.6';
 function prefv(k){return (state.prefs&&state.prefs[k]!=null)?state.prefs[k]:defaultPrefs()[k];}
 function applyTheme(){const t=state.prefs.theme,el=document.documentElement;if(t==='light'||t==='dark')el.setAttribute('data-theme',t);else el.removeAttribute('data-theme');}
 applyTheme();
@@ -534,6 +555,11 @@ function sanitizeRace(r){
   if(!r||!r.profile||!Array.isArray(r.profile.d)||!Array.isArray(r.profile.e)||r.profile.d.length!==r.profile.e.length||r.profile.d.length<2||!Array.isArray(r.stations))throw new Error('Données de course invalides.');
   const d=r.profile.d.map(Number),e=r.profile.e.map(Number);
   if(d.concat(e).some(x=>!isFinite(x)))throw new Error('Données de course invalides.');
+  const prof={d:d,e:e};
+  if(Array.isArray(r.profile.la)&&Array.isArray(r.profile.lo)&&r.profile.la.length===d.length&&r.profile.lo.length===d.length){
+    const la=r.profile.la.map(Number),lo=r.profile.lo.map(Number);
+    if(la.concat(lo).every(isFinite)){prof.la=la;prof.lo=lo;}
+  }
   const hm=/^\d{1,2}:\d{2}$/;
   const clean={
     name:String(r.name||'Course partagée').slice(0,80),date:/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')?r.date:'',
@@ -541,7 +567,7 @@ function sanitizeRace(r){
     stopMin:Math.max(0,Math.min(60,+r.stopMin||0)),drift:Math.max(0,Math.min(40,+r.drift||0)),
     finishBarrier:hm.test(r.finishBarrier||'')?r.finishBarrier:'',trackUrl:/^https?:\/\/[^\s<>"']{3,280}$/i.test(r.trackUrl||'')?String(r.trackUrl):'',
     carbs:Math.max(0,Math.min(200,+r.carbs||0)),water:Math.max(0,Math.min(2000,+r.water||0)),gelG:Math.max(0,Math.min(100,+r.gelG||0)),
-    profile:{d,e},points:{},diary:{rating:0,nutrition:'',learn:'',gear:''},
+    profile:prof,points:{},diary:{rating:0,nutrition:'',learn:'',gear:''},
     stations:r.stations.slice(0,30).map(s=>({id:String(s.id||uid()).replace(/[^A-Za-z0-9]/g,'').slice(0,12)||uid(),name:String(s.name||'Ravito').slice(0,80),km:Math.max(0,+s.km||0),access:!!s.access,barrier:hm.test(s.barrier||'')?s.barrier:'',
       items:Array.isArray(s.items)?s.items.slice(0,30).map(it=>({t:String(it.t||'').slice(0,80),done:false})):[]}))
   };
@@ -616,8 +642,8 @@ function applyRemote(r,doc){
   });
   const pend=r.pending||{};
   Object.keys(pend).forEach(id=>{if(pend[id]==null)delete merged[id];else merged[id]=pend[id];});
-  if(merged.fixkm!=null&&merged.fixt!=null)r.fix={km:merged.fixkm/100,t:merged.fixt};else r.fix=null;
-  delete merged.fixkm;delete merged.fixt;
+  if(merged.fixkm!=null&&merged.fixt!=null)r.fix={km:merged.fixkm/100,t:merged.fixt,src:merged.fixsrc?1:0};else r.fix=null;
+  delete merged.fixkm;delete merged.fixt;delete merged.fixsrc;
   r.points=merged;
   if(r.sync.role!=='owner'&&f.plan&&f.plan.stringValue&&f.plan.stringValue!==r.sync.lastPlan){
     try{mergePlan(r,sanitizeRace(JSON.parse(f.plan.stringValue)));r.sync.lastPlan=f.plan.stringValue;}catch(e){}
@@ -628,7 +654,7 @@ async function startShare(r){
   await getToken();
   for(let t=0;t<4;t++){
     const code=genCode();
-    const fields={owner:{stringValue:authState.uid||''},plan:{stringValue:planJSON(r)},points:{mapValue:{fields:ptsToFields(Object.assign({},r.points,r.fix?{fixkm:Math.round(r.fix.km*100),fixt:r.fix.t}:{}))}},updatedAt:{integerValue:String(Date.now())}};
+    const fields={owner:{stringValue:authState.uid||''},plan:{stringValue:planJSON(r)},points:{mapValue:{fields:ptsToFields(Object.assign({},r.points,r.fix?{fixkm:Math.round(r.fix.km*100),fixt:r.fix.t,fixsrc:r.fix.src?1:0}:{}))}},updatedAt:{integerValue:String(Date.now())}};
     try{
       await fsReq('POST','courses',{fields:fields},'?documentId='+code);
       r.sync={code:code,role:'owner',lastPlan:planJSON(r),lastSync:Date.now(),error:''};r.pending={};
@@ -779,6 +805,7 @@ async function doAuth(){
 async function signOutRunner(){
   try{if(state.profileDirty)await pushProfile();}catch(e){}
   cacheProfile();
+  await gpsStop();
   const r=state.race;if(r&&r.sync&&r.sync.role==='owner'){delete r.sync;r.pending={};}
   setAuth(null);loginMode='in';state.profile=defaultProfile();state.profileDirty=false;state.profileErr='';tab='plan';commit();window.scrollTo(0,0);flash('Déconnecté.');
 }
@@ -954,8 +981,22 @@ async function deleteCloudRace(r){
   if(r&&r.sync&&r.sync.role==='owner'){try{await fsReq('DELETE','courses/'+r.sync.code);return true;}catch(e){return false;}}
   return true;
 }
+async function leaveFollowNow(){
+  const r=state.race;
+  try{if(r&&Object.keys(r.pending||{}).length)await Promise.race([syncNow(),new Promise(res=>setTimeout(res,3000))]);}catch(e){}
+  state.race=null;if(landOpen)closeLand();commit();window.scrollTo(0,0);
+  flash('Suivi quitté : plan, pointages et position supprimés de cet appareil.');
+}
+async function stopShareNow(){
+  const r=state.race;if(!r||!r.sync)return;
+  await gpsStop();
+  const ok=await deleteCloudRace(r);
+  delete r.sync;r.pending={};r.fix=null;commit();
+  flash(ok?'Partage arrêté : le code ne fonctionne plus.':'Partage arrêté sur ce téléphone (le code n’a pas pu être supprimé du serveur, réessaie avec du réseau).');
+}
 async function deleteRaceNow(){
   const r=state.race;if(!r)return;
+  await gpsStop();
   const okCloud=await deleteCloudRace(r);
   state.race=null;landOpen&&closeLand();commit();
   flash(okCloud?'Course supprimée.':'Course supprimée sur ce téléphone (le suivi en ligne n’a pas pu être supprimé, réessaie avec du réseau).');
@@ -986,10 +1027,10 @@ function cleanUrl(v){
   if(!/^[a-z][a-z0-9+.-]*:/i.test(v)&&/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(v))v='https://'+v;
   return /^https?:\/\/[^\s<>"']{3,280}$/i.test(v)?v:null;
 }
-function setFix(r,km,t){
-  r.fix={km:km,t:t};queuePoint(r,'fixkm',Math.round(km*100));queuePoint(r,'fixt',Math.round(t));
+function setFix(r,km,t,src){
+  r.fix={km:km,t:t,src:src?1:0};queuePoint(r,'fixkm',Math.round(km*100));queuePoint(r,'fixt',Math.round(t));queuePoint(r,'fixsrc',src?1:0);
 }
-function clearFix(r){if(r.fix||(r.pending&&(r.pending.fixkm!=null||r.pending.fixt!=null))){queuePoint(r,'fixkm',null);queuePoint(r,'fixt',null);}r.fix=null;}
+function clearFix(r){if(r.fix||(r.pending&&(r.pending.fixkm!=null||r.pending.fixt!=null))){queuePoint(r,'fixkm',null);queuePoint(r,'fixt',null);queuePoint(r,'fixsrc',null);}r.fix=null;}
 function trackLink(r,cls){
   return r.trackUrl?'<a class="btn '+(cls||'')+'" href="'+esc(r.trackUrl)+'" target="_blank" rel="noopener noreferrer">Ouvrir le suivi de la montre</a>':'';
 }
@@ -1010,7 +1051,78 @@ function fixPanel(r,m){
     +'<div class="row"><label class="fld" style="flex:1;min-width:110px"><span>Kilomètre</span><input class="in" id="fix-km" type="number" inputmode="decimal" step="0.1" min="0" max="'+(Math.round(m.tot*10)/10)+'" placeholder="ex. 23,4"></label>'
     +'<label class="fld" style="flex:1;min-width:120px"><span>Heure</span><input class="in" type="time" id="fix-t" value="'+hhmmNow()+'"></label></div>'
     +'<div class="row"><button class="btn primary" data-act="set-fix">Enregistrer la position</button>'+(fx?'<button class="btn quiet" data-act="clear-fix">Annuler la dernière position</button>':'')+'</div>'
-    +(fx?'<p>Dernière position : <b class="t">km '+km1(fx.km)+'</b> à '+clk(fx.t)+'.</p>':'')+'</section>';
+    +(fx?(()=>{const age=Math.round(nowMin(r)-fx.t),stale=fx.src&&age>10;return '<p'+(stale?' class="warn"':'')+'>Dernière position'+(fx.src?' GPS':'')+' : <b class="t">km '+km1(fx.km)+'</b> à '+clk(fx.t)+(fx.src&&age>=0?', il y a '+(age<1?'moins d’1':age)+' min':'')+(stale?'. Signal perdu ?':'.')+'</p>';})():'')+'</section>';
+}
+
+// ---------- suivi GPS du téléphone ----------
+let gpsOn=false,gpsMode='',gpsWatch=null,gpsMsg='',gpsOkTxt='',gpsSentAt=0,gpsSentKm=-1,wakeLock=null;
+function gpsGap(){return window.__gpsGap!=null?window.__gpsGap:15000;}
+function gpsAvailable(r){return !!(r&&r.profile&&r.profile.la&&r.profile.lo);}
+function gpsText(){return gpsOn?(gpsMsg||'Suivi GPS actif : en attente d’un signal.'):'';}
+function setGpsStatus(t){gpsMsg=t;const el=document.getElementById('gpsstat');if(el)el.textContent=gpsText();}
+function nativeGeo(){return (window.RubaliseNative&&window.RubaliseNative.BackgroundGeolocation)?window.RubaliseNative:null;}
+async function gpsStart(){
+  const r=state.race;
+  if(gpsOn)return;
+  if(!r||!r.sync||r.sync.role!=='owner'){flash('Partage d’abord ta course en direct.');return;}
+  if(!gpsAvailable(r)){flash('Ce tracé n’a pas de coordonnées GPS : réimporte le fichier GPX.');return;}
+  gpsOn=true;gpsSentAt=0;gpsSentKm=-1;gpsMsg='';gpsOkTxt='';
+  const N=nativeGeo();
+  try{
+    if(N){
+      gpsMode='native';
+      if(N.LocalNotifications&&N.LocalNotifications.requestPermissions){try{await N.LocalNotifications.requestPermissions();}catch(e){}}
+      gpsWatch=await N.BackgroundGeolocation.addWatcher({backgroundTitle:'Rubalise : suivi de course',backgroundMessage:'Ton kilomètre sur le parcours est partagé avec ton assistance.',requestPermissions:true,stale:false,distanceFilter:15},(loc,err)=>{
+        if(err){setGpsStatus(err.code==='NOT_AUTHORIZED'?'Localisation refusée : autorise-la pour Rubalise dans les réglages du téléphone.':'Erreur GPS : '+(err.message||err.code));return;}
+        if(loc)onGps(loc.latitude,loc.longitude,loc.accuracy);
+      });
+    }else if(navigator.geolocation){
+      gpsMode='web';
+      gpsWatch=navigator.geolocation.watchPosition(p=>onGps(p.coords.latitude,p.coords.longitude,p.coords.accuracy),e=>setGpsStatus(e.code===1?'Localisation refusée : autorise-la dans les réglages du navigateur.':'GPS : signal momentanément indisponible.'),{enableHighAccuracy:true,maximumAge:10000,timeout:30000});
+      try{if(navigator.wakeLock)wakeLock=await navigator.wakeLock.request('screen');}catch(e){}
+    }else{gpsOn=false;flash('Ce téléphone ne permet pas la localisation.');return;}
+  }catch(e){gpsOn=false;gpsMode='';flash('Impossible de démarrer le GPS : '+(e.message||e));return;}
+  gpsMsg='Suivi GPS actif : en attente d’un signal.';commit();
+}
+async function gpsStop(){
+  if(!gpsOn)return;
+  const mode=gpsMode,w=gpsWatch;gpsOn=false;gpsMode='';gpsWatch=null;gpsMsg='';
+  try{
+    if(mode==='native'){const N=nativeGeo();if(N)await N.BackgroundGeolocation.removeWatcher({id:w});}
+    else if(mode==='web'&&w!=null){navigator.geolocation.clearWatch(w);}
+  }catch(e){}
+  try{if(wakeLock){await wakeLock.release();wakeLock=null;}}catch(e){}
+  if(tab==='assist')render();
+}
+function onGps(lat,lon,acc){
+  const r=state.race;
+  if(!gpsOn||!r||!r.sync||r.sync.role!=='owner')return;
+  if(typeof lat!=='number'||typeof lon!=='number')return;
+  if(acc&&acc>200){setGpsStatus('Signal GPS imprécis (±'+Math.round(acc)+' m) : en attente d’un meilleur signal.');return;}
+  const mt=matchKm(r.profile,lat,lon,(r.fix&&r.fix.src)?r.fix.km:null);
+  if(!mt){setGpsStatus('Tu sembles hors du parcours (à plus de 300 m du tracé). Rien n’est envoyé.');return;}
+  const now=Date.now(),arrived=mt.km>=r.profile.d[r.profile.d.length-1]-0.05;
+  if(!arrived&&(now-gpsSentAt<gpsGap()||(now-gpsSentAt<2.5*gpsGap()&&Math.abs(mt.km-gpsSentKm)<0.1))){
+    if(gpsOkTxt&&gpsMsg!==gpsOkTxt)setGpsStatus(gpsOkTxt);
+    return;
+  }
+  const m=Math.round(nowMin(r)),km=Math.round(mt.km*100)/100;
+  setFix(r,km,m,1);gpsSentAt=now;gpsSentKm=mt.km;save();syncSoon();
+  gpsOkTxt='Position envoyée : km '+km1(km)+' à '+fmtClock(m).s+(acc?' (précision ±'+Math.round(acc)+' m)':'')+'.';
+  setGpsStatus(gpsOkTxt);
+  if(arrived){gpsStop();flash('Arrivée atteinte : suivi GPS arrêté.');}
+}
+function gpsPanel(r){
+  if(!r||(r.sync&&r.sync.role==='member'))return '';
+  const owner=!!(r.sync&&r.sync.role==='owner');
+  let t='<section class="sec"><h2>Position GPS du téléphone</h2>'
+    +'<p class="note">Ton téléphone envoie ton kilomètre sur le parcours à ton assistance, toutes les 15 à 40 secondes environ. Seul le kilomètre est partagé, jamais tes coordonnées. Le GPS consomme de la batterie et n’envoie rien sans réseau.</p>';
+  if(!owner)t+='<p class="note">Partage d’abord ta course en direct (section « Suivi en direct » ci-dessus).</p>';
+  else if(!gpsAvailable(r))t+='<p class="warn">Ce tracé n’a pas de coordonnées GPS (importé avec une ancienne version). Réimporte le fichier GPX pour activer cette fonction.</p>';
+  else t+='<div class="row">'+(gpsOn?'<button class="btn danger" data-act="gps-stop">Arrêter le suivi GPS</button>':'<button class="btn primary" data-act="gps-start">Démarrer le suivi GPS</button>')+'</div>'
+    +'<p class="note" id="gpsstat">'+esc(gpsText())+'</p>'
+    +((!nativeGeo())?'<p class="note">Dans le navigateur, le suivi ne marche que si l’écran reste allumé et la page ouverte. L’appli installée (APK) peut suivre l’écran éteint.</p>':'');
+  return t+'</section>';
 }
 
 // ---------- vue horizontale du profil ----------
@@ -1234,6 +1346,7 @@ function renderAssist(){
   +'<p class="lead">Fenêtres de passage (course 8 % plus rapide ou 12 % plus lente que prévu), ce qu’il faut préparer et ce qu’il faut remplir à chaque ravito.</p></section>'
   +syncPanel(r)
   +trackPanel(r)
+  +gpsPanel(r)
   +(cards||'<p class="note">Aucun ravito avec accès assistance. Coche « Accès pour l’assistance » dans l’onglet Plan.</p>')
   +(without.length?'<p class="note">Sans accès assistance : '+without.map(x=>esc(x.name)).join(', ')+'.</p>':'')
   +'<section class="sec"><h2>Pour les supporters à l’arrivée</h2><p>'+(fin.actual!=null?'Arrivée pointée à '+clk(fin.actual)+'.':'Arrivée estimée entre '+clk(finE)+' et '+clk(finL)+'.')+'</p></section>'
@@ -1391,7 +1504,17 @@ function act(b){
     return;
   }
   if(a==='sync-now'){flash('Synchronisation…');syncNow();return;}
-  if(a==='stop-sync'){delete r.sync;r.pending={};commit();flash('Suivi en direct arrêté sur cet appareil.');return;}
+  if(a==='gps-start'){askConfirm({title:'Partager ma position ?',text:'Rubalise utilisera la localisation de ton téléphone et enverra ton kilomètre sur le parcours à ton assistance (jamais tes coordonnées). Cela consomme de la batterie.',okLabel:'Démarrer',onOk:gpsStart});return;}
+  if(a==='gps-stop'){gpsStop();commit();flash('Suivi GPS arrêté.');return;}
+  if(a==='stop-sync'){
+    if(r.sync&&r.sync.role==='member'){
+      const n=Object.keys(r.pending||{}).length;
+      askConfirm({title:'Quitter ce suivi ?',text:'Le plan, les pointages et la position enregistrés sur cet appareil seront supprimés.'+(n?' '+n+' pointage'+(n>1?'s':'')+' pas encore envoyé'+(n>1?'s':'')+' sera perdu'+(n>1?'s':'')+'.':''),okLabel:'Quitter et tout supprimer',danger:true,onOk:leaveFollowNow});
+    }else{
+      askConfirm({title:'Arrêter le partage ?',text:'Le code ne fonctionnera plus pour ton équipe. Ton plan reste sur ton téléphone.',okLabel:'Arrêter le partage',danger:true,onOk:stopShareNow});
+    }
+    return;
+  }
   if(a==='copy-live-code'){
     const c=r.sync&&r.sync.code;if(!c)return;
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(c).then(()=>flash('Code copié : '+c),()=>flash('Code : '+c));}else flash('Code : '+c);
@@ -1449,6 +1572,7 @@ function act(b){
     const m=model(r),tl=timeline(r,m,{}),st=profileStats(m.p),fin=tl.rows[tl.rows.length-1],d=r.diary||{};
     state.journal=state.journal||[];
     state.journal.unshift({id:uid(),name:r.name,date:r.date,km:st.km,up:st.up,planned:m.target,actual:fin.actual!=null?fin.actual-m.startMin:null,rating:d.rating||0,learn:(d.learn||'').slice(0,160)});
+    gpsStop();
     if(r.sync){delete r.sync;r.pending={};}
     r.fix=null;r.points={};r.diary={rating:0,nutrition:'',learn:'',gear:''};commit();flash('Course archivée dans le carnet.');return;
   }
