@@ -196,6 +196,8 @@ details p,details ol{margin:4px 0 10px;color:var(--ink);max-width:62ch}
 .stack{display:flex;flex-direction:column;gap:12px;max-width:420px;margin:14px 0}
 .zt .z td:first-child{border-left:6px solid var(--zc);padding-left:10px;font-weight:600;white-space:nowrap}
 select.in{appearance:auto}
+a.btn{color:inherit;text-decoration:none}
+a.btn.primary{color:var(--accent-ink)}
 .code-big{display:inline-block;font:700 44px/1 var(--f-num);letter-spacing:.14em;margin:10px 0 6px;padding:14px 18px;border:2px dashed var(--live);border-radius:8px;color:var(--ink);user-select:all}
 fieldset.lock{border:0;margin:0;padding:0;min-width:0}
 fieldset.lock:disabled{opacity:.9}
@@ -294,6 +296,7 @@ function timeline(race,m,opts){
   opts=opts||{};
   const mult=opts.mult||1;
   const pts=opts.plan?{}:(race.points||{});
+  const fx=opts.plan?null:race.fix;
   const stop=Math.max(0,+race.stopMin||0);
   const seq=m.stations.map(s=>({id:s.id,name:s.name||'Ravito',km:s.km,stop:stop,st:s,isFinish:false}))
     .concat([{id:'finish',name:'Arrivée',km:m.tot,stop:0,st:null,isFinish:true}]);
@@ -306,26 +309,35 @@ function timeline(race,m,opts){
     const r=Mref>0?Mact/Mref:1;
     f=Math.max(0.6,Math.min(2.5,1+(r-1)*0.6));
   }
+  let useFix=false;
+  if(fx&&isFinite(fx.km)&&isFinite(fx.t)&&fx.km>0&&fx.km<=m.tot&&(ref<0||(fx.km>=dref&&fx.t>=Dref)))useFix=true;
+  if(useFix){
+    const sb=seq.filter(s=>!s.isFinish&&s.km<fx.km).length*stop;
+    dref=fx.km;Dref=fx.t;Mref=m.M(fx.km);
+    const r2=Mref>0?(fx.t-m.startMin-sb)/Mref:1;
+    f=Math.max(0.6,Math.min(2.5,1+(r2-1)*0.6));
+  }
   const stopsBetween=km=>{let c=0;for(const s of seq){if(!s.isFinish&&s.km>dref&&s.km<km)c++;}return c*stop;};
   const T=km=>Dref+(m.M(km)-Mref)*f*mult+stopsBetween(km);
   const Tplan=km=>{let c=0;for(const s of seq){if(!s.isFinish&&s.km<km)c++;}return m.startMin+m.M(km)+c*stop;};
   const rows=seq.map((s,i)=>{
     const plannedArr=Tplan(s.km);
     const actual=pts[s.id]!=null?pts[s.id]:null;
-    const adjArr=actual!=null?actual:(i<ref?plannedArr:T(s.km));
+    const passedEst=actual==null&&(ref>=0||useFix)&&!s.isFinish&&s.km<dref;
+    const adjArr=actual!=null?actual:(passedEst?m.startMin+m.M(s.km)*f+i*stop:T(s.km));
     let bar=null;const bs=s.isFinish?race.finishBarrier:(s.st&&s.st.barrier);
     if(bs){let b=parseClock(bs);if(b!=null){while(b<m.startMin)b+=1440;bar=b;}}
-    return {id:s.id,name:s.name,km:s.km,stop:s.stop,isFinish:s.isFinish,st:s.st,index:i,plannedArr,actual,adjArr,dep:adjArr+s.stop,barrier:bar,margin:bar!=null?bar-adjArr:null};
+    return {id:s.id,name:s.name,km:s.km,stop:s.stop,isFinish:s.isFinish,st:s.st,index:i,plannedArr,actual,passedEst,adjArr,dep:adjArr+s.stop,barrier:bar,margin:bar!=null?bar-adjArr:null};
   });
   function kmAt(now){
-    if(ref>=0&&now<=Dref)return dref;
+    if((ref>=0||useFix)&&now<=Dref)return dref;
     if(ref<0&&now<=m.startMin)return 0;
     let lo=dref,hi=m.tot;
     if(now>=T(hi))return hi;
     for(let k=0;k<40;k++){const mid=(lo+hi)/2;if(T(mid)<now)lo=mid;else hi=mid;}
     return hi;
   }
-  return {rows,ref,f,kmAt};
+  return {rows,ref,f,kmAt,useFix};
 }
 function legs(race,m){
   const tl=timeline(race,m,{plan:true}),out=[];
@@ -389,7 +401,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function defaultPrefs(){return {theme:'auto',defStop:3,defCarbs:60,defWater:500,defGel:25};}
 let state=load();
 state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
-const APP_VERSION='0.4';
+const APP_VERSION='0.5.1';
 function prefv(k){return (state.prefs&&state.prefs[k]!=null)?state.prefs[k]:defaultPrefs()[k];}
 function applyTheme(){const t=state.prefs.theme,el=document.documentElement;if(t==='light'||t==='dark')el.setAttribute('data-theme',t);else el.removeAttribute('data-theme');}
 applyTheme();
@@ -405,7 +417,7 @@ function clk(min){const c=fmtClock(min);return '<span class="t">'+c.s+'</span>'+
 function mcls(mn){return mn>=45?'ok':mn>=15?'warn':'bad';}
 function mfmt(mn){return (mn>=0?'+':'−')+Math.abs(Math.round(mn))+' min';}
 function dsign(mn){const r=Math.round(mn);return (r>0?'+':r<0?'−':'')+Math.abs(r)+' min';}
-function flash(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),3200);}
+function flash(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),String(msg).length>70?7000:3200);}
 function commit(){save();clearTimeout(renderTimer);render();maybePush();}
 function schedule(){save();clearTimeout(renderTimer);renderTimer=setTimeout(render,220);maybePush();}
 function nowClock(){const d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60;}
@@ -440,7 +452,7 @@ function chartW(){return Math.max(280,Math.min(680,root.clientWidth||340));}
 
 // ---------- création de course ----------
 function newRace(profile,name,stations){
-  const r={name:name||'Ma course',date:'',start:'06:00',target:'',stopMin:prefv('defStop'),drift:10,finishBarrier:'',carbs:prefv('defCarbs'),water:prefv('defWater'),gelG:prefv('defGel'),profile:profile,stations:(stations||[]).sort((a,b)=>a.km-b.km),points:{},diary:{rating:0,nutrition:'',learn:'',gear:''}};
+  const r={name:name||'Ma course',date:'',start:'06:00',target:'',stopMin:prefv('defStop'),drift:10,finishBarrier:'',trackUrl:'',carbs:prefv('defCarbs'),water:prefv('defWater'),gelG:prefv('defGel'),profile:profile,stations:(stations||[]).sort((a,b)=>a.km-b.km),points:{},diary:{rating:0,nutrition:'',learn:'',gear:''}};
   autoTarget(r);return r;
 }
 function autoTarget(r){const U=unitCum(r.profile,r.drift);const t=6.5*U[U.length-1]+r.stations.length*r.stopMin;r.target=fmtHM(Math.round(t/5)*5);}
@@ -509,7 +521,7 @@ function importGPX(file){
 }
 
 // ---------- plan partageable ----------
-const PLAN_KEYS=['name','date','start','target','stopMin','drift','finishBarrier','carbs','water','gelG'];
+const PLAN_KEYS=['name','date','start','target','stopMin','drift','finishBarrier','carbs','water','gelG','trackUrl'];
 function planObj(r,withItems){
   const o={};PLAN_KEYS.forEach(k=>{o[k]=r[k];});
   o.profile=r.profile;
@@ -527,7 +539,7 @@ function sanitizeRace(r){
     name:String(r.name||'Course partagée').slice(0,80),date:/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')?r.date:'',
     start:hm.test(r.start||'')?r.start:'06:00',target:String(r.target||'').slice(0,8),
     stopMin:Math.max(0,Math.min(60,+r.stopMin||0)),drift:Math.max(0,Math.min(40,+r.drift||0)),
-    finishBarrier:hm.test(r.finishBarrier||'')?r.finishBarrier:'',
+    finishBarrier:hm.test(r.finishBarrier||'')?r.finishBarrier:'',trackUrl:/^https?:\/\/[^\s<>"']{3,280}$/i.test(r.trackUrl||'')?String(r.trackUrl):'',
     carbs:Math.max(0,Math.min(200,+r.carbs||0)),water:Math.max(0,Math.min(2000,+r.water||0)),gelG:Math.max(0,Math.min(100,+r.gelG||0)),
     profile:{d,e},points:{},diary:{rating:0,nutrition:'',learn:'',gear:''},
     stations:r.stations.slice(0,30).map(s=>({id:String(s.id||uid()).replace(/[^A-Za-z0-9]/g,'').slice(0,12)||uid(),name:String(s.name||'Ravito').slice(0,80),km:Math.max(0,+s.km||0),access:!!s.access,barrier:hm.test(s.barrier||'')?s.barrier:'',
@@ -593,7 +605,7 @@ function mergePlan(r,p){
   r.stations=p.stations.map(s=>Object.assign({},s,{items:keep[s.id]||[]}));
 }
 function applyRemote(r,doc){
-  const before=pstr(r.points)+'|'+r.sync.lastPlan;
+  const before=pstr(r.points)+'|'+r.sync.lastPlan+'|'+JSON.stringify(r.fix||null);
   const f=doc.fields||{};
   const mf=(f.points&&f.points.mapValue&&f.points.mapValue.fields)||{};
   const merged={};
@@ -604,17 +616,19 @@ function applyRemote(r,doc){
   });
   const pend=r.pending||{};
   Object.keys(pend).forEach(id=>{if(pend[id]==null)delete merged[id];else merged[id]=pend[id];});
+  if(merged.fixkm!=null&&merged.fixt!=null)r.fix={km:merged.fixkm/100,t:merged.fixt};else r.fix=null;
+  delete merged.fixkm;delete merged.fixt;
   r.points=merged;
   if(r.sync.role!=='owner'&&f.plan&&f.plan.stringValue&&f.plan.stringValue!==r.sync.lastPlan){
     try{mergePlan(r,sanitizeRace(JSON.parse(f.plan.stringValue)));r.sync.lastPlan=f.plan.stringValue;}catch(e){}
   }
-  return before!==pstr(r.points)+'|'+r.sync.lastPlan;
+  return before!==pstr(r.points)+'|'+r.sync.lastPlan+'|'+JSON.stringify(r.fix||null);
 }
 async function startShare(r){
   await getToken();
   for(let t=0;t<4;t++){
     const code=genCode();
-    const fields={owner:{stringValue:authState.uid||''},plan:{stringValue:planJSON(r)},points:{mapValue:{fields:ptsToFields(r.points)}},updatedAt:{integerValue:String(Date.now())}};
+    const fields={owner:{stringValue:authState.uid||''},plan:{stringValue:planJSON(r)},points:{mapValue:{fields:ptsToFields(Object.assign({},r.points,r.fix?{fixkm:Math.round(r.fix.km*100),fixt:r.fix.t}:{}))}},updatedAt:{integerValue:String(Date.now())}};
     try{
       await fsReq('POST','courses',{fields:fields},'?documentId='+code);
       r.sync={code:code,role:'owner',lastPlan:planJSON(r),lastSync:Date.now(),error:''};r.pending={};
@@ -682,7 +696,7 @@ function maybePush(){
 }
 function fbErr(e){
   if(e.network)return 'Impossible de joindre Firebase. Vérifie ta connexion (le suivi en direct ne marche pas dans l’aperçu web de Claude, seulement dans l’appli installée).';
-  if(e.status===403)return 'Accès refusé par Firebase : vérifie que les règles sont publiées et que la connexion Anonyme est activée.';
+  if(e.status===403)return 'Accès refusé par Firebase. Vérifie que les dernières règles (fichier firestore.rules) sont publiées : Firestore, onglet Règles, bouton Publier.';
   return e.message||'Erreur Firebase.';
 }
 function joinForm(label){
@@ -707,26 +721,48 @@ function authErr(e){
   return m||'Erreur de connexion.';
 }
 function profileHasData(pf){return !!(pf&&(pf.first||pf.birth||pf.hrMax||pf.hrRest||pf.hrLt||pf.refTime));}
+function cacheProfile(){
+  if(!isRunner())return;
+  state.profiles=state.profiles||{};
+  state.profiles[authState.uid]={profile:state.profile,dirty:!!state.profileDirty};
+}
 async function pushProfile(){
   if(!isRunner())return;
-  await fsReq('PATCH','users/'+authState.uid,{fields:{profile:{stringValue:JSON.stringify(state.profile)},updatedAt:{integerValue:String(Date.now())}}},'?updateMask.fieldPaths=profile&updateMask.fieldPaths=updatedAt');
-  state.profileDirty=false;save();
+  try{
+    await fsReq('PATCH','users/'+authState.uid,{fields:{profile:{stringValue:JSON.stringify(state.profile)},updatedAt:{integerValue:String(Date.now())}}},'?updateMask.fieldPaths=profile&updateMask.fieldPaths=updatedAt');
+  }catch(e){
+    state.profileErr=e.network?'':fbErr(e);state.profileDirty=true;cacheProfile();save();throw e;
+  }
+  state.profileDirty=false;state.profileErr='';state.profileSavedAt=Date.now();cacheProfile();save();
+}
+function profStatText(){
+  if(state.profileErr)return 'Non enregistré dans ton compte : '+state.profileErr+' Tes données restent sur ce téléphone.';
+  if(state.profileDirty)return 'Modifications en attente d’enregistrement.';
+  if(state.profileSavedAt)return 'Enregistré dans ton compte il y a '+ago(state.profileSavedAt)+'.';
+  return 'Tes données sont enregistrées automatiquement dans ton compte.';
 }
 function setProfStatus(t){const el=document.getElementById('profstat');if(el)el.textContent=t;}
 function pushProfileSoon(){
   if(!isRunner())return;
-  state.profileDirty=true;save();clearTimeout(profTimer);
-  profTimer=setTimeout(()=>{pushProfile().then(()=>setProfStatus('Enregistré dans ton compte.')).catch(e=>setProfStatus(e.network?'Hors ligne : sera enregistré au retour du réseau.':'Enregistrement impossible : '+fbErr(e)));},1500);
+  state.profileDirty=true;cacheProfile();save();clearTimeout(profTimer);
+  profTimer=setTimeout(()=>{pushProfile().then(()=>setProfStatus(profStatText())).catch(()=>setProfStatus(profStatText()));},1500);
 }
 async function afterLogin(){
+  const uid=authState.uid,cached=(state.profiles||{})[uid];
+  let cloud=null,cloudErr=null;
   try{
-    let doc=null;
-    try{doc=await fsReq('GET','users/'+authState.uid);}catch(e){if(e.status!==404)throw e;}
-    const f=doc&&doc.fields;
-    if(f&&f.profile&&f.profile.stringValue){state.profile=Object.assign(defaultProfile(),JSON.parse(f.profile.stringValue));state.profileDirty=false;}
-    else if(profileHasData(state.profile)){await pushProfile();}
-  }catch(e){}
-  save();
+    const doc=await fsReq('GET','users/'+uid),f=doc&&doc.fields;
+    if(f&&f.profile&&f.profile.stringValue)cloud=Object.assign(defaultProfile(),JSON.parse(f.profile.stringValue));
+  }catch(e){if(e.status!==404)cloudErr=e;}
+  const localHas=!!(cached&&profileHasData(cached.profile));
+  state.profileErr='';
+  if(cloud&&!(cached&&cached.dirty)){state.profile=cloud;state.profileDirty=false;}
+  else if(localHas){state.profile=Object.assign(defaultProfile(),cached.profile);state.profileDirty=!!cached.dirty||!cloud;}
+  else if(cloud){state.profile=cloud;state.profileDirty=false;}
+  else{state.profile=profileHasData(state.profile)?state.profile:defaultProfile();state.profileDirty=profileHasData(state.profile);}
+  if(cloudErr)state.profileErr=fbErr(cloudErr);
+  else if(state.profileDirty){try{await pushProfile();}catch(e){}}
+  cacheProfile();save();
 }
 async function doAuth(){
   if(authBusy)return;
@@ -735,14 +771,16 @@ async function doAuth(){
   authBusy=true;flash(loginMode==='up'?'Création du compte…':'Connexion…');
   try{
     if(loginMode==='up')await runnerSignUp(em,pw);else await runnerSignIn(em,pw);
-    await afterLogin();tab='runner';commit();window.scrollTo(0,0);flash('Connecté.');
+    await afterLogin();loginMode='in';tab='runner';commit();window.scrollTo(0,0);
+    flash(state.profileErr?'Connecté, mais ton profil ne peut pas être enregistré. '+state.profileErr:'Connecté.');
   }catch(e){flash(authErr(e));}
   finally{authBusy=false;}
 }
 async function signOutRunner(){
   try{if(state.profileDirty)await pushProfile();}catch(e){}
+  cacheProfile();
   const r=state.race;if(r&&r.sync&&r.sync.role==='owner'){delete r.sync;r.pending={};}
-  setAuth(null);state.profile=defaultProfile();state.profileDirty=false;tab='plan';commit();window.scrollTo(0,0);flash('Déconnecté.');
+  setAuth(null);loginMode='in';state.profile=defaultProfile();state.profileDirty=false;state.profileErr='';tab='plan';commit();window.scrollTo(0,0);flash('Déconnecté.');
 }
 function zoneEstimate(pf,r){
   const tm=parseTimeMin(pf.refTime),dm=+pf.refDist;
@@ -820,7 +858,8 @@ function renderRunner(){
   +'<h3 style="margin-top:20px">Performance de référence</h3>'
   +'<div class="grid2"><label class="fld"><span>Distance</span><select class="in" data-p="refDist">'+[['5','5 km'],['10','10 km'],['21.0975','Semi-marathon'],['42.195','Marathon']].map(o=>'<option value="'+o[0]+'"'+(String(pf.refDist)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>'
   +'<label class="fld"><span>Temps (mm:ss ou h:mm:ss)</span><input data-p="refTime" value="'+esc(pf.refTime)+'" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="45:00"></label></div>'
-  +'<p class="note" id="profstat">'+(state.profileDirty?'Modifications en attente d’enregistrement.':'')+'</p></section>'
+  +'<div class="row"><button class="btn" data-act="save-profile">Enregistrer dans mon compte</button></div>'
+  +'<p class="note" id="profstat">'+esc(profStatText())+'</p></section>'
   +'<section class="sec"><h2>Zones de fréquence cardiaque</h2>'+hr+'</section>'
   +'<section class="sec"><h2>Zones d’allure</h2>'+pace+'</section>'
   +apply
@@ -862,7 +901,7 @@ function renderSettings(){
   return backBtn()+'<section class="empty"><h1>Paramètres du compte</h1></section>'
   +'<section class="sec"><h2>Identité</h2><p>E-mail : <b>'+esc(authState.email)+'</b></p>'
   +'<label class="fld"><span>Prénom</span><input data-p="first" value="'+esc(pf.first)+'" autocomplete="given-name"></label>'
-  +'<p class="note" id="profstat">'+(state.profileDirty?'Modifications en attente d’enregistrement.':'')+'</p></section>'
+  +'<p class="note" id="profstat">'+esc(profStatText())+'</p></section>'
   +'<section class="sec"><h2>Sécurité</h2><div class="stack">'
   +'<label class="fld"><span>Nouveau mot de passe (6 caractères minimum)</span><input class="in" id="newpw" type="password" autocomplete="new-password"></label>'
   +'<button class="btn" data-act="change-pw">Changer le mot de passe</button>'
@@ -888,6 +927,7 @@ function renderHelp(){
   +'<details><summary>Importer un parcours GPX</summary><p>Dans l’onglet Plan, appuie sur « Importer un fichier GPX » et choisis le fichier. Si le sélecteur ne l’ouvre pas, utilise « Coller son contenu » : ouvre le GPX dans un éditeur de texte, copie tout et colle-le. L’organisateur de la course fournit en général le GPX, sinon tu peux l’exporter depuis ta montre ou ton application de suivi.</p></details>'
   +'<details><summary>Partager une course en direct</summary><ol><li>Connecte-toi (rond en haut à droite).</li><li>Onglet Assistance, « Partager en direct » : un code de 6 caractères apparaît.</li><li>Ton assistance et tes supporters saisissent ce code dans « Rejoindre », sans compte.</li></ol></details>'
   +'<details><summary>Pointer un passage</summary><p>Dans l’onglet En course, indique l’heure de passage au ravito et appuie sur « Pointer le passage ». Les heures suivantes se recalculent chez tout le monde. Sans réseau, le pointage est gardé sur le téléphone et envoyé dès que le signal revient.</p></details>'
+  +'<details><summary>Suivre le coureur avec sa montre</summary><ol><li>Le coureur active le suivi en direct dans l’appli de sa montre (LiveTrack chez Garmin, Live Tracking chez Coros) et copie le lien.</li><li>Il le colle dans l’onglet Assistance, section « Suivi de la montre ».</li><li>L’assistance ouvre le lien, lit où se trouve le coureur, puis saisit son kilomètre dans En course (ou touche le profil). Les heures d’arrivée se recalculent.</li></ol></details>'
   +'<details><summary>Vue horizontale du profil</summary><p>Sur le Plan ou En course, appuie sur « Vue horizontale », puis sur un point numéroté du profil : tu vois le nom du ravito, l’heure d’arrivée prévue et le matériel à prévoir, avec un lien pour le modifier.</p></details>'
   +'<details><summary>Zones d’allure et de fréquence cardiaque</summary><p>Elles sont calculées dans l’espace coureur à partir de ta performance de référence (indice de forme de Daniels) et de tes fréquences cardiaques (réserve cardiaque de Karvonen, pourcentage de la FC max ou FC de seuil). Les allures sont données sur terrain plat.</p></details>'
   +'<details><summary>Installer une mise à jour</summary><p>Télécharge le nouvel APK compilé sur GitHub et installe-le par-dessus l’ancien : tes données sont conservées.</p></details>'
@@ -923,6 +963,7 @@ async function deleteRaceNow(){
 function resetPlanNow(){
   const r=state.race;if(!r)return;
   if(r.sync){Object.keys(r.points||{}).forEach(id=>queuePoint(r,id,null));}
+  clearFix(r);r.trackUrl='';
   r.date='';r.start='06:00';r.stopMin=prefv('defStop');r.drift=10;r.finishBarrier='';r.carbs=prefv('defCarbs');r.water=prefv('defWater');r.gelG=prefv('defGel');
   r.stations=[];r.points={};r.diary={rating:0,nutrition:'',learn:'',gear:''};autoTarget(r);
   commit();syncSoon();flash('Plan réinitialisé. Le tracé GPX est conservé.');
@@ -935,7 +976,41 @@ async function deleteAccountNow(){
     await authRequest('delete',{idToken:await getToken()});
   }catch(e){flash(authErr(e));return;}
   if(r&&r.sync&&r.sync.role==='owner'){delete r.sync;r.pending={};}
-  setAuth(null);state.profile=defaultProfile();state.profileDirty=false;exportText='';tab='plan';commit();window.scrollTo(0,0);flash('Compte supprimé.');
+  if(state.profiles)delete state.profiles[uid];
+  setAuth(null);state.profile=defaultProfile();state.profileDirty=false;state.profileErr='';exportText='';tab='plan';commit();window.scrollTo(0,0);flash('Compte supprimé.');
+}
+
+// ---------- position du coureur (lien de suivi + saisie du km) ----------
+function cleanUrl(v){
+  v=String(v||'').trim();if(!v)return '';
+  if(!/^[a-z][a-z0-9+.-]*:/i.test(v)&&/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(v))v='https://'+v;
+  return /^https?:\/\/[^\s<>"']{3,280}$/i.test(v)?v:null;
+}
+function setFix(r,km,t){
+  r.fix={km:km,t:t};queuePoint(r,'fixkm',Math.round(km*100));queuePoint(r,'fixt',Math.round(t));
+}
+function clearFix(r){if(r.fix||(r.pending&&(r.pending.fixkm!=null||r.pending.fixt!=null))){queuePoint(r,'fixkm',null);queuePoint(r,'fixt',null);}r.fix=null;}
+function trackLink(r,cls){
+  return r.trackUrl?'<a class="btn '+(cls||'')+'" href="'+esc(r.trackUrl)+'" target="_blank" rel="noopener noreferrer">Ouvrir le suivi de la montre</a>':'';
+}
+function trackPanel(r){
+  const member=!!(r.sync&&r.sync.role==='member');
+  if(member&&!r.trackUrl)return '';
+  return '<section class="sec"><h2>Suivi de la montre</h2>'
+    +(member?'<p class="note">Lien de suivi fourni par le coureur. Ouvre-le pour voir sa position sur la carte, puis indique son kilomètre dans l’onglet En course.</p>'
+            :'<p class="note">Active le suivi en direct dans l’appli de ta montre (LiveTrack chez Garmin, Live Tracking chez Coros), copie le lien et colle-le ici. Ton assistance pourra l’ouvrir pour voir où tu es. Toute personne qui a ce lien voit ta position : ne le partage qu’avec ton équipe.</p>'
+              +'<label class="fld"><span>Lien de suivi</span><input class="in" data-r="trackUrl" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://…" value="'+esc(r.trackUrl||'')+'"></label>')
+    +(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'')+'</section>';
+}
+function fixPanel(r,m){
+  const fx=r.fix;
+  return '<section class="sec"><h2>Position du coureur</h2>'
+    +(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'<p class="note">Aucun lien de suivi. Le coureur peut en ajouter un dans l’onglet Assistance.</p>')
+    +'<p class="note">Regarde où se trouve le coureur sur la carte du lien, puis indique son kilomètre : les heures d’arrivée se recalculent. Tu peux aussi toucher le profil plus haut.</p>'
+    +'<div class="row"><label class="fld" style="flex:1;min-width:110px"><span>Kilomètre</span><input class="in" id="fix-km" type="number" inputmode="decimal" step="0.1" min="0" max="'+(Math.round(m.tot*10)/10)+'" placeholder="ex. 23,4"></label>'
+    +'<label class="fld" style="flex:1;min-width:120px"><span>Heure</span><input class="in" type="time" id="fix-t" value="'+hhmmNow()+'"></label></div>'
+    +'<div class="row"><button class="btn primary" data-act="set-fix">Enregistrer la position</button>'+(fx?'<button class="btn quiet" data-act="clear-fix">Annuler la dernière position</button>':'')+'</div>'
+    +(fx?'<p>Dernière position : <b class="t">km '+km1(fx.km)+'</b> à '+clk(fx.t)+'.</p>':'')+'</section>';
 }
 
 // ---------- vue horizontale du profil ----------
@@ -1158,6 +1233,7 @@ function renderAssist(){
   return '<section class="empty"><h1>Équipe d’assistance</h1>'
   +'<p class="lead">Fenêtres de passage (course 8 % plus rapide ou 12 % plus lente que prévu), ce qu’il faut préparer et ce qu’il faut remplir à chaque ravito.</p></section>'
   +syncPanel(r)
+  +trackPanel(r)
   +(cards||'<p class="note">Aucun ravito avec accès assistance. Coche « Accès pour l’assistance » dans l’onglet Plan.</p>')
   +(without.length?'<p class="note">Sans accès assistance : '+without.map(x=>esc(x.name)).join(', ')+'.</p>':'')
   +'<section class="sec"><h2>Pour les supporters à l’arrivée</h2><p>'+(fin.actual!=null?'Arrivée pointée à '+clk(fin.actual)+'.':'Arrivée estimée entre '+clk(finE)+' et '+clk(finL)+'.')+'</p></section>'
@@ -1174,7 +1250,7 @@ function renderLive(){
   const now=nowMin(r),rows=tl.rows;
   const fin=rows[rows.length-1],finPlan=plan.rows[rows.length-1];
   const delta=fin.adjArr-finPlan.adjArr;
-  const nextIdx=rows.findIndex(x=>x.actual==null);
+  const nextIdx=rows.findIndex(x=>x.actual==null&&!x.passedEst);
   const finished=nextIdx===-1,started=now>=m.startMin;
   let status;
   if(finished)status='Arrivée pointée.';
@@ -1182,11 +1258,12 @@ function renderLive(){
   else status='En course depuis '+fmtDur(now-m.startMin)+'.';
   const kmNow=started?tl.kmAt(now):null;
   const svg=profileSVG(m,tl,{w:chartW(),kmNow:kmNow});
-  const anyPoint=rows.some(x=>x.actual!=null);
+  const anyPoint=rows.some(x=>x.actual!=null)||!!r.fix;
   const list=rows.map((x,i)=>{
-    const cls=x.actual!=null?'done':(i===nextIdx?'next':'todo');
+    const cls=(x.actual!=null||x.passedEst)?'done':(i===nextIdx?'next':'todo');
     let times;
     if(x.actual!=null)times='<span><small>Pointé</small>'+clk(x.actual)+'</span><span><small>Prévu</small>'+clk(x.plannedArr)+'</span><span class="'+(x.actual-x.plannedArr>5?'warn':'ok')+'">'+dsign(x.actual-x.plannedArr)+'</span>';
+    else if(x.passedEst)times='<span><small>Déjà passé, estimé</small>'+clk(x.adjArr)+'</span><span><small>Prévu</small>'+clk(x.plannedArr)+'</span>';
     else times='<span><small>Prévu</small>'+clk(x.plannedArr)+'</span><span><small>Estimé</small>'+clk(x.adjArr)+'</span>'+(x.margin!=null?'<span class="'+mcls(x.margin)+'">Marge '+mfmt(x.margin)+'</span>':'');
     return '<li class="pt '+cls+'"><div class="pt-main">'+esc(x.name)+' <span class="km">km '+km1(x.km)+'</span></div><div class="pt-times">'+times+'</div></li>';
   }).join('');
@@ -1201,10 +1278,11 @@ function renderLive(){
   +'<dl class="sum"><div><dt>Arrivée estimée</dt><dd>'+clk(fin.adjArr)+'</dd></div><div><dt>Prévue</dt><dd>'+clk(finPlan.adjArr)+'</dd></div>'
   +(anyPoint?'<div><dt>Écart</dt><dd class="'+(delta>5?'warn':'ok')+'">'+dsign(delta)+'</dd></div>':'')+'</dl>'
   +(anyPoint?'':'<p class="note" style="margin-top:10px">Aucun passage pointé : l’estimation suit le plan. Sans date de course, on suppose qu’elle a lieu aujourd’hui.</p>')
-  +'<div class="chart">'+svg+'</div>'
+  +'<div class="chart" data-fixchart data-w="'+chartW()+'" data-l="46" data-r="10" data-tot="'+m.tot+'">'+svg+'</div>'
   +(kmNow!=null?'<div class="legend"><span style="color:var(--live)">Point rose : position estimée, km '+km1(kmNow)+'</span></div>':'')
   +'<div class="row" style="margin:8px 0 0"><button class="btn quiet small" data-act="land-open">Vue horizontale</button></div></section>'
   +next
+  +fixPanel(r,m)
   +'<section class="sec"><h2>Passages</h2><ol class="pts">'+list+'</ol>'
   +'<div class="row">'
   +(anyPoint?'<button class="btn quiet" data-act="undo">Annuler le dernier pointage</button>'+((!r.sync||r.sync.role==='owner')?'<button class="btn quiet" data-act="clear-points">Effacer les pointages</button>':''):(r.sync?'':'<button class="btn quiet" data-act="simulate">Simuler un coureur 10 % plus lent</button>'))
@@ -1255,6 +1333,12 @@ function render(top){
 function act(b){
   const a=b.dataset.act,r=state.race;
   if(a==='menu'){toggleMenu();return;}
+  if(a==='save-profile'){
+    if(!isRunner())return;
+    flash('Enregistrement…');
+    pushProfile().then(()=>{setProfStatus(profStatText());flash('Profil enregistré dans ton compte.');}).catch(e=>{setProfStatus('Enregistrement impossible : '+fbErr(e));flash(e.network?'Hors ligne : ton profil sera enregistré au retour du réseau.':fbErr(e));});
+    return;
+  }
   if(a==='back'){tab=prevTab||'plan';render(true);return;}
   if(a==='land-open'){openLand();return;}
   if(a==='land-close'){closeLand();return;}
@@ -1264,7 +1348,7 @@ function act(b){
   if(a==='change-pw'){changePassword((document.getElementById('newpw')||{}).value||'');return;}
   if(a==='export-data'){exportText=exportMyData();commit();return;}
   if(a==='copy-export'){const bx=document.getElementById('exportbox');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(exportText).then(()=>flash('Données copiées.'),()=>flash('Sélectionne le texte pour le copier.'));}else if(bx){bx.select();flash('Sélectionne le texte pour le copier.');}return;}
-  if(a==='clear-device'){askConfirm({title:'Effacer les données de cet appareil ?',text:'La course en cours, le carnet et le profil mémorisés sur ce téléphone seront supprimés. Les données de ton compte ne sont pas touchées.',okLabel:'Effacer',danger:true,onOk:()=>{state.race=null;state.journal=[];state.profile=defaultProfile();state.profileDirty=false;exportText='';commit();flash('Données de l’appareil effacées.');}});return;}
+  if(a==='clear-device'){askConfirm({title:'Effacer les données de cet appareil ?',text:'La course en cours, le carnet et le profil mémorisés sur ce téléphone seront supprimés. Les données de ton compte ne sont pas touchées.',okLabel:'Effacer',danger:true,onOk:()=>{state.race=null;state.journal=[];state.profile=defaultProfile();state.profiles={};state.profileDirty=false;state.profileErr='';exportText='';commit();flash('Données de l’appareil effacées.');}});return;}
   if(a==='delete-account'){askConfirm({title:'Supprimer ton compte ?',text:'Ton compte, ton profil enregistré et la course que tu partages en direct seront supprimés définitivement.',okLabel:'Supprimer mon compte',danger:true,onOk:deleteAccountNow});return;}
   if(a==='reset-plan'&&r){askConfirm({title:'Réinitialiser le plan ?',text:'L’objectif, les ravitos, la nutrition et les pointages repartent de zéro. Le tracé GPX est conservé.'+(r.sync?' Les pointages partagés seront aussi effacés pour toute l’équipe.':''),okLabel:'Réinitialiser',danger:true,onOk:resetPlanNow});return;}
   if(a==='delete-race'&&r){askConfirm({title:'Supprimer la course ?',text:'Le tracé GPX et tout le plan seront supprimés.'+(r.sync&&r.sync.role==='owner'?' Le suivi en direct sera arrêté et la course supprimée du serveur.':''),okLabel:'Supprimer',danger:true,onOk:deleteRaceNow});return;}
@@ -1332,7 +1416,7 @@ function act(b){
     return;
   }
   if(a==='point'){
-    const m=model(r),tl=timeline(r,m,{}),idx=tl.rows.findIndex(x=>x.actual==null);if(idx<0)return;
+    const m=model(r),tl=timeline(r,m,{}),idx=tl.rows.findIndex(x=>x.actual==null&&!x.passedEst);if(idx<0)return;
     const inp=document.getElementById('pt-time');let min=parseClock(inp&&inp.value);
     if(min==null){flash('Saisis une heure de passage.');return;}
     const lastDone=tl.rows.filter(x=>x.actual!=null).map(x=>x.actual).pop();
@@ -1344,7 +1428,16 @@ function act(b){
     const m=model(r),tl=timeline(r,m,{});let k=-1;tl.rows.forEach((x,i)=>{if(x.actual!=null)k=i;});
     if(k>=0){delete r.points[tl.rows[k].id];queuePoint(r,tl.rows[k].id,null);commit();syncSoon();}return;
   }
-  if(a==='clear-points'){Object.keys(r.points).forEach(id=>queuePoint(r,id,null));r.points={};commit();syncSoon();return;}
+  if(a==='clear-points'){Object.keys(r.points).forEach(id=>queuePoint(r,id,null));r.points={};clearFix(r);commit();syncSoon();return;}
+  if(a==='set-fix'){
+    const m=model(r),kmv=parseFloat(String((document.getElementById('fix-km')||{}).value||'').replace(',','.')),tv=parseClock((document.getElementById('fix-t')||{}).value);
+    if(!isFinite(kmv)||kmv<=0||kmv>m.tot){flash('Indique un kilomètre entre 0 et '+km1(m.tot)+'.');return;}
+    if(tv==null){flash('Indique l’heure de cette position.');return;}
+    const lastDone=Object.keys(r.points||{}).map(k=>r.points[k]).sort((x,y)=>x-y).pop();
+    const floor=lastDone!=null?lastDone:m.startMin;let min=tv;while(min<floor-5)min+=1440;
+    setFix(r,Math.round(kmv*10)/10,min);commit();syncSoon();flash('Position enregistrée : km '+km1(kmv)+'.');return;
+  }
+  if(a==='clear-fix'){clearFix(r);commit();syncSoon();flash('Position annulée.');return;}
   if(a==='simulate'){
     const m=model(r),tl=timeline(r,m,{plan:true}),stop=+r.stopMin||0;
     r.points={};
@@ -1357,13 +1450,23 @@ function act(b){
     state.journal=state.journal||[];
     state.journal.unshift({id:uid(),name:r.name,date:r.date,km:st.km,up:st.up,planned:m.target,actual:fin.actual!=null?fin.actual-m.startMin:null,rating:d.rating||0,learn:(d.learn||'').slice(0,160)});
     if(r.sync){delete r.sync;r.pending={};}
-    r.points={};r.diary={rating:0,nutrition:'',learn:'',gear:''};commit();flash('Course archivée dans le carnet.');return;
+    r.fix=null;r.points={};r.diary={rating:0,nutrition:'',learn:'',gear:''};commit();flash('Course archivée dans le carnet.');return;
   }
 }
 document.addEventListener('click',e=>{
   const ma=e.target.closest('[data-mact]');
   if(ma){const f=(ma.dataset.mact==='ok')?modalOk:null;closeModal();if(f)f();return;}
   if(!document.getElementById('modal').hidden&&e.target.id==='modal'){closeModal();return;}
+  const fc=e.target.closest('[data-fixchart]');
+  if(fc&&!e.target.closest('[data-hit]')){
+    const svg=fc.querySelector('svg');
+    if(svg){
+      const rc=svg.getBoundingClientRect(),W=+fc.dataset.w,L=+fc.dataset.l,R=+fc.dataset.r,tot=+fc.dataset.tot;
+      const x=(e.clientX-rc.left)*(W/rc.width),km=Math.max(0,Math.min(tot,(x-L)/(W-L-R)*tot)),inp=document.getElementById('fix-km');
+      if(inp&&rc.width>0){inp.value=(Math.round(km*10)/10).toFixed(1);flash('Km '+km1(km)+' choisi. Vérifie l’heure puis enregistre la position.');}
+    }
+    return;
+  }
   const hit=e.target.closest('[data-hit]');
   if(hit&&landOpen){landSel=(landSel===hit.dataset.hit)?null:hit.dataset.hit;renderLand();return;}
   const mi=e.target.closest('[data-menu]');
@@ -1412,6 +1515,7 @@ document.addEventListener('change',e=>{
   if(rf){
     let v=t.value;
     if(rf==='target'){v=fmtTyped(v,true);t.value=v;}
+    if(rf==='trackUrl'){const u=cleanUrl(v);if(u===null){flash('Lien invalide : il doit commencer par https://');t.value=r.trackUrl||'';return;}v=u;t.value=u;}
     if(t.dataset.num!==undefined){v=parseFloat(v);if(isNaN(v)||v<0)v=0;}
     r[rf]=v;schedule();
   }
