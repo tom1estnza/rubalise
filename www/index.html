@@ -422,7 +422,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function defaultPrefs(){return {theme:'auto',defStop:3,defCarbs:60,defWater:500,defGel:25};}
 let state=load();
 state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
-const APP_VERSION='0.6';
+const APP_VERSION='0.7';
 function prefv(k){return (state.prefs&&state.prefs[k]!=null)?state.prefs[k]:defaultPrefs()[k];}
 function applyTheme(){const t=state.prefs.theme,el=document.documentElement;if(t==='light'||t==='dark')el.setAttribute('data-theme',t);else el.removeAttribute('data-theme');}
 applyTheme();
@@ -954,11 +954,11 @@ function renderHelp(){
   +'<details><summary>Importer un parcours GPX</summary><p>Dans l’onglet Plan, appuie sur « Importer un fichier GPX » et choisis le fichier. Si le sélecteur ne l’ouvre pas, utilise « Coller son contenu » : ouvre le GPX dans un éditeur de texte, copie tout et colle-le. L’organisateur de la course fournit en général le GPX, sinon tu peux l’exporter depuis ta montre ou ton application de suivi.</p></details>'
   +'<details><summary>Partager une course en direct</summary><ol><li>Connecte-toi (rond en haut à droite).</li><li>Onglet Assistance, « Partager en direct » : un code de 6 caractères apparaît.</li><li>Ton assistance et tes supporters saisissent ce code dans « Rejoindre », sans compte.</li></ol></details>'
   +'<details><summary>Pointer un passage</summary><p>Dans l’onglet En course, indique l’heure de passage au ravito et appuie sur « Pointer le passage ». Les heures suivantes se recalculent chez tout le monde. Sans réseau, le pointage est gardé sur le téléphone et envoyé dès que le signal revient.</p></details>'
-  +'<details><summary>Suivre le coureur avec sa montre</summary><ol><li>Le coureur active le suivi en direct dans l’appli de sa montre (LiveTrack chez Garmin, Live Tracking chez Coros) et copie le lien.</li><li>Il le colle dans l’onglet Assistance, section « Suivi de la montre ».</li><li>L’assistance ouvre le lien, lit où se trouve le coureur, puis saisit son kilomètre dans En course (ou touche le profil). Les heures d’arrivée se recalculent.</li></ol></details>'
+  +'<details><summary>Suivre le coureur</summary><p>Si le coureur partage sa position GPS (onglet Assistance, « Démarrer le suivi GPS »), la position et les heures d’arrivée se mettent à jour toutes seules. Sinon, il peut coller le lien de suivi de sa montre (LiveTrack chez Garmin, Live Tracking chez Coros) : l’assistance l’ouvre, lit où il se trouve et saisit son kilomètre dans En course. À chaque ravito pointé, la position suit.</p></details>'
   +'<details><summary>Vue horizontale du profil</summary><p>Sur le Plan ou En course, appuie sur « Vue horizontale », puis sur un point numéroté du profil : tu vois le nom du ravito, l’heure d’arrivée prévue et le matériel à prévoir, avec un lien pour le modifier.</p></details>'
   +'<details><summary>Zones d’allure et de fréquence cardiaque</summary><p>Elles sont calculées dans l’espace coureur à partir de ta performance de référence (indice de forme de Daniels) et de tes fréquences cardiaques (réserve cardiaque de Karvonen, pourcentage de la FC max ou FC de seuil). Les allures sont données sur terrain plat.</p></details>'
   +'<details><summary>Installer une mise à jour</summary><p>Télécharge le nouvel APK compilé sur GitHub et installe-le par-dessus l’ancien : tes données sont conservées.</p></details>'
-  +'<details><summary>À propos</summary><p>Rubalise, version '+APP_VERSION+' (prototype). Les heures de passage sont des estimations : elles ne remplacent ni ton expérience, ni les barrières horaires officielles de l’organisateur, à vérifier avant le départ.</p></details>'
+  +'<details><summary>À propos</summary><p>Rubalise, version '+APP_VERSION+' (prototype). Environnement : '+(isNativeApp()?'application Android':'navigateur')+', module de localisation '+(nativeGeo()?'présent':'absent')+'. Les heures de passage sont des estimations : elles ne remplacent ni ton expérience, ni les barrières horaires officielles de l’organisateur, à vérifier avant le départ.</p></details>'
   +'</section>';
 }
 function exportMyData(){
@@ -1043,15 +1043,63 @@ function trackPanel(r){
               +'<label class="fld"><span>Lien de suivi</span><input class="in" data-r="trackUrl" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://…" value="'+esc(r.trackUrl||'')+'"></label>')
     +(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'')+'</section>';
 }
+function gpsLive(r){
+  if(gpsOn&&r.sync&&r.sync.role==='owner')return true;
+  const fx=r.fix;return !!(fx&&fx.src&&(nowMin(r)-fx.t)<=10);
+}
 function fixPanel(r,m){
-  const fx=r.fix;
-  return '<section class="sec"><h2>Position du coureur</h2>'
-    +(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'<p class="note">Aucun lien de suivi. Le coureur peut en ajouter un dans l’onglet Assistance.</p>')
-    +'<p class="note">Regarde où se trouve le coureur sur la carte du lien, puis indique son kilomètre : les heures d’arrivée se recalculent. Tu peux aussi toucher le profil plus haut.</p>'
+  const fx=r.fix,live=gpsLive(r);
+  let last='';
+  if(fx){
+    const age=Math.round(nowMin(r)-fx.t),st=!fx.src?r.stations.find(x=>Math.abs(x.km-fx.km)<0.06):null;
+    const src=fx.src?'GPS':(st?'pointage au ravito '+esc(st.name||'Ravito'):(Math.abs(fx.km-m.tot)<0.06?'pointage à l’arrivée':'saisie manuelle'));
+    const stale=fx.src&&age>10;
+    last='<p'+(stale?' class="warn"':'')+'>Dernière position ('+src+') : <b class="t">km '+km1(fx.km)+'</b> à '+clk(fx.t)+(fx.src&&age>=0?', il y a '+(age<1?'moins d’1':age)+' min':'')+(stale?'. Signal perdu ?':'.')+'</p>';
+  }
+  const manual='<p class="note">'+(fx&&fx.src?'Le signal GPS est perdu depuis un moment. ':'Pas de position GPS en direct. ')+'Regarde où est le coureur sur la carte du lien et indique son kilomètre, ou touche le profil plus haut. Quand tu pointes un ravito, la position se met à jour toute seule.</p>'
     +'<div class="row"><label class="fld" style="flex:1;min-width:110px"><span>Kilomètre</span><input class="in" id="fix-km" type="number" inputmode="decimal" step="0.1" min="0" max="'+(Math.round(m.tot*10)/10)+'" placeholder="ex. 23,4"></label>'
     +'<label class="fld" style="flex:1;min-width:120px"><span>Heure</span><input class="in" type="time" id="fix-t" value="'+hhmmNow()+'"></label></div>'
-    +'<div class="row"><button class="btn primary" data-act="set-fix">Enregistrer la position</button>'+(fx?'<button class="btn quiet" data-act="clear-fix">Annuler la dernière position</button>':'')+'</div>'
-    +(fx?(()=>{const age=Math.round(nowMin(r)-fx.t),stale=fx.src&&age>10;return '<p'+(stale?' class="warn"':'')+'>Dernière position'+(fx.src?' GPS':'')+' : <b class="t">km '+km1(fx.km)+'</b> à '+clk(fx.t)+(fx.src&&age>=0?', il y a '+(age<1?'moins d’1':age)+' min':'')+(stale?'. Signal perdu ?':'.')+'</p>';})():'')+'</section>';
+    +'<div class="row"><button class="btn primary" data-act="set-fix">Enregistrer la position</button>'+(fx&&!fx.src?'<button class="btn quiet" data-act="clear-fix">Annuler la dernière position</button>':'')+'</div>';
+  return '<section class="sec"><h2>Position du coureur</h2>'
+    +(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'')
+    +(live?'<p class="note">Position GPS en direct : les heures d’arrivée se recalculent toutes seules.</p>':manual+(r.trackUrl?'':'<p class="note">Aucun lien de suivi : le coureur peut en ajouter un dans l’onglet Assistance.</p>'))
+    +last+'</section>';
+}
+
+// ---------- autorisations du téléphone ----------
+let permState={loc:'?',notif:'?'};
+function isNativeApp(){return !!(window.Capacitor&&typeof window.Capacitor.isNativePlatform==='function'&&window.Capacitor.isNativePlatform());}
+function permLabel(v){return v==='granted'?'autorisée':v==='denied'?'refusée':(v==='prompt'||v==='prompt-with-rationale')?'pas encore demandée':'inconnue';}
+function permText(){return 'Localisation : '+permLabel(permState.loc)+(isNativeApp()?'. Notifications : '+permLabel(permState.notif):'')+'.';}
+function updatePermUI(){const el=document.getElementById('permstat');if(el)el.textContent=permText();}
+async function checkPerms(){
+  const N=window.RubaliseNative;
+  try{
+    if(N&&N.Geolocation){permState.loc=(await N.Geolocation.checkPermissions()).location;}
+    else if(navigator.permissions&&navigator.permissions.query){permState.loc=(await navigator.permissions.query({name:'geolocation'})).state;}
+  }catch(e){}
+  try{if(N&&N.LocalNotifications)permState.notif=(await N.LocalNotifications.checkPermissions()).display;}catch(e){}
+  updatePermUI();
+}
+async function ensurePermissions(){
+  const N=window.RubaliseNative;
+  try{
+    if(N&&N.Geolocation){
+      let p=await N.Geolocation.checkPermissions();
+      if(p.location!=='granted')p=await N.Geolocation.requestPermissions({permissions:['location','coarseLocation']});
+      permState.loc=p.location;
+    }else if(navigator.geolocation){
+      permState.loc=await new Promise(res=>navigator.geolocation.getCurrentPosition(()=>res('granted'),e=>res(e.code===1?'denied':'prompt'),{timeout:10000,maximumAge:600000}));
+    }
+  }catch(e){permState.loc='denied';}
+  try{
+    if(N&&N.LocalNotifications){
+      let p=await N.LocalNotifications.checkPermissions();
+      if(p.display!=='granted')p=await N.LocalNotifications.requestPermissions();
+      permState.notif=p.display;
+    }
+  }catch(e){}
+  updatePermUI();return permState;
 }
 
 // ---------- suivi GPS du téléphone ----------
@@ -1066,12 +1114,13 @@ async function gpsStart(){
   if(gpsOn)return;
   if(!r||!r.sync||r.sync.role!=='owner'){flash('Partage d’abord ta course en direct.');return;}
   if(!gpsAvailable(r)){flash('Ce tracé n’a pas de coordonnées GPS : réimporte le fichier GPX.');return;}
+  const ps=await ensurePermissions();
+  if(ps.loc==='denied'){flash('Localisation refusée. Autorise-la pour Rubalise : bouton « Ouvrir les réglages du téléphone ».');commit();return;}
   gpsOn=true;gpsSentAt=0;gpsSentKm=-1;gpsMsg='';gpsOkTxt='';
   const N=nativeGeo();
   try{
     if(N){
       gpsMode='native';
-      if(N.LocalNotifications&&N.LocalNotifications.requestPermissions){try{await N.LocalNotifications.requestPermissions();}catch(e){}}
       gpsWatch=await N.BackgroundGeolocation.addWatcher({backgroundTitle:'Rubalise : suivi de course',backgroundMessage:'Ton kilomètre sur le parcours est partagé avec ton assistance.',requestPermissions:true,stale:false,distanceFilter:15},(loc,err)=>{
         if(err){setGpsStatus(err.code==='NOT_AUTHORIZED'?'Localisation refusée : autorise-la pour Rubalise dans les réglages du téléphone.':'Erreur GPS : '+(err.message||err.code));return;}
         if(loc)onGps(loc.latitude,loc.longitude,loc.accuracy);
@@ -1117,10 +1166,11 @@ function gpsPanel(r){
   const owner=!!(r.sync&&r.sync.role==='owner');
   let t='<section class="sec"><h2>Position GPS du téléphone</h2>'
     +'<p class="note">Ton téléphone envoie ton kilomètre sur le parcours à ton assistance, toutes les 15 à 40 secondes environ. Seul le kilomètre est partagé, jamais tes coordonnées. Le GPS consomme de la batterie et n’envoie rien sans réseau.</p>';
-  if(!owner)t+='<p class="note">Partage d’abord ta course en direct (section « Suivi en direct » ci-dessus).</p>';
+  if(!owner)t+='<p class="note" id="permstat">'+esc(permText())+'</p><p class="note">Partage d’abord ta course en direct (section « Suivi en direct » ci-dessus).</p>';
   else if(!gpsAvailable(r))t+='<p class="warn">Ce tracé n’a pas de coordonnées GPS (importé avec une ancienne version). Réimporte le fichier GPX pour activer cette fonction.</p>';
   else t+='<div class="row">'+(gpsOn?'<button class="btn danger" data-act="gps-stop">Arrêter le suivi GPS</button>':'<button class="btn primary" data-act="gps-start">Démarrer le suivi GPS</button>')+'</div>'
     +'<p class="note" id="gpsstat">'+esc(gpsText())+'</p>'
+    +'<p class="note" id="permstat">'+esc(permText())+'</p><div class="row"><button class="btn quiet small" data-act="perm-request">Autoriser la localisation</button>'+(nativeGeo()?'<button class="btn quiet small" data-act="perm-settings">Ouvrir les réglages du téléphone</button>':'')+'</div>'
     +((!nativeGeo())?'<p class="note">Dans le navigateur, le suivi ne marche que si l’écran reste allumé et la page ouverte. L’appli installée (APK) peut suivre l’écran éteint.</p>':'');
   return t+'</section>';
 }
@@ -1440,6 +1490,7 @@ function render(top){
   }catch(err){html='<section class="empty"><h1>Oups</h1><p class="lead">Un calcul a échoué : '+esc(err.message)+'.</p><button class="btn" data-act="demo">Recharger la course démo</button></section>';}
   root.innerHTML=html;
   window.scrollTo(0,top?0:y);
+  if(tab==='assist')checkPerms();
 }
 
 // ---------- actions ----------
@@ -1506,6 +1557,8 @@ function act(b){
   if(a==='sync-now'){flash('Synchronisation…');syncNow();return;}
   if(a==='gps-start'){askConfirm({title:'Partager ma position ?',text:'Rubalise utilisera la localisation de ton téléphone et enverra ton kilomètre sur le parcours à ton assistance (jamais tes coordonnées). Cela consomme de la batterie.',okLabel:'Démarrer',onOk:gpsStart});return;}
   if(a==='gps-stop'){gpsStop();commit();flash('Suivi GPS arrêté.');return;}
+  if(a==='perm-request'){ensurePermissions().then(ps=>flash(ps.loc==='granted'?'Localisation autorisée.':'Localisation non autorisée : ouvre les réglages du téléphone pour l’activer.'));return;}
+  if(a==='perm-settings'){const N=nativeGeo();try{if(N&&N.BackgroundGeolocation.openSettings)N.BackgroundGeolocation.openSettings();}catch(e){}return;}
   if(a==='stop-sync'){
     if(r.sync&&r.sync.role==='member'){
       const n=Object.keys(r.pending||{}).length;
@@ -1545,11 +1598,24 @@ function act(b){
     const lastDone=tl.rows.filter(x=>x.actual!=null).map(x=>x.actual).pop();
     const floor=lastDone!=null?lastDone:m.startMin;
     while(min<floor-5)min+=1440;
-    r.points[tl.rows[idx].id]=min;queuePoint(r,tl.rows[idx].id,min);commit();syncSoon();flash('Passage pointé : '+tl.rows[idx].name+'.');return;
+    const prow=tl.rows[idx];
+    r.points[prow.id]=min;queuePoint(r,prow.id,min);
+    if(!r.fix||min>=r.fix.t-1)setFix(r,Math.round(prow.km*100)/100,min,0);
+    commit();syncSoon();flash('Passage pointé : '+prow.name+'.');return;
   }
   if(a==='undo'){
     const m=model(r),tl=timeline(r,m,{});let k=-1;tl.rows.forEach((x,i)=>{if(x.actual!=null)k=i;});
-    if(k>=0){delete r.points[tl.rows[k].id];queuePoint(r,tl.rows[k].id,null);commit();syncSoon();}return;
+    if(k>=0){
+      const urow=tl.rows[k],was=urow.actual;
+      delete r.points[urow.id];queuePoint(r,urow.id,null);
+      if(r.fix&&!r.fix.src&&Math.abs(r.fix.km-urow.km)<0.011&&Math.round(r.fix.t)===Math.round(was)){
+        clearFix(r);
+        const prev=tl.rows.slice(0,k).filter(x=>x.actual!=null).pop();
+        if(prev)setFix(r,Math.round(prev.km*100)/100,prev.actual,0);
+      }
+      commit();syncSoon();
+    }
+    return;
   }
   if(a==='clear-points'){Object.keys(r.points).forEach(id=>queuePoint(r,id,null));r.points={};clearFix(r);commit();syncSoon();return;}
   if(a==='set-fix'){
@@ -1682,6 +1748,7 @@ window.addEventListener('online',()=>syncNow());
 
 lastW=root.clientWidth;
 render(true);
+if(isNativeApp()){if(!state.permAsked){state.permAsked=true;save();setTimeout(()=>{ensurePermissions();},900);}else checkPerms();}
 if(state.race&&state.race.sync)syncSoon();
 if(isRunner()&&state.profileDirty)pushProfile().catch(()=>{});
 setInterval(()=>{if(isRunner()&&state.profileDirty&&!document.hidden)pushProfile().catch(()=>{});},30000);
