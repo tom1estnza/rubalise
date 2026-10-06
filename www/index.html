@@ -17,7 +17,7 @@
 <style>
 :root{
   --bg:#EDF2EE; --surface:#F8FBF9; --ink:#10312B; --ink2:#4A625C; --line:#C7D5CE;
-  --accent:#1E6F8E; --accent-ink:#FFFFFF; --live:#C2125F; --ok:#2B7A4B; --warn:#9A5B00; --fill:#D3E3DB;
+  --accent:#1E6F8E; --accent-ink:#FFFFFF; --live:#C2125F; --z1:#7DB3A0; --z2:#3E8E69; --z3:#1E6F8E; --z4:#B26A00; --z5:#C2125F; --ok:#2B7A4B; --warn:#9A5B00; --fill:#D3E3DB;
   --f-body:'Barlow',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   --f-num:'Barlow Semi Condensed','Barlow',system-ui,'Arial Narrow',sans-serif;
   box-sizing:border-box;
@@ -27,12 +27,12 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#0D1F1B; --surface:#132B25; --ink:#E5F0EB; --ink2:#9CB5AC; --line:#294640;
-    --accent:#6CC0E0; --accent-ink:#0D1F1B; --live:#FF6BB0; --ok:#6FD398; --warn:#F0B050; --fill:#1B3B34;
+    --accent:#6CC0E0; --accent-ink:#0D1F1B; --live:#FF6BB0; --z1:#6FB09B; --z2:#6FD398; --z3:#6CC0E0; --z4:#F0B050; --z5:#FF6BB0; --ok:#6FD398; --warn:#F0B050; --fill:#1B3B34;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0D1F1B; --surface:#132B25; --ink:#E5F0EB; --ink2:#9CB5AC; --line:#294640;
-  --accent:#6CC0E0; --accent-ink:#0D1F1B; --live:#FF6BB0; --ok:#6FD398; --warn:#F0B050; --fill:#1B3B34;
+  --accent:#6CC0E0; --accent-ink:#0D1F1B; --live:#FF6BB0; --z1:#6FB09B; --z2:#6FD398; --z3:#6CC0E0; --z4:#F0B050; --z5:#FF6BB0; --ok:#6FD398; --warn:#F0B050; --fill:#1B3B34;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
@@ -149,12 +149,17 @@ td small{display:block}
 .journal li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
 .code{font-family:ui-monospace,Menlo,monospace;font-size:12px;min-height:96px}
 
-.tabs{position:fixed;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(4,1fr);background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+.tabs{position:fixed;left:0;right:0;bottom:0;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
 .tabbtn{min-height:58px;border:0;background:transparent;font-weight:600;font-size:15px;color:var(--ink2);cursor:pointer}
 .tabbtn[aria-current="page"]{color:var(--ink);box-shadow:inset 0 3px 0 var(--live)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:15px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:6;max-width:92vw;text-align:center}
 .toast.on{opacity:1}
 .empty{padding-top:8px}
+.tabs.five .tabbtn{font-size:13px;padding:0 2px}
+#acct.run{min-width:38px;width:38px;padding:0;border-radius:50%;font-weight:700;font-size:16px}
+.stack{display:flex;flex-direction:column;gap:12px;max-width:420px;margin:14px 0}
+.zt .z td:first-child{border-left:6px solid var(--zc);padding-left:10px;font-weight:600;white-space:nowrap}
+select.in{appearance:auto}
 .code-big{display:inline-block;font:700 44px/1 var(--f-num);letter-spacing:.14em;margin:10px 0 6px;padding:14px 18px;border:2px dashed var(--live);border-radius:8px;color:var(--ink);user-select:all}
 fieldset.lock{border:0;margin:0;padding:0;min-width:0}
 fieldset.lock:disabled{opacity:.9}
@@ -164,7 +169,7 @@ fieldset.lock:disabled{opacity:.9}
 <div class="app">
   <header class="top">
     <div class="brand"><span class="tape" aria-hidden="true"></span><span>Rubalise</span></div>
-    <span class="proto">Prototype</span>
+    <button class="btn quiet small" id="acct" data-tab="login">Se connecter</button>
   </header>
   <main id="view"></main>
 </div>
@@ -173,6 +178,7 @@ fieldset.lock:disabled{opacity:.9}
   <button class="tabbtn" data-tab="assist">Assistance</button>
   <button class="tabbtn" data-tab="live">En course</button>
   <button class="tabbtn" data-tab="diary">Carnet</button>
+  <button class="tabbtn" data-tab="runner" hidden>Coureur</button>
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -288,11 +294,52 @@ function demoProfile(){
   for(let i=0;i<n;i++){const km=tot*i/(n-1);d.push(Math.round(km*1000)/1000);e.push(Math.round(interp(xs,ys,km)+12*Math.sin(km*2.3)));}
   return {d,e};
 }
+function vdotFrom(distM,tMin){const v=distM/tMin;const pct=0.8+0.1894393*Math.exp(-0.012778*tMin)+0.2989558*Math.exp(-0.1932605*tMin);const vo2=-4.6+0.182258*v+0.000104*v*v;return vo2/pct;}
+function paceAtVO2(vo2){const a=0.000104,b=0.182258,c=-(4.6+vo2);const v=(-b+Math.sqrt(b*b-4*a*c))/(2*a);return 1000/v;}
+const PACE_ZONES=[['Z1','Récupération',0.59,0.65],['Z2','Endurance',0.65,0.75],['Z3','Tempo, allure marathon',0.75,0.84],['Z4','Seuil',0.84,0.92],['Z5','VMA, intervalles',0.92,1.00]];
+function paceZones(vdot){return PACE_ZONES.map(z=>({id:z[0],name:z[1],fast:paceAtVO2(vdot*z[3]),slow:paceAtVO2(vdot*z[2])}));}
+function hrMaxEstimate(age){return Math.round(208-0.7*age);}
+function hrZones(method,p){
+  const names=[['Z1','Récupération'],['Z2','Endurance'],['Z3','Tempo'],['Z4','Seuil'],['Z5','Effort maximal']];
+  let b,f;
+  if(method==='lthr'){b=[[null,0.85],[0.85,0.89],[0.90,0.94],[0.95,0.99],[1.00,null]];f=x=>Math.round(p.lt*x);}
+  else if(method==='karvonen'){b=[[0.5,0.6],[0.6,0.7],[0.7,0.8],[0.8,0.9],[0.9,1]];f=x=>Math.round(p.rest+(p.max-p.rest)*x);}
+  else{b=[[0.5,0.6],[0.6,0.7],[0.7,0.8],[0.8,0.9],[0.9,1]];f=x=>Math.round(p.max*x);}
+  return names.map((n,i)=>({id:n[0],name:n[1],lo:b[i][0]==null?null:f(b[i][0]),hi:b[i][1]==null?null:f(b[i][1])}));
+}
+function parseTimeMin(s){
+  const m=/^\s*(\d{1,2})(?::(\d{1,2}))?(?::(\d{1,2}))?\s*$/.exec(s||'');if(!m||m[2]==null)return null;
+  const a=+m[1],b=+m[2];
+  if(m[3]==null){if(b>59)return null;return a+b/60;}
+  const c=+m[3];if(b>59||c>59)return null;return a*60+b+c/60;
+}
+function fmtTypedTime(raw,final){
+  let d=String(raw).replace(/\D/g,'').slice(0,6);
+  if(final&&d.length&&d.length<=2)d=d+'00';
+  if(d.length<=2)return d;
+  if(d.length<=4){const m=d.slice(0,-2);let sec=d.slice(-2);if(final&&+sec>59)sec='59';return m+':'+sec;}
+  const h=d.slice(0,-4);let mi=d.slice(-4,-2),sec=d.slice(-2);
+  if(final){if(+mi>59)mi='59';if(+sec>59)sec='59';}
+  return h+':'+mi+':'+sec;
+}
+function ageFrom(birth){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(birth||'');if(!m)return 0;
+  const d=new Date(+m[1],+m[2]-1,+m[3]),n=new Date();let a=n.getFullYear()-d.getFullYear();
+  if(n<new Date(n.getFullYear(),d.getMonth(),d.getDate()))a--;
+  return a>0&&a<110?a:0;
+}
+function defaultProfile(){return {first:'',birth:'',hrMax:'',hrRest:'',hrLt:'',refDist:'10',refTime:'',method:'auto',applyZone:'Z2'};}
+function effMethod(pf,maxEff){
+  const lt=+pf.hrLt,rest=+pf.hrRest;
+  const avail={lthr:lt>0,karvonen:maxEff>0&&rest>0&&rest<maxEff,pctmax:maxEff>0};
+  const pick=(pf.method!=='auto'&&avail[pf.method])?pf.method:(avail.lthr?'lthr':avail.karvonen?'karvonen':avail.pctmax?'pctmax':null);
+  return {pick:pick,avail:avail};
+}
 // </core>
 
 // ---------- stockage ----------
 const KEY='rubalise:v1';
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&typeof s==='object')return Object.assign({race:null,journal:[]},s);}}catch(e){}return {race:null,journal:[]};}
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&typeof s==='object')return Object.assign({race:null,journal:[],profile:defaultProfile(),profileDirty:false},s);}}catch(e){}return {race:null,journal:[],profile:defaultProfile(),profileDirty:false};}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 let state=load();
 let tab='plan',animateNext=true,importOpen=false,gpxPasteOpen=false,shareCode='',toastTimer=null,renderTimer=null;
@@ -467,9 +514,9 @@ async function getToken(){
   if(authState&&authState.refreshToken){
     try{
       const r=await fetchJSON('https://securetoken.googleapis.com/v1/token?key='+FB.apiKey,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(authState.refreshToken)});
-      setAuth({idToken:r.id_token,refreshToken:r.refresh_token,expiresAt:now+(+r.expires_in)*1000,uid:r.user_id});
+      setAuth({idToken:r.id_token,refreshToken:r.refresh_token,expiresAt:now+(+r.expires_in)*1000,uid:r.user_id,email:authState.email||''});
       return authState.idToken;
-    }catch(e){if(e.network)throw e;}
+    }catch(e){if(e.network)throw e;setAuth(null);}
   }
   const r=await fetchJSON('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+FB.apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({returnSecureToken:true})});
   setAuth({idToken:r.idToken,refreshToken:r.refreshToken,expiresAt:now+(+r.expiresIn)*1000,uid:r.localId});
@@ -590,6 +637,140 @@ function fbErr(e){
 function joinForm(label){
   return '<div class="row"><label class="fld" style="flex:1;min-width:150px"><span>'+(label||'Tu suis un coureur ? Saisis son code')+'</span><input class="in" id="joincode" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="K7Q2MX"></label><button class="btn" data-act="join">Rejoindre</button></div>';
 }
+
+// ---------- compte coureur ----------
+let loginMode='in',authBusy=false,profTimer=null;
+function isRunner(){return !!(authState&&authState.email);}
+async function authRequest(endpoint,body){
+  return fetchJSON('https://identitytoolkit.googleapis.com/v1/accounts:'+endpoint+'?key='+FB.apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+}
+function storeSession(r,email){setAuth({idToken:r.idToken,refreshToken:r.refreshToken,expiresAt:Date.now()+(+r.expiresIn)*1000,uid:r.localId,email:r.email||email});}
+async function runnerSignUp(email,password){storeSession(await authRequest('signUp',{email:email,password:password,returnSecureToken:true}),email);}
+async function runnerSignIn(email,password){storeSession(await authRequest('signInWithPassword',{email:email,password:password,returnSecureToken:true}),email);}
+async function resetPassword(email){await authRequest('sendOobCode',{requestType:'PASSWORD_RESET',email:email});}
+function authErr(e){
+  if(e.network)return 'Pas de connexion à Firebase.';
+  const m=String(e.message||'');
+  const map=[['EMAIL_EXISTS','Un compte existe déjà avec cet e-mail.'],['INVALID_LOGIN_CREDENTIALS','E-mail ou mot de passe incorrect.'],['INVALID_PASSWORD','E-mail ou mot de passe incorrect.'],['EMAIL_NOT_FOUND','E-mail ou mot de passe incorrect.'],['WEAK_PASSWORD','Mot de passe trop court (6 caractères minimum).'],['INVALID_EMAIL','Adresse e-mail invalide.'],['MISSING_PASSWORD','Saisis ton mot de passe.'],['TOO_MANY_ATTEMPTS','Trop de tentatives, réessaie dans quelques minutes.'],['OPERATION_NOT_ALLOWED','La connexion par e-mail n’est pas activée dans Firebase.'],['API key not valid','Clé API Firebase invalide.']];
+  for(let i=0;i<map.length;i++)if(m.indexOf(map[i][0])>=0)return map[i][1];
+  return m||'Erreur de connexion.';
+}
+function profileHasData(pf){return !!(pf&&(pf.first||pf.birth||pf.hrMax||pf.hrRest||pf.hrLt||pf.refTime));}
+async function pushProfile(){
+  if(!isRunner())return;
+  await fsReq('PATCH','users/'+authState.uid,{fields:{profile:{stringValue:JSON.stringify(state.profile)},updatedAt:{integerValue:String(Date.now())}}},'?updateMask.fieldPaths=profile&updateMask.fieldPaths=updatedAt');
+  state.profileDirty=false;save();
+}
+function setProfStatus(t){const el=document.getElementById('profstat');if(el)el.textContent=t;}
+function pushProfileSoon(){
+  if(!isRunner())return;
+  state.profileDirty=true;save();clearTimeout(profTimer);
+  profTimer=setTimeout(()=>{pushProfile().then(()=>setProfStatus('Enregistré dans ton compte.')).catch(e=>setProfStatus(e.network?'Hors ligne : sera enregistré au retour du réseau.':'Enregistrement impossible : '+fbErr(e)));},1500);
+}
+async function afterLogin(){
+  try{
+    let doc=null;
+    try{doc=await fsReq('GET','users/'+authState.uid);}catch(e){if(e.status!==404)throw e;}
+    const f=doc&&doc.fields;
+    if(f&&f.profile&&f.profile.stringValue){state.profile=Object.assign(defaultProfile(),JSON.parse(f.profile.stringValue));state.profileDirty=false;}
+    else if(profileHasData(state.profile)){await pushProfile();}
+  }catch(e){}
+  save();
+}
+async function doAuth(){
+  if(authBusy)return;
+  const em=((document.getElementById('authmail')||{}).value||'').trim(),pw=(document.getElementById('authpass')||{}).value||'';
+  if(!em||!pw){flash('Saisis ton e-mail et ton mot de passe.');return;}
+  authBusy=true;flash(loginMode==='up'?'Création du compte…':'Connexion…');
+  try{
+    if(loginMode==='up')await runnerSignUp(em,pw);else await runnerSignIn(em,pw);
+    await afterLogin();tab='runner';commit();window.scrollTo(0,0);flash('Connecté.');
+  }catch(e){flash(authErr(e));}
+  finally{authBusy=false;}
+}
+async function signOutRunner(){
+  try{if(state.profileDirty)await pushProfile();}catch(e){}
+  const r=state.race;if(r&&r.sync&&r.sync.role==='owner'){delete r.sync;r.pending={};}
+  setAuth(null);state.profile=defaultProfile();state.profileDirty=false;tab='plan';commit();window.scrollTo(0,0);flash('Déconnecté.');
+}
+function zoneEstimate(pf,r){
+  const tm=parseTimeMin(pf.refTime),dm=+pf.refDist;
+  if(!r||!(dm>0)||!tm)return null;
+  const zones=paceZones(vdotFrom(dm*1000,tm)),z=zones.find(x=>x.id===pf.applyZone)||zones[1];
+  const m=model(r),U=m.U[m.U.length-1],bp=(z.fast+z.slow)/2;
+  return {zone:z,total:Math.round((bp*U+m.stopsTotal)/5)*5,basePace:bp};
+}
+function updateChrome(){
+  const run=isRunner();
+  const nav=document.querySelector('.tabs');if(nav)nav.classList.toggle('five',run);
+  const rb=document.querySelector('.tabbtn[data-tab="runner"]');if(rb)rb.hidden=!run;
+  const ab=document.getElementById('acct');
+  if(ab){ab.dataset.tab=run?'runner':'login';ab.classList.toggle('run',run);ab.textContent=run?authState.email.charAt(0).toUpperCase():'Se connecter';ab.setAttribute('aria-label',run?'Mon espace coureur':'Se connecter');}
+}
+function renderLogin(){
+  const up=loginMode==='up';
+  return '<section class="empty"><h1>'+(up?'Créer mon compte coureur':'Connexion coureur')+'</h1>'
+  +'<p class="lead">Le compte ouvre ton espace coureur (zones d’allure et de fréquence cardiaque) et permet de partager une course en direct. Ton assistance et tes supporters n’ont pas besoin de compte : ils saisissent seulement le code.</p>'
+  +'<div class="stack"><label class="fld"><span>E-mail</span><input class="in" id="authmail" type="email" autocomplete="email" autocapitalize="off" spellcheck="false"></label>'
+  +'<label class="fld"><span>Mot de passe'+(up?' (6 caractères minimum)':'')+'</span><input class="in" id="authpass" type="password" autocomplete="'+(up?'new-password':'current-password')+'"></label>'
+  +'<button class="btn primary" data-act="auth-submit">'+(up?'Créer mon compte':'Me connecter')+'</button>'
+  +'<button class="btn quiet" data-act="auth-mode">'+(up?'J’ai déjà un compte':'Créer un compte')+'</button>'
+  +(up?'':'<button class="btn quiet small" data-act="auth-reset">Mot de passe oublié ?</button>')+'</div>'
+  +'<p class="note">Ton profil (date de naissance, fréquences cardiaques, performance de référence) est enregistré dans ton compte, pour le retrouver sur un autre téléphone.</p></section>';
+}
+function kmh(pace){return (60/pace).toFixed(1).replace('.',',');}
+function renderRunner(){
+  const pf=state.profile||defaultProfile(),r=state.race;
+  const age=ageFrom(pf.birth),maxEst=age?hrMaxEstimate(age):0,maxEff=(+pf.hrMax>0?+pf.hrMax:maxEst);
+  const mt=effMethod(pf,maxEff);
+  const mlab={lthr:'FC de seuil',karvonen:'Réserve cardiaque (Karvonen)',pctmax:'% de la FC max'};
+  let hr;
+  if(!mt.pick)hr='<p class="note">Renseigne ta FC max (ou ta date de naissance pour l’estimer), puis idéalement ta FC de repos ou de seuil.</p>';
+  else{
+    const Z=hrZones(mt.pick,{max:maxEff,rest:+pf.hrRest,lt:+pf.hrLt});
+    const opts='<option value="auto"'+(pf.method==='auto'?' selected':'')+'>Automatique ('+mlab[mt.pick]+')</option>'+['lthr','karvonen','pctmax'].filter(k=>mt.avail[k]).map(k=>'<option value="'+k+'"'+(pf.method===k?' selected':'')+'>'+mlab[k]+'</option>').join('');
+    hr='<label class="fld" style="margin-bottom:8px"><span>Méthode de calcul</span><select class="in" data-p="method">'+opts+'</select></label>'
+      +'<div class="tblwrap"><table class="zt"><thead><tr><th>Zone</th><th>Effort</th><th>Fréquence</th></tr></thead><tbody>'
+      +Z.map((z,i)=>'<tr class="z" style="--zc:var(--z'+(i+1)+')"><td>'+z.id+'</td><td>'+z.name+'</td><td class="t">'+(z.lo==null?'moins de '+z.hi:z.hi==null?'à partir de '+z.lo:z.lo+' à '+z.hi)+' bpm</td></tr>').join('')+'</tbody></table></div>'
+      +((!(+pf.hrMax>0)&&maxEst&&mt.pick!=='lthr')?'<p class="note">FC max estimée à '+maxEst+' bpm d’après ton âge (formule de Tanaka). Une valeur mesurée en effort maximal est plus fiable.</p>':'');
+  }
+  const dm=+pf.refDist,tm=parseTimeMin(pf.refTime);
+  let pace;
+  if(!(dm>0&&tm))pace='<p class="note">Saisis une performance récente (par exemple un 10 km en 45:00) pour obtenir tes zones d’allure.</p>';
+  else{
+    const vd=vdotFrom(dm*1000,tm),Z=paceZones(vd);
+    pace='<p>Indice de forme (VDOT) : <b class="t">'+vd.toFixed(1).replace('.',',')+'</b>. Allure VMA : <b class="t">'+fmtPace(Z[4].fast)+' /km</b>.</p>'
+      +'<div class="tblwrap"><table class="zt"><thead><tr><th>Zone</th><th>Effort</th><th>Allure</th></tr></thead><tbody>'
+      +Z.map((z,i)=>'<tr class="z" style="--zc:var(--z'+(i+1)+')"><td>'+z.id+'</td><td>'+z.name+'</td><td class="t">'+fmtPace(z.fast)+' à '+fmtPace(z.slow)+' /km<small>'+kmh(z.slow)+' à '+kmh(z.fast)+' km/h</small></td></tr>').join('')+'</tbody></table></div>'
+      +'<p class="note">Allures sur terrain plat. En course, le plan les corrige selon la pente.</p>';
+  }
+  let apply='';
+  const est=zoneEstimate(pf,r);
+  if(r&&!(r.sync&&r.sync.role==='member')){
+    apply='<section class="sec"><h2>Appliquer à ma course</h2><p>'+esc(r.name)+'</p>'
+      +(est?'<label class="fld"><span>Effort visé sur le plat</span><select class="in" data-p="applyZone">'+['Z2','Z3','Z4'].map(id=>'<option value="'+id+'"'+(pf.applyZone===id?' selected':'')+'>'+id+' '+PACE_ZONES.find(z=>z[0]===id)[1]+'</option>').join('')+'</select></label>'
+        +'<p style="margin-top:10px">Temps estimé, arrêts compris : <b class="t">'+fmtHM(est.total)+'</b> (allure plat '+fmtPace(est.basePace)+' /km).</p>'
+        +'<div class="row"><button class="btn primary" data-act="apply-zone">Utiliser comme temps visé</button></div>'
+        +'<p class="note">Pour une course longue, vise plutôt l’endurance (Z2). L’estimation intègre la pente et le ralentissement réglés dans ton plan.</p>'
+       :'<p class="note">Renseigne ta performance de référence ci-dessus pour estimer ton temps.</p>')+'</section>';
+  }
+  return '<section class="empty"><h1>Espace coureur</h1><p class="lead">'+(pf.first?'Bonjour '+esc(pf.first)+'. ':'')+'Saisis tes données une fois : elles sont enregistrées dans ton compte.</p></section>'
+  +'<section class="sec"><h2>Mes données</h2>'
+  +'<div class="grid2"><label class="fld"><span>Prénom</span><input data-p="first" value="'+esc(pf.first)+'" autocomplete="given-name"></label>'
+  +'<label class="fld"><span>Date de naissance</span><input type="date" data-p="birth" value="'+esc(pf.birth)+'"></label>'
+  +'<label class="fld"><span>FC max (bpm)</span><input type="number" inputmode="numeric" min="100" max="230" data-p="hrMax" value="'+esc(pf.hrMax)+'" placeholder="'+(maxEst||'ex. 185')+'"></label>'
+  +'<label class="fld"><span>FC de repos (bpm)</span><input type="number" inputmode="numeric" min="30" max="100" data-p="hrRest" value="'+esc(pf.hrRest)+'"></label>'
+  +'<label class="fld"><span>FC de seuil (bpm), facultatif</span><input type="number" inputmode="numeric" min="100" max="220" data-p="hrLt" value="'+esc(pf.hrLt)+'"></label></div>'
+  +'<h3 style="margin-top:20px">Performance de référence</h3>'
+  +'<div class="grid2"><label class="fld"><span>Distance</span><select class="in" data-p="refDist">'+[['5','5 km'],['10','10 km'],['21.0975','Semi-marathon'],['42.195','Marathon']].map(o=>'<option value="'+o[0]+'"'+(String(pf.refDist)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>'
+  +'<label class="fld"><span>Temps (mm:ss ou h:mm:ss)</span><input data-p="refTime" value="'+esc(pf.refTime)+'" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="45:00"></label></div>'
+  +'<p class="note" id="profstat">'+(state.profileDirty?'Modifications en attente d’enregistrement.':'')+'</p></section>'
+  +'<section class="sec"><h2>Zones de fréquence cardiaque</h2>'+hr+'</section>'
+  +'<section class="sec"><h2>Zones d’allure</h2>'+pace+'</section>'
+  +apply
+  +'<section class="sec"><h2>Mon compte</h2><p>'+esc(authState&&authState.email||'')+'</p><div class="row"><button class="btn quiet" data-act="sign-out">Se déconnecter</button></div></section>';
+}
+
 function syncPanel(r){
   const sy=r.sync;
   if(sy){
@@ -599,6 +780,11 @@ function syncPanel(r){
       +'<div class="code-big" aria-label="Code de la course">'+esc(sy.code)+'</div>'
       +'<p class="note" id="syncstat">'+esc(syncText(r))+'</p>'
       +'<div class="row"><button class="btn" data-act="copy-live-code">Copier le code</button><button class="btn quiet" data-act="sync-now">Synchroniser maintenant</button><button class="btn quiet" data-act="stop-sync">'+(owner?'Arrêter le partage':'Quitter ce suivi')+'</button></div></section>';
+  }
+  if(!isRunner()){
+    return '<section class="sec"><h2>Suivi en direct</h2>'
+      +'<p class="note">Partager une course en direct est réservé aux coureurs connectés. Ton assistance et tes supporters, eux, n’ont pas besoin de compte : ils saisissent seulement le code.</p>'
+      +'<div class="row"><button class="btn primary" data-tab="login">Se connecter ou créer un compte</button></div>'+joinForm()+'</section>';
   }
   return '<section class="sec"><h2>Suivi en direct</h2>'
     +'<p class="note">Crée un code de course : ton assistance et tes supporters le saisissent dans leur appli, voient tes heures de passage se recalculer en direct et peuvent pointer tes passages. Rien n’est envoyé tant que tu ne crées pas de code.</p>'
@@ -815,7 +1001,8 @@ function render(top){
   const y=window.scrollY;
   let html='';
   try{
-    html=tab==='plan'?renderPlan():tab==='assist'?renderAssist():tab==='live'?renderLive():renderDiary();
+    updateChrome();
+    html=tab==='plan'?renderPlan():tab==='assist'?renderAssist():tab==='live'?renderLive():tab==='login'?renderLogin():tab==='runner'?(isRunner()?renderRunner():renderLogin()):renderDiary();
   }catch(err){html='<section class="empty"><h1>Oups</h1><p class="lead">Un calcul a échoué : '+esc(err.message)+'.</p><button class="btn" data-act="demo">Recharger la course démo</button></section>';}
   root.innerHTML=html;
   window.scrollTo(0,top?0:y);
@@ -840,10 +1027,24 @@ function act(b){
     joinCourse(bx?bx.value:'').then(race=>{state.race=race;animateNext=true;tab='live';commit();window.scrollTo(0,0);flash('Course rejointe : '+race.name+'.');}).catch(e=>flash(fbErr(e)));
     return;
   }
+  if(a==='auth-mode'){loginMode=loginMode==='in'?'up':'in';commit();return;}
+  if(a==='auth-submit'){doAuth();return;}
+  if(a==='auth-reset'){
+    const em=((document.getElementById('authmail')||{}).value||'').trim();
+    if(!em){flash('Saisis d’abord ton e-mail ci-dessus.');return;}
+    resetPassword(em).then(()=>flash('Si un compte existe, un e-mail de réinitialisation vient d’être envoyé.')).catch(e=>flash(authErr(e)));return;
+  }
+  if(a==='sign-out'){signOutRunner();return;}
+  if(a==='apply-zone'){
+    const rr=state.race,est=zoneEstimate(state.profile,rr);
+    if(!rr||!est){flash('Renseigne ta performance de référence.');return;}
+    rr.target=fmtHM(est.total);commit();flash('Temps visé mis à jour : '+rr.target+'.');return;
+  }
   if(a==='sync-test'){flash('Test de connexion…');getToken().then(()=>flash('Connexion Firebase OK.')).catch(e=>flash(fbErr(e)));return;}
   if(a==='del-journal'){state.journal=(state.journal||[]).filter(x=>x.id!==b.dataset.id);commit();return;}
   if(!r)return;
   if(a==='share-live'){
+    if(!isRunner()){loginMode='up';tab='login';commit();window.scrollTo(0,0);flash('Crée un compte coureur pour partager une course.');return;}
     flash('Création du suivi en direct…');
     startShare(r).then(code=>{commit();flash('Suivi créé. Code : '+code);}).catch(e=>flash(fbErr(e)));
     return;
@@ -911,6 +1112,13 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{
   const t=e.target,r=state.race;
   if(t.dataset&&t.dataset.gpx!==undefined){const f=t.files&&t.files[0];if(f)importGPX(f);return;}
+  if(t.dataset&&t.dataset.p){
+    const k=t.dataset.p;let v=t.value;
+    if(k==='refTime'){v=fmtTypedTime(v,true);t.value=v;}
+    state.profile=state.profile||defaultProfile();state.profile[k]=v;save();pushProfileSoon();
+    if(k!=='first')schedule();
+    return;
+  }
   if(!r)return;
   if(t.dataset.act==='toggle-item'){const s=r.stations.find(x=>x.id===t.dataset.id);if(s&&s.items[+t.dataset.k]){s.items[+t.dataset.k].done=t.checked;save();}return;}
   if(t.dataset.add){
@@ -938,10 +1146,12 @@ document.addEventListener('change',e=>{
 document.addEventListener('input',e=>{
   const t=e.target;
   if(t.dataset&&t.dataset.r==='target'){t.value=fmtTyped(t.value,false);return;}
+  if(t.dataset&&t.dataset.p==='refTime'){t.value=fmtTypedTime(t.value,false);return;}
   if(t.dataset&&t.dataset.r==='drift'){const o=document.getElementById('driftv');if(o)o.textContent='+'+t.value+' %';}
 });
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.add){e.target.blur();}
+  if(e.key==='Enter'&&e.target.id==='authpass'){doAuth();}
 });
 let rz=null,lastW=0;
 window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{const w=root.clientWidth;if(w!==lastW&&(tab==='plan'||tab==='live')){lastW=w;render();}},180);});
@@ -963,6 +1173,8 @@ window.addEventListener('online',()=>syncNow());
 lastW=root.clientWidth;
 render(true);
 if(state.race&&state.race.sync)syncSoon();
+if(isRunner()&&state.profileDirty)pushProfile().catch(()=>{});
+setInterval(()=>{if(isRunner()&&state.profileDirty&&!document.hidden)pushProfile().catch(()=>{});},30000);
 })();
 </script>
 <script>
