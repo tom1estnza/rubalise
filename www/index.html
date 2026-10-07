@@ -35,7 +35,7 @@
   --accent:#6CC0E0; --accent-ink:#0D1F1B; --live:#FF6BB0; --z1:#6FB09B; --z2:#6FD398; --z3:#6CC0E0; --z4:#F0B050; --z5:#FF6BB0; --ok:#6FD398; --warn:#F0B050; --fill:#1B3B34;
 }
 *,*::before,*::after{box-sizing:inherit}
-html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%;overflow-x:clip}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45}
 .app{max-width:680px;margin:0 auto;padding:12px 16px 112px}
 button,input,textarea{font:inherit;color:inherit}
@@ -69,14 +69,13 @@ button{touch-action:manipulation}
 .btn.small{min-height:36px;padding:0 12px;font-size:14px}
 .icon{min-width:44px;min-height:44px;border:0;background:transparent;font-size:24px;color:var(--ink2);cursor:pointer}
 
-.fld{display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--ink2)}
+.fld{min-width:0;display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--ink2)}
 .fld input,.fld textarea,.in{min-height:44px;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);font-size:16px;color:var(--ink);width:100%}
 textarea.in{min-height:88px;resize:vertical}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 input[type=range]{width:100%;accent-color:var(--accent);min-height:32px}
 .chk{flex-direction:row;align-items:center;gap:8px;min-height:44px;color:var(--ink)}
-.chk input{width:22px;height:22px;min-height:0;accent-color:var(--accent)}
 
 .race-name{font:700 clamp(22px,6.2vw,30px)/1.15 var(--f-num);text-overflow:ellipsis;width:100%;border:0;border-bottom:2px solid var(--line);background:transparent;padding:6px 0;color:var(--ink);border-radius:0}
 .stats{display:flex;flex-wrap:wrap;gap:6px 18px;margin:10px 0 0}
@@ -103,8 +102,8 @@ input[type=range]{width:100%;accent-color:var(--accent);min-height:32px}
 .stn:last-child{border-bottom:0}
 .stn-head{display:flex;align-items:center;gap:8px}
 .stn-n{font:700 18px var(--f-num);min-width:22px;color:var(--accent)}
-.stn-name{flex:1;font:600 19px var(--f-num);border:0;border-bottom:1.5px solid var(--line);background:transparent;min-height:44px;padding:4px 0;border-radius:0;color:var(--ink)}
-.stn-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:8px}
+.stn-name{flex:1;min-width:0;font:600 19px var(--f-num);border:0;border-bottom:1.5px solid var(--line);background:transparent;min-height:44px;padding:4px 0;border-radius:0;color:var(--ink)}
+.stn-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 12px;margin-top:8px}
 .stn-grid .chk{grid-column:1 / -1}
 .stn-times{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;font-size:15px}
 ul.plain{list-style:none;padding:0;margin:0}
@@ -120,7 +119,6 @@ td small{display:block}
 .items{list-style:none;padding:0;margin:8px 0}
 .items li{display:flex;align-items:center;gap:6px;min-height:40px}
 .items label{flex:1;display:flex;align-items:center;gap:10px}
-.items input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
 .chip{min-height:36px;padding:0 12px;border-radius:999px;border:1.5px solid var(--line);background:transparent;font-size:14px;cursor:pointer}
 .addrow{display:flex;gap:8px;margin-top:6px}
@@ -129,7 +127,6 @@ td small{display:block}
 .igroup .note{margin:2px 0 4px}
 .lockic{display:inline-flex;align-items:center;color:var(--ink2);padding:0 8px}
 .lockic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.addrow .qty{flex:none;width:76px;text-align:center}
 .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .addrow .in{flex:1}
 
@@ -164,6 +161,25 @@ td small{display:block}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:15px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:6;max-width:92vw;text-align:center}
 .toast.on{opacity:1}
 .empty{padding-top:8px}
+body input[type=checkbox]{-webkit-appearance:none;appearance:none;width:26px;height:26px;min-height:0;flex:none;margin:0;padding:0;border-radius:50%;border:2px solid var(--ink2);background:color-mix(in srgb,var(--ink) 7%,transparent);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;transition:background .15s,border-color .15s}
+body input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:3px solid var(--accent-ink);border-bottom:3px solid var(--accent-ink);transform:translateY(-1px) rotate(-45deg);opacity:0;transition:opacity .12s}
+body input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+body input[type=checkbox]:checked::after{opacity:1}
+body input[type=checkbox]:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 40%,transparent);outline-offset:2px}
+.stepper{display:flex;align-items:center;gap:4px;flex:none}
+.stepper .step{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:transparent;font-size:20px;line-height:1;color:var(--ink);cursor:pointer;touch-action:manipulation;padding:0}
+.stepper .qty{flex:none;width:46px;min-height:34px;height:34px;padding:0 2px;text-align:center;-moz-appearance:textfield;appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stepper.mini .step{width:30px;height:30px;font-size:18px}
+.stepper.mini .qv{min-width:24px;text-align:center;font:600 16px var(--f-num)}
+.addbox .clothes{display:none}
+.addbox[data-mode="clothes"] .clothes{display:block}
+.addbox[data-mode="clothes"] .stepper,.addbox[data-mode="free"] .stepper{display:none}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.crew.hl{background:color-mix(in srgb,var(--accent) 14%,transparent);border-radius:10px}
+.maplinks{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+.maplinks a.btn{text-decoration:none}
+.c3d-credit{position:absolute;right:0;top:0;font-size:11px;color:var(--ink2);max-width:60%;text-align:right}
 .in:focus-visible,.fld select:focus-visible,.fld textarea:focus-visible,.fld input:not([type=checkbox]):not([type=range]):focus-visible,.in:focus,.fld input:not([type=checkbox]):not([type=range]):focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
 .stn-name:focus-visible,.race-name:focus-visible{outline:none;border-bottom-color:var(--accent)}
 .grid2,.grid3{align-items:end}
@@ -237,6 +253,7 @@ details p,details ol{margin:4px 0 10px;color:var(--ink);max-width:62ch}
 #c3d{position:absolute;left:0;top:0;touch-action:none;cursor:grab}
 .c3d-tools{position:absolute;left:0;bottom:0;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .c3d-tools .btn{min-height:34px;padding:0 10px;font-size:14px;background:var(--bg)}
+.c3d-tools .btn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .c3d-legend{position:absolute;right:0;bottom:0;display:flex;gap:10px;font-size:12px;color:var(--ink2);flex-wrap:wrap;justify-content:flex-end;max-width:60%}
 .c3d-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
 .land-hint{font-size:13px;color:var(--ink2);flex:1}
@@ -565,7 +582,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function defaultPrefs(){return {theme:'auto',defStop:3,defCarbs:60,defWater:500,defGel:25,gpsEvery:'auto'};}
 let state=load();
 state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
-const APP_VERSION='1.0';
+const APP_VERSION='1.2';
 function prefv(k){return (state.prefs&&state.prefs[k]!=null)?state.prefs[k]:defaultPrefs()[k];}
 function applyTheme(){const t=state.prefs.theme,el=document.documentElement;if(t==='light'||t==='dark')el.setAttribute('data-theme',t);else el.removeAttribute('data-theme');}
 applyTheme();
@@ -886,6 +903,7 @@ async function syncNow(){
   }finally{
     syncing=false;save();
     if(changed&&state.race===r&&!typing())render();else updateSyncUI();
+    maybeAutoGps();
     if(resync){resync=false;setTimeout(syncNow,150);}
   }
 }
@@ -1159,12 +1177,12 @@ function tourSteps(){
   const run=isRunner(),nat=isNativeApp();
   const L=[
     {tab:'plan',target:null,title:'Bienvenue dans Rubalise',text:'En une minute, découvre comment préparer ta course, la partager avec ton équipe et la suivre en direct.'},
-    {tab:'plan',target:'[data-tab="plan"]',title:'1. Prépare ta course',text:'Dans Plan, importe le fichier GPX de ton parcours (ou lance la course démo) et fixe ton temps visé. Rubalise calcule tes heures de passage à chaque ravito et ta nutrition.'},
-    {tab:'assist',target:'[data-tab="assist"]',title:'2. Invite ton équipe',text:'Dans Assistance, crée un code de course : ton assistance et tes supporters le saisissent, sans compte, pour voir tes heures de passage et préparer ce qu’il faut à chaque ravito.'},
-    {tab:'live',target:'[data-tab="live"]',title:'3. Suis la course',text:'Le jour J, « pointer » un ravito, c’est noter l’heure de passage : les heures suivantes se recalculent. Ton téléphone peut aussi partager ta position GPS.'+(nat?' Android te demandera alors la localisation et les notifications.':'')},
-    {tab:'diary',target:'[data-tab="diary"]',title:'4. Garde une trace',text:'Après la course, compare le prévu et le réel, note ton ressenti, puis archive la course dans ton carnet.'}
+    {tab:'plan',target:'.tabs [data-tab="plan"]',title:'1. Prépare ta course',text:'Dans Plan, importe le fichier GPX de ton parcours (ou lance la course démo) et fixe ton temps visé. Rubalise calcule tes heures de passage à chaque ravito et ta nutrition.'},
+    {tab:'assist',target:'.tabs [data-tab="assist"]',title:'2. Invite ton équipe',text:'Dans Assistance, crée un code de course : ton assistance et tes supporters le saisissent, sans compte, pour voir tes heures de passage et préparer ce qu’il faut à chaque ravito.'},
+    {tab:'live',target:'.tabs [data-tab="live"]',title:'3. Suis la course',text:'Le jour J, « pointer » un ravito, c’est noter l’heure de passage : les heures suivantes se recalculent. Ton téléphone peut aussi partager ta position GPS.'+(nat?' Android te demandera alors la localisation et les notifications.':'')},
+    {tab:'diary',target:'.tabs [data-tab="diary"]',title:'4. Garde une trace',text:'Après la course, compare le prévu et le réel, note ton ressenti, puis archive la course dans ton carnet.'}
   ];
-  if(run)L.push({tab:'plan',target:'[data-tab="runner"]',title:'Ton espace coureur',text:'Renseigne ta fréquence cardiaque et une performance de référence : tu obtiens tes zones d’allure et de fréquence cardiaque, et un temps estimé pour ta course.'});
+  if(run)L.push({tab:'plan',target:'.tabs [data-tab="runner"]',title:'Ton espace coureur',text:'Renseigne ta fréquence cardiaque et une performance de référence : tu obtiens tes zones d’allure et de fréquence cardiaque, et un temps estimé pour ta course.'});
   else L.push({tab:'plan',target:'#acct',title:'Crée ton compte',text:'Un compte gratuit permet de partager ta course et d’enregistrer ton profil (zones d’allure et de fréquence cardiaque). Tu peux aussi t’en passer pour préparer une course.'});
   L.push({tab:'plan',target:'#helpbtn',title:'Besoin d’aide ?',text:'Le bouton « ? » rouvre ce guide, la FAQ et le mini-lexique à tout moment.'});
   L.push({tab:'plan',target:null,final:true,title:'À toi de jouer !',text:'Importe ton fichier GPX, ou essaie la course démo pour tout voir en action.'});
@@ -1174,7 +1192,7 @@ function startTour(){
   if(!state.race){state.race=demoRace();state.tmpRace=true;tourTemp=true;save();}
   tourList=tourSteps();tourI=0;tourOn=true;
   document.getElementById('tour').hidden=false;document.body.classList.add('noscroll','touring');
-  showTourStep();
+  showTourStep();tourSig='';if(!tourRaf)tourRaf=requestAnimationFrame(tourLoop);
 }
 function showTourStep(){
   const s0=tourList[tourI];
@@ -1191,14 +1209,17 @@ function showTourStep(){
 }
 function positionTour(){
   if(!tourOn)return;
-  const s0=tourList[tourI],hl=document.getElementById('tourhl'),card=document.getElementById('tourcard');
-  const el=s0.target?document.querySelector(s0.target):null,vw=window.innerWidth,vh=window.innerHeight;
+  const s0=tourList[tourI],hl=document.getElementById('tourhl'),card=document.getElementById('tourcard'),tr=document.getElementById('tour');
+  // On mesure par rapport au calque du guide lui-même (et non à window.innerHeight) : sur Android, les deux peuvent différer
+  // quand les barres du système apparaissent ou disparaissent.
+  const box=tr.getBoundingClientRect(),vw=box.width,vh=box.height;
+  const el=s0.target?document.querySelector(s0.target):null;
   const rc=el&&!el.hidden?el.getBoundingClientRect():null;
   card.style.transform='none';
-  if(rc&&rc.width>0){
-    // Le cadre reste toujours entièrement visible : à l'intérieur de la barre pour les onglets, autour de l'élément sinon.
+  if(rc&&rc.width>0&&rc.height>0){
+    // Le cadre reste entièrement visible : à l'intérieur de la barre pour les onglets, autour de l'élément sinon.
     const pad=el.closest('.tabs')?-2:5;
-    let L=rc.left-pad,T=rc.top-pad,W=rc.width+2*pad,H=rc.height+2*pad;
+    let L=rc.left-box.left-pad,T=rc.top-box.top-pad,W=rc.width+2*pad,H=rc.height+2*pad;
     L=Math.max(3,L);T=Math.max(3,T);W=Math.min(W,vw-3-L);H=Math.min(H,vh-3-T);
     hl.classList.remove('none');
     hl.style.left=L+'px';hl.style.top=T+'px';hl.style.width=W+'px';hl.style.height=H+'px';
@@ -1209,6 +1230,18 @@ function positionTour(){
     hl.style.left=(vw/2)+'px';hl.style.top=(vh*0.45)+'px';hl.style.width='0px';hl.style.height='0px';
     card.style.bottom='auto';card.style.top='50%';card.style.transform='translateY(-50%)';card.style.maxHeight=(vh-24)+'px';
   }
+}
+// Tant que le guide est ouvert, on revérifie la position à chaque image : si la mise en page bouge après coup
+// (barres du système, polices, défilement), le cadre suit l'élément au lieu de rester à une position périmée.
+let tourSig='',tourRaf=0;
+function tourLoop(){
+  if(!tourOn){tourRaf=0;return;}
+  const s0=tourList[tourI],tr=document.getElementById('tour'),el=s0&&s0.target?document.querySelector(s0.target):null;
+  let sig='';
+  if(tr){const b=tr.getBoundingClientRect();sig=Math.round(b.width)+'x'+Math.round(b.height);}
+  if(el&&!el.hidden){const r=el.getBoundingClientRect();sig+='|'+[r.left,r.top,r.width,r.height].map(Math.round).join(',');}
+  if(sig!==tourSig){tourSig=sig;positionTour();}
+  tourRaf=requestAnimationFrame(tourLoop);
 }
 function endTour(){
   if(!tourOn)return;
@@ -1423,7 +1456,8 @@ async function deleteAccountNow(){
 }
 
 // ---------- matériel à préparer ----------
-const ITEM_CATS=[['gel','Gels','gels'],['barre','Barres','barres'],['compote','Compotes','compotes'],['soda','Sodas','sodas'],['vetement','Vêtements',''],['autre','Autre','']];
+const ITEM_CATS=[['gel','Gels','gels','count'],['barre','Barres','barres','count'],['compote','Compotes','compotes','count'],['soda','Sodas','sodas','count'],['eau','Eau et sel','bidons d’eau','count'],['vetement','Vêtements','','clothes'],['autre','Autre','','free']];
+const CLOTHES=['Veste imperméable','Coupe-vent','Doudoune légère','Haut manches longues','T-shirt sec','Collant ou pantalon','Manchons','Gants','Bonnet ou buff','Casquette','Lunettes','Chaussettes sèches','Chaussures de rechange','Lampe frontale','Couverture de survie'];
 function isMember(r){return !!(r&&r.sync&&r.sync.role==='member');}
 function itemLabel(it){return (it.q>1?it.q+' × ':'')+it.t;}
 function normLabel(t){return String(t||'').trim().toLowerCase();}
@@ -1462,10 +1496,12 @@ function needsText(n){return n.gels+' gel'+(n.gels>1?'s':'')+', '+n.bars+' barre
 const LOCK_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 function itemRow(r,it,list,stId){
   const member=isMember(r),done=!!(r.done&&r.done[it.id]);
-  const canDel=(list==='runner'&&!member)||(list==='extra'&&member);
-  return '<li><label><input type="checkbox" data-act="item-done" data-iid="'+it.id+'"'+(done?' checked':'')+'><span>'+esc(itemLabel(it))+'</span></label>'
-    +(canDel?'<button class="icon" style="min-width:40px;min-height:40px;font-size:20px" data-act="item-del" data-id="'+stId+'" data-list="'+list+'" data-iid="'+it.id+'" aria-label="Retirer '+esc(it.t)+'">×</button>'
-            :(list==='runner'&&member?'<span class="lockic" title="Demandé par le coureur : non modifiable">'+LOCK_SVG+'</span>':''))+'</li>';
+  const canEdit=(list==='runner'&&!member)||(list==='extra'&&member);
+  const sp=(d,l)=>'<button type="button" class="step" data-act="item-qty" data-id="'+stId+'" data-list="'+list+'" data-iid="'+it.id+'" data-d="'+d+'" aria-label="'+l+' '+esc(it.t)+'">'+(d<0?'−':'+')+'</button>';
+  return '<li><label><input type="checkbox" data-act="item-done" data-iid="'+it.id+'"'+(done?' checked':'')+'><span>'+(canEdit?esc(it.t):esc(itemLabel(it)))+'</span></label>'
+    +(canEdit?'<span class="stepper mini" role="group" aria-label="Quantité">'+sp(-1,'Moins de')+'<span class="qv">'+(it.q||1)+'</span>'+sp(1,'Plus de')+'</span>'
+        +'<button class="icon" style="min-width:40px;min-height:40px;font-size:20px" data-act="item-del" data-id="'+stId+'" data-list="'+list+'" data-iid="'+it.id+'" aria-label="Retirer '+esc(it.t)+'">×</button>'
+      :(list==='runner'&&member?'<span class="lockic" title="Demandé par le coureur : non modifiable">'+LOCK_SVG+'</span>':''))+'</li>';
 }
 function itemsBlock(r,st){
   const member=isMember(r),synced=!!r.sync;
@@ -1475,9 +1511,14 @@ function itemsBlock(r,st){
     +(member?'<p class="note">Tu peux cocher « préparé », mais pas modifier ces demandes.</p>':'')
     +(run.length?'<ul class="items">'+run.map(it=>itemRow(r,it,'runner',st.id)).join('')+'</ul>':'<p class="note">Rien de demandé pour l’instant.</p>')+'</div>';
   if(synced&&(ext.length||member))h+='<div class="igroup"><h4>Ajouté par l’assistance</h4>'+(ext.length?'<ul class="items">'+ext.map(it=>itemRow(r,it,'extra',st.id)).join('')+'</ul>':'<p class="note">Rien d’ajouté pour l’instant.</p>')+'</div>';
-  const chips=ITEM_CATS.map(c=>'<button class="chip" data-act="item-cat" data-id="'+st.id+'" data-cat="'+c[0]+'" data-fill="'+esc(c[2])+'">'+c[1]+'</button>').join('');
-  h+='<div class="igroup"><h4>'+(member?'Ajouter pour ce ravito (assistance)':'Ajouter une demande')+'</h4><div class="chips">'+chips+'</div>'
-    +'<div class="addrow"><input class="in qty" id="iq-'+st.id+'" type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Quantité"><input class="in" id="it-'+st.id+'" data-itadd="'+st.id+'" placeholder="Ex. gels, compotes, coupe-vent" aria-label="Article à préparer à '+esc(st.name)+'" autocomplete="off"><button class="btn small" data-act="item-add" data-id="'+st.id+'">Ajouter</button></div></div>';
+  const chips=ITEM_CATS.map(c=>'<button type="button" class="chip" data-act="item-cat" data-id="'+st.id+'" data-cat="'+c[0]+'" data-mode="'+c[3]+'" data-fill="'+esc(c[2])+'">'+c[1]+'</button>').join('');
+  const clothes=CLOTHES.map(c=>'<button type="button" class="chip" data-act="cloth-toggle" data-id="'+st.id+'" data-v="'+esc(c)+'" aria-pressed="false">'+esc(c)+'</button>').join('');
+  h+='<div class="igroup addbox" id="ab-'+st.id+'" data-mode="count"><h4>'+(member?'Ajouter pour ce ravito (assistance)':'Ajouter une demande')+'</h4><div class="chips">'+chips+'</div>'
+    +'<div class="clothes"><p class="note" style="margin:6px 0 2px">Choisis dans la liste (plusieurs possibles) ou écris un autre vêtement plus bas.</p><div class="chips">'+clothes+'</div></div>'
+    +'<div class="addrow"><div class="stepper" role="group" aria-label="Quantité"><button type="button" class="step" data-act="qty-step" data-id="'+st.id+'" data-d="-1" aria-label="Moins">−</button>'
+    +'<input class="in qty" id="iq-'+st.id+'" type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Quantité">'
+    +'<button type="button" class="step" data-act="qty-step" data-id="'+st.id+'" data-d="1" aria-label="Plus">+</button></div>'
+    +'<input class="in" id="it-'+st.id+'" data-itadd="'+st.id+'" placeholder="Ex. gels, compotes" aria-label="Article à préparer à '+esc(st.name)+'" autocomplete="off"><button class="btn small" data-act="item-add" data-id="'+st.id+'">Ajouter</button></div></div>';
   return h;
 }
 
@@ -1575,7 +1616,18 @@ function gpsGap(){
   return s*1000;
 }
 function gpsAvailable(r){return !!(r&&r.profile&&r.profile.la&&r.profile.lo);}
-function gpsText(){return gpsOn?(gpsMsg||'Suivi GPS actif : en attente d’un signal.'):'';}
+function gpsText(){
+  const r=state.race;
+  return gpsOn?(gpsMsg||'Suivi GPS actif : en attente d’un signal.'):((r&&r.gpsArmed)?'GPS armé : il démarrera automatiquement quand le départ sera donné. Garde l’appli ouverte à ce moment-là : sinon il démarre à la réouverture.':'');
+}
+let gpsStarting=false;
+function maybeAutoGps(){
+  const r=state.race;
+  if(!r||!r.gpsArmed||gpsOn||gpsStarting||document.hidden||!r.sync||r.sync.role!=='owner'||r.startAt==null)return;
+  if(r.points&&r.points.finish!=null)return;
+  gpsStarting=true;r.gpsAutoStarted=true;
+  Promise.resolve(gpsStart()).catch(()=>{}).then(()=>{gpsStarting=false;});
+}
 function setGpsStatus(t){gpsMsg=t;const el=document.getElementById('gpsstat');if(el)el.textContent=gpsText();}
 function nativeGeo(){return (window.RubaliseNative&&window.RubaliseNative.BackgroundGeolocation)?window.RubaliseNative:null;}
 async function gpsStart(){
@@ -1628,16 +1680,18 @@ function onGps(lat,lon,acc){
   setFix(r,km,m,1);gpsSentAt=now;gpsSentKm=mt.km;save();syncSoon();
   gpsOkTxt='Position envoyée : km '+km1(km)+' à '+fmtClock(m).s+(acc?' (précision ±'+Math.round(acc)+' m)':'')+'.';
   setGpsStatus(gpsOkTxt);
-  if(arrived){gpsStop();flash('Arrivée atteinte : suivi GPS arrêté.');}
+  if(arrived){r.gpsArmed=false;gpsStop();flash('Arrivée atteinte : suivi GPS arrêté.');}
 }
 function gpsPanel(r){
   if(!r||(r.sync&&r.sync.role==='member'))return '';
   const owner=!!(r.sync&&r.sync.role==='owner');
   let t='<section class="sec"><h2>Position GPS du téléphone</h2>'
-    +'<p class="note">Ton téléphone envoie ton kilomètre sur le parcours à ton assistance, toutes les 2 minutes environ (réglable ci-dessous). Seul le kilomètre est partagé, jamais tes coordonnées. Le GPS consomme de la batterie et n’envoie rien sans réseau.</p>';
+    +'<p class="note">Ton téléphone envoie ton kilomètre sur le parcours à ton assistance, toutes les 2 minutes environ (réglable ci-dessous). Seul le kilomètre est partagé, jamais tes coordonnées. Le GPS consomme de la batterie et n’envoie rien sans réseau. Pour économiser la batterie, choisis « Activer au départ » : il ne démarre que lorsque le départ est donné et s’arrête à l’arrivée.</p>';
   if(!owner)t+='<p class="note" id="permstat">'+esc(permText())+'</p><p class="note">Partage d’abord ta course en direct (section « Suivi en direct » ci-dessus).</p>';
   else if(!gpsAvailable(r))t+='<p class="warn">Ce tracé n’a pas de coordonnées GPS (importé avec une ancienne version). Réimporte le fichier GPX pour activer cette fonction.</p>';
-  else t+='<div class="row">'+(gpsOn?'<button class="btn danger" data-act="gps-stop">Arrêter le suivi GPS</button>':'<button class="btn primary" data-act="gps-start">Démarrer le suivi GPS</button>')+'</div>'
+  else t+='<div class="row">'+(gpsOn?'<button class="btn danger" data-act="gps-stop">Arrêter le suivi GPS</button>'
+      :(r.gpsArmed?'<button class="btn" data-act="gps-disarm">Désarmer</button><button class="btn quiet" data-act="gps-start">Démarrer maintenant</button>'
+                  :'<button class="btn primary" data-act="gps-arm">Activer au départ (recommandé)</button><button class="btn quiet" data-act="gps-start">Démarrer maintenant</button>'))+'</div>'
     +'<p class="note" id="gpsstat">'+esc(gpsText())+'</p>'
     +'<label class="fld" style="margin-top:8px"><span>Fréquence d’envoi de ta position</span><select class="in" data-gpsevery>'
     +[['auto','Automatique (2 min, plus espacé si la batterie baisse)'],['60','Toutes les minutes'],['120','Toutes les 2 minutes'],['300','Toutes les 5 minutes'],['600','Toutes les 10 minutes']].map(o=>'<option value="'+o[0]+'"'+(String((state.prefs&&state.prefs.gpsEvery)||'auto')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>'
@@ -1686,7 +1740,7 @@ function landCardHTML(r,m,tl,L,row){
     if(!run.length&&!ext.length)t+='<p class="note">Aucun article pour l’instant.</p>';
     if(sg)t+='<p>Jusqu’à '+esc(sg.to)+' ('+km1(sg.km)+' km'+(sg.via.length?', via '+sg.via.map(esc).join(' et ')+', sans assistance':'')+') : <b>'+needsText(sg.needs)+'</b>.</p>';
   }
-  t+='<div class="row"><button class="btn primary small" data-act="land-edit" data-id="'+row.id+'">'+(member?'Voir ce ravito':'Modifier ce ravito')+'</button></div>';
+  t+='<div class="row"><button class="btn primary small" data-act="land-edit" data-id="'+row.id+'">'+(st.access?(member?'Voir et préparer ce ravito':'Préparer ce ravito'):(member?'Voir ce ravito':'Modifier ce ravito'))+'</button></div>'+(st.access?'<div class="maplinks">'+mapsLinks(r,m,row.km)+'</div>':'');
   return t;
 }
 function renderLand(){
@@ -1707,10 +1761,49 @@ function renderLand(){
   else{cur3=null;ch.innerHTML=profileSVG(m,tl,{w:w,h:h,kmNow:kmNow,hit:true,sel:landSel});}
 }
 // ---------- tracé 3D du parcours ----------
-let landMode='profile',v3={yaw:-0.7,pitch:0.9,zoom:1,relief:3},cur3=null;
+let landMode='profile',v3={yaw:-0.7,pitch:0.9,zoom:1,relief:3,sat:false},cur3=null;
 function clampN(v,a,b){return Math.max(a,Math.min(b,v));}
 function cssv(n,d){const v=getComputedStyle(document.documentElement).getPropertyValue(n).trim();return v||d;}
 function slopeCol(g){return g>0.12?cssv('--z5','#c2125f'):g>0.06?cssv('--z4','#b26a00'):g>0.02?cssv('--z3','#1e6f8e'):g>-0.02?cssv('--z2','#3e8e69'):cssv('--z1','#7db3a0');}
+function mercPx(lat,lon,z){const n=256*Math.pow(2,z),sn=Math.sin(lat*Math.PI/180);return [(lon+180)/360*n,(0.5-Math.log((1+sn)/(1-sn))/(4*Math.PI))*n];}
+function satSource(bb){
+  if(window.__tiles)return window.__tiles;
+  const fr=bb.latMin>41&&bb.latMax<51.5&&bb.lonMin>-5.5&&bb.lonMax<9.8;
+  return fr?{name:'IGN',credit:'Photographies aériennes © IGN',url:(z,x,y)=>'https://data.geopf.fr/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&TILEMATRIXSET=PM&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&FORMAT=image/jpeg&TILEMATRIX='+z+'&TILEROW='+y+'&TILECOL='+x}
+    :{name:'Esri',credit:'Imagerie : Esri, Maxar, Earthstar Geographics',url:(z,x,y)=>'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+z+'/'+y+'/'+x};
+}
+function pickTiles(bb){
+  for(let z=16;z>=7;z--){
+    const a=mercPx(bb.latMax,bb.lonMin,z),b=mercPx(bb.latMin,bb.lonMax,z);
+    const x0=Math.floor(a[0]/256),x1=Math.floor(b[0]/256),y0=Math.floor(a[1]/256),y1=Math.floor(b[1]/256);
+    if((x1-x0+1)*(y1-y0+1)<=36){const tiles=[];for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)tiles.push({x:x,y:y});return {z:z,tiles:tiles};}
+  }
+  return null;
+}
+const tileCache={};
+function updateSatInfo(){
+  const el=document.getElementById('c3dcredit');if(!el||!cur3||!cur3.sat)return;
+  const s0=cur3.sat;el.textContent=s0.loaded?s0.src.credit:(s0.failed>=s0.tiles.length?'Image satellite indisponible (hors ligne ?)':'Chargement de l’image satellite…');
+}
+function ensureSat(){
+  if(!cur3||!v3.sat)return;
+  const p=cur3.m.p;
+  let bb={latMin:Math.min.apply(null,p.la),latMax:Math.max.apply(null,p.la),lonMin:Math.min.apply(null,p.lo),lonMax:Math.max.apply(null,p.lo)};
+  const dl=(bb.latMax-bb.latMin)*0.08||0.002,dn=(bb.lonMax-bb.lonMin)*0.08||0.002;
+  bb={latMin:bb.latMin-dl,latMax:bb.latMax+dl,lonMin:bb.lonMin-dn,lonMax:bb.lonMax+dn};
+  const src=satSource(bb),pk=pickTiles(bb);if(!pk){cur3.sat=null;return;}
+  const sat={z:pk.z,src:src,loaded:0,failed:0,tiles:pk.tiles.map(t=>({x:t.x,y:t.y,img:null,url:src.url(pk.z,t.x,t.y)}))};
+  cur3.sat=sat;
+  sat.tiles.forEach(t=>{
+    const c=tileCache[t.url];
+    if(c){t.img=c;sat.loaded++;return;}
+    const im=new Image();
+    im.onload=()=>{tileCache[t.url]=im;t.img=im;sat.loaded++;updateSatInfo();requestAnimationFrame(draw3D);};
+    im.onerror=()=>{sat.failed++;updateSatInfo();};
+    im.src=t.url;
+  });
+  updateSatInfo();
+}
 function draw3D(){
   if(!cur3)return;
   const {cv,m,tl,kmNow}=cur3,p=m.p,n=p.d.length,ctx=cv.getContext('2d'),W=cv.width,H=cv.height,dpr=W/(cv.clientWidth||W);
@@ -1726,6 +1819,20 @@ function draw3D(){
   P.concat(G).forEach(q=>{x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);});
   const pad=34*dpr,sc=Math.min((W-2*pad)/Math.max(1,x1-x0),(H-2*pad)/Math.max(1,y1-y0))*v3.zoom;
   const ox=W/2-(x0+x1)/2*sc,oy=H/2-(y0+y1)/2*sc,S=q=>[ox+q[0]*sc,oy+q[1]*sc];
+  if(window.__debug3d)cur3.dbg={ox:ox,oy:oy,sc:sc,cy:cy,sy:sy,st:st,la0:la0,lo0:lo0,cl:cl,W:W,H:H};
+  // image satellite posée au sol (les tuiles subissent la même transformation que le tracé)
+  if(v3.sat&&cur3.sat){
+    const sat=cur3.sat,z=sat.z,pp=mercPx(la0,lo0,z),kd=360/(256*Math.pow(2,z));
+    const sxm=kd*cl*111320,sym=kd*Math.cos(la0*Math.PI/180)*110540;
+    ctx.imageSmoothingEnabled=true;
+    sat.tiles.forEach(t=>{
+      if(!t.img)return;
+      const nw=t.img.naturalWidth||256,kk=256/nw,X0=(t.x*256-pp[0])*sxm,Y0=-(t.y*256-pp[1])*sym;
+      ctx.save();
+      ctx.setTransform(sc*sxm*kk*cy,-sc*st*sxm*kk*sy,sc*sym*kk*sy,sc*st*sym*kk*cy,ox+sc*(X0*cy-Y0*sy),oy-sc*st*(X0*sy+Y0*cy));
+      ctx.drawImage(t.img,0,0);ctx.restore();
+    });
+  }
   const ink=cssv('--ink','#10312b'),ink2=cssv('--ink2','#4a625c'),line=cssv('--line','#c7d5ce'),acc=cssv('--accent','#1e6f8e'),bg=cssv('--bg','#edf2ee'),live=cssv('--live','#c2125f'),fill=cssv('--fill','#d3e3db');
   // « rideau » sous le tracé : donne la hauteur
   ctx.globalAlpha=0.55;ctx.fillStyle=fill;
@@ -1787,22 +1894,29 @@ function show3D(ch,r,m,tl,kmNow,w,h){
   if(!gpsAvailable(r)){ch.innerHTML='<p class="note" style="padding:16px">Ce tracé n’a pas de coordonnées GPS (importé avec une ancienne version) : réimporte le fichier GPX pour voir la 3D.</p>';cur3=null;return;}
   const dpr=Math.min(2,window.devicePixelRatio||1);
   ch.innerHTML='<canvas id="c3d" aria-label="Tracé 3D du parcours : fais glisser pour tourner"></canvas>'
-    +'<div class="c3d-tools"><button class="btn quiet" data-act="c3d-zoom" data-v="1.25" aria-label="Zoom avant">+</button><button class="btn quiet" data-act="c3d-zoom" data-v="0.8" aria-label="Zoom arrière">−</button><button class="btn quiet" data-act="c3d-relief">Relief ×'+v3.relief+'</button><button class="btn quiet" data-act="c3d-reset">Recentrer</button></div>'
+    +'<div class="c3d-tools"><button class="btn quiet" data-act="c3d-zoom" data-v="1.25" aria-label="Zoom avant">+</button><button class="btn quiet" data-act="c3d-zoom" data-v="0.8" aria-label="Zoom arrière">−</button><button class="btn quiet" data-act="c3d-relief">Relief ×'+v3.relief+'</button><button class="btn quiet" data-act="c3d-sat" aria-pressed="'+v3.sat+'">Satellite</button><button class="btn quiet" data-act="c3d-reset">Recentrer</button></div><div class="c3d-credit" id="c3dcredit"></div>'
     +'<div class="c3d-legend"><span><i style="background:'+slopeCol(0.2)+'"></i>Raide</span><span><i style="background:'+slopeCol(0.08)+'"></i>Montée</span><span><i style="background:'+slopeCol(0.03)+'"></i>Douce</span><span><i style="background:'+slopeCol(0)+'"></i>Plat</span><span><i style="background:'+slopeCol(-0.1)+'"></i>Descente</span></div>';
   const cv=document.getElementById('c3d');cv.style.width=w+'px';cv.style.height=h+'px';cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
   cur3={cv:cv,m:m,tl:tl,kmNow:kmNow,sel:landSel,hits:[]};
-  attach3D(cv);draw3D();
+  attach3D(cv);ensureSat();draw3D();
 }
 
+function mapsLinks(r,m,km){
+  if(!gpsAvailable(r))return '';
+  const lat=interp(m.p.d,m.p.la,km),lon=interp(m.p.d,m.p.lo,km),c=lat.toFixed(5)+','+lon.toFixed(5);
+  return '<a class="btn quiet small" href="https://www.google.com/maps/@?api=1&map_action=map&center='+c+'&zoom=17&basemap=satellite" target="_blank" rel="noopener noreferrer">Vue satellite</a>'
+    +'<a class="btn quiet small" href="https://www.google.com/maps/dir/?api=1&destination='+c+'&travelmode=driving" target="_blank" rel="noopener noreferrer">Itinéraire</a>';
+}
 function openStation(id){
+  const r=state.race,st=r&&r.stations.find(x=>x.id===id),toAssist=!!(st&&st.access);
   const wasFs=!!document.fullscreenElement;
   if(landOpen)closeLand();
-  tab='plan';render(true);
+  tab=toAssist?'assist':'plan';render(true);
   const focusIt=()=>{
-    const el=document.getElementById('stn-'+id);if(!el)return;
-    el.scrollIntoView({block:'center'});el.classList.add('hl');
+    const el=document.getElementById((toAssist?'crew-':'stn-')+id);if(!el)return;
+    el.scrollIntoView({block:toAssist?'start':'center'});el.classList.add('hl');
     setTimeout(()=>el.classList.remove('hl'),2600);
-    const inp=el.querySelector('.stn-name');if(inp&&!inp.closest('fieldset:disabled'))inp.focus({preventScroll:true});
+    if(!toAssist){const inp=el.querySelector('.stn-name');if(inp&&!inp.closest('fieldset:disabled'))inp.focus({preventScroll:true});}
   };
   if(wasFs)setTimeout(focusIt,450);else focusIt();
 }
@@ -1973,11 +2087,12 @@ function renderAssist(){
   const without=rows.filter(x=>!x.isFinish&&!x.st.access);
   const cards=withAccess.map(x=>{
     const i=x.index,early=tlO.rows[i].adjArr,late=tlP.rows[i].adjArr,passed=x.actual!=null,sg=segs.find(z=>z.fromId===x.id);
-    return '<article class="crew'+(passed?' passed':'')+'"><h3><span>'+esc(x.name)+'</span><span class="km">km '+km1(x.km)+'</span></h3>'
+    return '<article class="crew'+(passed?' passed':'')+'" id="crew-'+x.id+'"><h3><span>'+esc(x.name)+'</span><span class="km">km '+km1(x.km)+'</span></h3>'
       +(passed?'<p class="win">Le coureur est passé à '+clk(x.actual)+'.</p>'
               :'<p class="win">Passage estimé entre '+clk(early)+' et '+clk(late)+'.<br>Être sur place avant <b>'+clk(early-15)+'</b>.</p>')
       +(x.margin!=null&&!passed?'<p class="'+mcls(x.margin)+'">Marge sur la barrière : '+mfmt(x.margin)+'</p>':'')
       +(sg?'<p>Jusqu’à <b>'+esc(sg.to)+'</b> ('+km1(sg.km)+' km, +'+sg.up+' m, −'+sg.down+' m, environ '+fmtDur(sg.dur)+')'+(sg.via.length?', en passant par '+sg.via.map(esc).join(' et ')+' (sans accès assistance)':'')+' : prévoir <b>'+needsText(sg.needs)+'</b>.</p>':'')
+      +(gpsAvailable(r)?'<div class="maplinks">'+mapsLinks(r,m,x.km)+'</div>':'')
       +itemsBlock(r,x.st)+'</article>';
   }).join('');
   const startNote=(segs.length&&segs[0].fromId==='start')?'<section class="sec"><h2>Au départ</h2><p>Le coureur doit partir avec de quoi aller jusqu’à <b>'+esc(segs[0].to)+'</b> ('+km1(segs[0].km)+' km'+(segs[0].via.length?', en passant par '+segs[0].via.map(esc).join(' et ')+', sans accès assistance':'')+') : <b>'+needsText(segs[0].needs)+'</b>.</p></section>':'';
@@ -1999,12 +2114,21 @@ function renderAssist(){
   +'</section>';
 }
 function startCard(r,m){
+  const owner=!isMember(r),planTime=fmtClock(m.startMin).s;
   if(r.startAt==null){
-    return '<div class="card" style="margin-top:14px"><h2>Départ de la course</h2><p class="hint">Quand le départ est donné, appuie sur le bouton : toutes les heures de passage partent de cette minute. Départ prévu à <b class="t">'+fmtClock(m.startMin).s+'</b>.</p>'
-      +'<div class="row"><label class="fld" style="flex:1;min-width:130px"><span>Heure du départ</span><input type="time" id="start-time" value="'+hhmmNow()+'"></label><button class="btn primary" data-act="start-race">Le départ est donné</button></div></div>';
+    return '<div class="card" style="margin-top:14px"><h2>Départ de la course</h2>'
+      +'<p class="hint">Départ prévu à <b class="t">'+planTime+'</b>. Dès que le départ est donné, confirme-le : toutes les heures de passage partent de cette minute.</p>'
+      +'<div class="row"><button class="btn primary" data-act="start-race" data-at="plan">Le départ est donné à '+planTime+'</button></div>'
+      +'<p class="hint" style="margin:10px 0 4px">Le départ a eu lieu à une autre heure ?</p>'
+      +'<div class="row" style="margin:0"><label class="fld" style="flex:1;min-width:130px"><span>Heure réelle du départ</span><input type="time" id="start-time" value="'+hhmmNow()+'"></label><button class="btn" data-act="start-race">Valider cette heure</button></div>'
+      +(owner?'<details style="margin-top:10px"><summary>Le départ est repoussé ?</summary><p class="hint">Modifie l’heure de départ prévue : les heures estimées et les barrières calculées sont recalculées.</p>'
+        +'<div class="row" style="margin:0"><label class="fld" style="flex:1;min-width:130px"><span>Nouvelle heure prévue</span><input type="time" id="plan-start" value="'+esc(r.start)+'"></label><button class="btn" data-act="set-plan-start">Modifier l’heure prévue</button></div></details>':'')
+      +'</div>';
   }
   const d=Math.round(m.start0-m.startMin);
-  return '<div class="card" style="margin-top:14px"><p style="margin:0">Départ donné à <b class="t">'+fmtClock(m.start0).s+'</b> (prévu à '+fmtClock(m.startMin).s+(d?', '+dsign(d):'')+').</p><div class="row" style="margin:8px 0 0"><button class="btn quiet small" data-act="clear-start">Annuler le départ</button></div></div>';
+  return '<div class="card" style="margin-top:14px"><p style="margin:0">Départ donné à <b class="t">'+fmtClock(m.start0).s+'</b> (prévu à '+planTime+(d?', '+dsign(d):'')+').</p>'
+    +'<div class="row" style="margin:10px 0 0"><label class="fld" style="flex:1;min-width:130px"><span>Modifier l’heure du départ</span><input type="time" id="start-time" value="'+fmtClock(m.start0).s+'"></label><button class="btn" data-act="start-race">Enregistrer</button></div>'
+    +'<div class="row" style="margin:6px 0 0"><button class="btn quiet small" data-act="clear-start">Annuler le départ</button></div></div>';
 }
 function renderLive(){
   const r=state.race;if(!r)return needRace();
@@ -2114,7 +2238,8 @@ function act(b){
   if(a==='land-mode'){landMode=b.dataset.v==='3d'?'3d':'profile';renderLand();return;}
   if(a==='c3d-zoom'){v3.zoom=clampN(v3.zoom*(+b.dataset.v||1),0.5,4);draw3D();return;}
   if(a==='c3d-relief'){const L=[1,2,3,5];v3.relief=L[(L.indexOf(v3.relief)+1)%L.length];renderLand();return;}
-  if(a==='c3d-reset'){v3={yaw:-0.7,pitch:0.9,zoom:1,relief:3};renderLand();return;}
+  if(a==='c3d-sat'){v3.sat=!v3.sat;renderLand();return;}
+  if(a==='c3d-reset'){v3={yaw:-0.7,pitch:0.9,zoom:1,relief:3,sat:v3.sat};renderLand();return;}
   if(a==='land-close'){closeLand();return;}
   if(a==='land-edit'){openStation(b.dataset.id);return;}
   if(a==='set-theme'){state.prefs.theme=b.dataset.v;save();applyTheme();commit();return;}
@@ -2168,7 +2293,7 @@ function act(b){
   }
   if(a==='sync-now'){flash('Synchronisation…');syncNow();return;}
   if(a==='gps-start'){askConfirm({title:'Partager ma position ?',text:'Rubalise utilisera la localisation de ton téléphone et enverra ton kilomètre sur le parcours à ton assistance (jamais tes coordonnées). Cela consomme de la batterie.',okLabel:'Démarrer',onOk:gpsStart});return;}
-  if(a==='gps-stop'){gpsStop();commit();flash('Suivi GPS arrêté.');return;}
+  if(a==='gps-stop'){if(r)r.gpsArmed=false;gpsStop();commit();flash('Suivi GPS arrêté.');return;}
   if(a==='perm-request'){ensurePermissions().then(ps=>flash(ps.loc==='granted'?'Localisation autorisée.':'Localisation non autorisée : ouvre les réglages du téléphone pour l’activer.'));return;}
   if(a==='perm-settings'){const N=nativeGeo();try{if(N&&N.BackgroundGeolocation.openSettings)N.BackgroundGeolocation.openSettings();}catch(e){}return;}
   if(a==='stop-sync'){
@@ -2193,16 +2318,38 @@ function act(b){
   }
   if(a==='del-station'){r.stations=r.stations.filter(s=>s.id!==b.dataset.id);delete r.points[b.dataset.id];commit();return;}
   if(a==='item-cat'){
-    const inp=document.getElementById('it-'+b.dataset.id);
-    if(inp){inp.value=b.dataset.fill||'';inp.dataset.cat=b.dataset.cat;inp.focus();}
-    document.querySelectorAll('.chip[data-act="item-cat"][data-id="'+b.dataset.id+'"]').forEach(c=>c.classList.toggle('on',c===b));
+    const id=b.dataset.id,ab=document.getElementById('ab-'+id),inp=document.getElementById('it-'+id),mode=b.dataset.mode||'count';
+    if(ab)ab.dataset.mode=mode;
+    if(inp){
+      inp.value=(mode==='count')?(b.dataset.fill||''):'';inp.dataset.cat=b.dataset.cat;
+      inp.placeholder=mode==='clothes'?'Autre vêtement (facultatif)':(mode==='free'?'Écris ce qu’il faut préparer':'Ex. gels, compotes');
+      if(mode!=='clothes')inp.focus();
+    }
+    document.querySelectorAll('.chip[data-act="item-cat"][data-id="'+id+'"]').forEach(c=>c.classList.toggle('on',c===b));
+    return;
+  }
+  if(a==='cloth-toggle'){b.setAttribute('aria-pressed',String(b.getAttribute('aria-pressed')!=='true'));return;}
+  if(a==='qty-step'){const inp=document.getElementById('iq-'+b.dataset.id);if(inp)inp.value=clampN((parseInt(inp.value,10)||1)+(+b.dataset.d||0),1,99);return;}
+  if(a==='item-qty'){
+    const d=+b.dataset.d||0,iid=b.dataset.iid;
+    if(b.dataset.list==='extra'&&isMember(r)&&r.extras&&r.extras[iid]){r.extras[iid].q=clampN((r.extras[iid].q||1)+d,1,99);queuePoint(r,'x:'+iid,JSON.stringify(r.extras[iid]));commit();syncSoon();}
+    else if(b.dataset.list==='runner'&&!isMember(r)){const sx=r.stations.find(x=>x.id===b.dataset.id),it=sx&&(sx.items||[]).find(x=>x.id===iid);if(it){it.q=clampN((it.q||1)+d,1,99);commit();}}
     return;
   }
   if(a==='item-add'){
-    const id=b.dataset.id,inp=document.getElementById('it-'+id),q=document.getElementById('iq-'+id),now=Date.now();
+    const id=b.dataset.id,ab=document.getElementById('ab-'+id),mode=(ab&&ab.dataset.mode)||'count',inp=document.getElementById('it-'+id),q=document.getElementById('iq-'+id),now=Date.now();
     if(now-itemAddAt<500)return;
-    if(!inp||!inp.value.trim()){flash('Écris ce qu’il faut préparer, par exemple « gels ».');if(inp)inp.focus();return;}
-    if(addItem(r,id,inp.value,q&&q.value,inp.dataset.cat)){itemAddAt=now;commit();syncSoon();}
+    let ok=false;
+    if(mode==='clothes'){
+      const sel=Array.prototype.slice.call(document.querySelectorAll('#ab-'+id+' .clothes .chip[aria-pressed="true"]')).map(c=>c.dataset.v),other=inp&&inp.value.trim();
+      if(!sel.length&&!other){flash('Choisis au moins un vêtement dans la liste, ou écris-le dans « Autre vêtement ».');return;}
+      sel.forEach(v=>{ok=addItem(r,id,v,1,'vetement')||ok;});
+      if(other)ok=addItem(r,id,other,1,'vetement')||ok;
+    }else{
+      if(!inp||!inp.value.trim()){flash('Écris ce qu’il faut préparer, par exemple « gels ».');if(inp)inp.focus();return;}
+      ok=addItem(r,id,inp.value,mode==='free'?1:(q&&q.value),inp.dataset.cat);
+    }
+    if(ok){itemAddAt=now;commit();syncSoon();}
     return;
   }
   if(a==='item-del'){
@@ -2252,12 +2399,20 @@ function act(b){
     setFix(r,Math.round(kmv*10)/10,min);commit();syncSoon();flash('Position enregistrée : km '+km1(kmv)+'.');return;
   }
   if(a==='start-race'){
-    const m=model(r),tv=parseClock((document.getElementById('start-time')||{}).value);
+    const m=model(r),tv=(b.dataset.at==='plan')?m.startMin:parseClock((document.getElementById('start-time')||{}).value);
     if(tv==null){flash('Indique l’heure du départ.');return;}
     let min=tv;const floor=m.startMin-360;while(min<floor)min+=1440;
-    r.startAt=min;queuePoint(r,'startat',min);commit();syncSoon();flash('Départ enregistré à '+fmtClock(min).s+'.');return;
+    r.startAt=min;queuePoint(r,'startat',min);commit();syncSoon();maybeAutoGps();flash('Départ enregistré à '+fmtClock(min).s+'.');return;
   }
-  if(a==='clear-start'){r.startAt=null;queuePoint(r,'startat',null);commit();syncSoon();flash('Départ annulé.');return;}
+  if(a==='clear-start'){r.startAt=null;queuePoint(r,'startat',null);if(r.gpsAutoStarted&&gpsOn)gpsStop();commit();syncSoon();flash('Départ annulé.');return;}
+  if(a==='set-plan-start'){
+    if(isMember(r))return;
+    const v=(document.getElementById('plan-start')||{}).value;
+    if(parseClock(v)==null){flash('Indique une heure.');return;}
+    r.start=v;applyAutoBarriers(r);commit();syncSoon();flash('Heure de départ prévue : '+v+'.');return;
+  }
+  if(a==='gps-arm'){r.gpsArmed=true;r.gpsAutoStarted=false;save();maybeAutoGps();commit();flash(r.startAt!=null?'GPS activé.':'GPS armé : il démarrera quand le départ sera donné.');return;}
+  if(a==='gps-disarm'){r.gpsArmed=false;commit();flash('GPS désarmé.');return;}
   if(a==='clear-fix'){clearFix(r);commit();syncSoon();flash('Position annulée.');return;}
   if(a==='simulate'){
     const m=model(r),tl=timeline(r,m,{plan:true}),stop=+r.stopMin||0;
@@ -2382,7 +2537,12 @@ setInterval(()=>{
   const age=Date.now()-(r.sync.lastSync||0),every=(tab==='live')?10000:30000;
   if(age>=every||Object.keys(r.pending||{}).length)syncNow();
 },5000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncNow();});
+document.addEventListener('click',e=>{
+  const l=e.target.closest&&e.target.closest('.maplinks a'),N=window.RubaliseNative;
+  if(l&&N&&N.Browser){e.preventDefault();N.Browser.open({url:l.href}).catch(()=>flash('Impossible d’ouvrir le navigateur.'));}
+});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){syncNow();maybeAutoGps();}});
+setInterval(maybeAutoGps,5000);
 window.addEventListener('online',()=>syncNow());
 
 if(state.tmpRace){state.race=null;state.tmpRace=false;save();}
