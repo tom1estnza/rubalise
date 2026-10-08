@@ -633,7 +633,7 @@ function osrmUrl(mode,a,b){
 }
 function overpassQuery(lat,lon,R){
   const a='(around:'+Math.round(R)+','+lat.toFixed(6)+','+lon.toFixed(6)+')';
-  return '[out:json][timeout:20];(node["amenity"="parking"]'+a+';way["amenity"="parking"]'+a+';relation["amenity"="parking"]'+a+';);out center tags 40;';
+  return '[out:json][timeout:20];(node["amenity"="parking"]'+a+';way["amenity"="parking"]'+a+';relation["amenity"="parking"]'+a+';);out center 60;';
 }
 // Réponse Overpass -> parkings utilisables, du plus proche au plus loin (sans les parkings privés, doublons fusionnés)
 function parseOverpass(j,center){
@@ -645,6 +645,23 @@ function parseOverpass(j,center){
     const lat=e.lat!=null?+e.lat:(e.center?+e.center.lat:NaN),lon=e.lon!=null?+e.lon:(e.center?+e.center.lon:NaN);
     if(!isFinite(lat)||!isFinite(lon))return;
     out.push({name:String(t.name||t['name:fr']||'').trim().slice(0,60),lat:Math.round(lat*1e6)/1e6,lon:Math.round(lon*1e6)/1e6,distM:Math.round(distM(center,{lat:lat,lon:lon})),fee:t.fee==='yes',capacity:parseInt(t.capacity,10)||null});
+  });
+  out.sort((x,y)=>x.distM-y.distM);
+  const ded=[];out.forEach(c=>{if(!ded.some(d=>distM(d,c)<20))ded.push(c);});
+  return ded;
+}
+// Repli si Overpass est injoignable : recherche « parking » de Nominatim dans un carré autour du ravito (l'accès privé n'est pas connu).
+function nominatimUrl(lat,lon,R){
+  const dLat=R/111320,dLon=R/(111320*Math.max(0.2,Math.cos(lat*Math.PI/180)));
+  return 'https://nominatim.openstreetmap.org/search?format=jsonv2&q=parking&bounded=1&limit=20&accept-language=fr&viewbox='+(lon-dLon).toFixed(6)+','+(lat+dLat).toFixed(6)+','+(lon+dLon).toFixed(6)+','+(lat-dLat).toFixed(6);
+}
+function parseNominatim(arr,center){
+  const out=[];
+  (Array.isArray(arr)?arr:[]).forEach(e=>{
+    if((e.category||e.class)!=='amenity'||e.type!=='parking')return;
+    const lat=parseFloat(e.lat),lon=parseFloat(e.lon);
+    if(!isFinite(lat)||!isFinite(lon))return;
+    out.push({name:String(e.name||'').trim().slice(0,60),lat:Math.round(lat*1e6)/1e6,lon:Math.round(lon*1e6)/1e6,distM:Math.round(distM(center,{lat:lat,lon:lon})),fee:false,capacity:null,src:'nominatim'});
   });
   out.sort((x,y)=>x.distM-y.distM);
   const ded=[];out.forEach(c=>{if(!ded.some(d=>distM(d,c)<20))ded.push(c);});
@@ -664,7 +681,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function defaultPrefs(){return {theme:'auto',defStop:3,defCarbs:60,defWater:500,defGel:25,gpsEvery:'auto'};}
 let state=load();
 state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
-const APP_VERSION='1.7';
+const APP_VERSION='1.8';
 function prefv(k){return (state.prefs&&state.prefs[k]!=null)?state.prefs[k]:defaultPrefs()[k];}
 function applyTheme(){const t=state.prefs.theme,el=document.documentElement;if(t==='light'||t==='dark')el.setAttribute('data-theme',t);else el.removeAttribute('data-theme');}
 applyTheme();
@@ -728,7 +745,10 @@ function applyAutoBarriers(r){
   r.stations.forEach(x=>{if(x.barrierAuto!==false)x.barrier=autoBarrier(r,x.km);});
   if(r.finishBarrierAuto!==false)r.finishBarrier=autoBarrier(r,tot);
 }
-const OSM={overpass:['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter']};
+const OSM={overpass:['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter']};
+let osmDiag=[];
+function osmWhy(e){return e&&e.status?'HTTP '+e.status:(e&&e.name==='AbortError')?'délai dépassé':(e&&e.name==='SyntaxError')?'réponse illisible':'pas de connexion au serveur (réseau ou blocage)';}
+function osmNote(url,e){let h=url;try{h=new URL(url).host;}catch(x){}osmDiag.push(h+' : '+osmWhy(e));if(osmDiag.length>8)osmDiag.shift();}
 let osmLast=0;
 function osmPaceMs(){return window.__osmPace!=null?window.__osmPace:1100;}
 async function osmWait(){const w=osmPaceMs()-(Date.now()-osmLast);if(w>0)await new Promise(r=>setTimeout(r,w));osmLast=Date.now();}
@@ -736,6 +756,7 @@ async function osmFetch(url,opt,timeout){
   await osmWait();
   const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),timeout||15000);
   try{const r=await fetch(url,Object.assign({signal:ctl.signal},opt||{}));if(!r.ok){const e=new Error('HTTP '+r.status);e.status=r.status;throw e;}return await r.json();}
+  catch(e){osmNote(url,e);throw e;}
   finally{clearTimeout(to);}
 }
 // Mémoire des réponses (appareil seulement) : on ne redemande pas deux fois la même chose aux serveurs publics.
@@ -755,7 +776,13 @@ async function osmFindParking(o){
       j=x;break;
     }catch(e){last=e;}
   }
-  if(!j)throw last||new Error('Service indisponible');
+  if(!j){
+    // dernier recours : Nominatim (l'accès privé n'y est pas indiqué, à vérifier)
+    try{
+      const c=parseNominatim(await osmFetch(nominatimUrl(o.lat,o.lon,o.radiusM),{},15000),{lat:o.lat,lon:o.lon});
+      geoSet(key,c);return c;
+    }catch(e){throw last||e;}
+  }
   const c=parseOverpass(j,{lat:o.lat,lon:o.lon});geoSet(key,c);return c;
 }
 async function osmTravelMin(o){
@@ -773,11 +800,13 @@ const ROUTE_PROVIDERS={
   osm:{id:'osm',label:'OpenStreetMap',auto:true,findParking:osmFindParking,travelMin:osmTravelMin}
 };
 function routeProvider(){return ROUTE_PROVIDERS[(state.prefs&&state.prefs.routeProvider)||'osm']||ROUTE_PROVIDERS.manual;}
-let crewRun={running:false,cancel:false,lines:[],err:''};
+let crewRun={running:false,cancel:false,lines:[],err:'',diag:[]};
 function crewStatusHTML(){
   const c=crewRun;
   return c.lines.map(l=>'<p class="note">'+esc(l)+'</p>').join('')
     +(c.err?'<p class="warn">'+esc(c.err)+'</p>':'')
+    +((c.diag&&c.diag.length)?'<p class="note"><b>Détails techniques :</b><br>'+Array.from(new Set(c.diag)).map(esc).join('<br>')+'</p>':'')
+    +(c.test?c.test.map(l=>'<p class="note">'+esc(l)+'</p>').join(''):'')
     +(c.running?'<div class="row"><button class="btn quiet small" data-act="crew-cancel">Arrêter</button></div>':'');
 }
 function setCrewStatus(){const el=document.getElementById('crewauto');if(el)el.innerHTML=crewStatusHTML();}
@@ -794,7 +823,7 @@ async function crewAuto(r,opts){
   if(!accs.length)throw new Error('Aucun ravito avec accès pour l’assistance.');
   const touched={};let fails=0;
   const alive=()=>state.race===r&&!crewRun.cancel;
-  const safe=async fn=>{try{const v=await fn();fails=0;return v;}catch(e){fails++;if(fails>=2)throw new Error(navigator.onLine===false?'Pas de réseau : lance la recherche chez toi, avec du réseau.':'Le service OpenStreetMap ne répond pas pour le moment. Réessaie plus tard ou saisis les valeurs à la main.');return null;}};
+  const safe=async fn=>{try{const v=await fn();fails=0;return v;}catch(e){fails++;if(fails>=2){crewRun.diag=osmDiag.slice();throw new Error(navigator.onLine===false?'Pas de réseau : lance la recherche chez toi, avec du réseau.':'Le service OpenStreetMap ne répond pas pour le moment. Réessaie plus tard ou saisis les valeurs à la main.');}return null;}};
   // 1. stationnements
   if(!opts.driveOnly){
     for(const s of accs){
@@ -831,7 +860,7 @@ async function crewAuto(r,opts){
       s.parking=parkLabel(best);s.parkLat=best.lat;s.parkLon=best.lon;s.walkMin=best.walkMin;s.walkEst=!!best.est;s.parkAuto=true;
       s.parkAlt=ranked.slice(1,3).map(c=>({name:parkLabel(c),lat:c.lat,lon:c.lon,walkMin:c.walkMin,est:!!c.est}));
       touched[s.id]=true;
-      crewLog('« '+s.name+' » : '+s.parking+', '+s.walkMin+' min à pied'+(best.est?' (estimé)':'')+'.');
+      crewLog('« '+s.name+' » : '+s.parking+', '+s.walkMin+' min à pied'+(best.est?' (estimé)':'')+(best.src==='nominatim'?' · service de secours, accès au parking à vérifier':'')+'.');
     }
   }
   // 2. trajets en voiture : de parking en parking, en partant du départ de la course
@@ -852,9 +881,27 @@ async function crewAuto(r,opts){
     }
   }
 }
+// Test de connexion : dit quel service répond, avec le code d'erreur sinon (utile si la recherche échoue).
+async function crewTest(){
+  if(crewRun.running)return;
+  crewRun={running:true,cancel:false,lines:[],err:'',diag:[],test:['Test en cours…']};setCrewStatus();
+  const out=[],ping=async(label,url,opt)=>{
+    const t0=Date.now(),ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),15000);
+    try{const r=await fetch(url,Object.assign({signal:ctl.signal},opt||{}));const ms=Date.now()-t0;if(!r.ok)out.push('✖ '+label+' : HTTP '+r.status+' ('+ms+' ms)');else{try{await r.text();}catch(e){}out.push('✔ '+label+' : répond en '+ms+' ms');}}
+    catch(e){out.push('✖ '+label+' : '+osmWhy(e));}
+    finally{clearTimeout(to);}
+    crewRun.test=out.slice();setCrewStatus();
+  };
+  const q='data='+encodeURIComponent('[out:json][timeout:10];node["amenity"="parking"](around:300,48.8566,2.3522);out center 1;');
+  for(const ep of OSM.overpass)await ping('Parkings, '+new URL(ep).host,ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:q});
+  await ping('Parkings (secours), nominatim.openstreetmap.org',nominatimUrl(48.8566,2.3522,300));
+  await ping('Itinéraires voiture, routing.openstreetmap.de',osrmUrl('drive',{lat:48.8566,lon:2.3522},{lat:48.8606,lon:2.3376}));
+  await ping('Itinéraires à pied, routing.openstreetmap.de',osrmUrl('walk',{lat:48.8566,lon:2.3522},{lat:48.8606,lon:2.3376}));
+  crewRun.running=false;crewRun.test=out.concat(['Envoie-moi ces lignes si un service ne répond pas.']);setCrewStatus();
+}
 async function runCrewAuto(opts){
   const r=state.race;if(!r||crewRun.running)return;
-  crewRun={running:true,cancel:false,lines:[],err:''};setCrewStatus();
+  osmDiag=[];crewRun={running:true,cancel:false,lines:[],err:'',diag:[]};setCrewStatus();
   try{await crewAuto(r,opts);if(crewRun.cancel)crewRun.lines.push('Recherche arrêtée.');else crewRun.lines.push('Terminé. Vérifie les résultats, ils restent modifiables.');}
   catch(e){crewRun.err=e.message||'Erreur pendant la recherche.';}
   crewRun.running=false;
@@ -880,6 +927,7 @@ function crewAutoBlock(r){
   if(!gpsAvailable(r))return '<p class="hint">La recherche automatique du stationnement demande les coordonnées du tracé : réimporte le fichier GPX.</p>';
   return '<div class="crewauto"><button class="btn" data-act="crew-auto"'+(crewRun.running?' disabled':'')+'>Trouver les stationnements et les trajets</button>'
     +'<p class="hint">Recherche gratuite avec OpenStreetMap, sans compte. À lancer chez toi avec du réseau : les résultats restent dans le plan. Les temps de voiture sont hors circulation, la marge de sécurité couvre le reste. Tes saisies manuelles ne sont jamais écrasées.</p>'
+    +'<div class="row" style="margin:4px 0"><button class="btn quiet small" data-act="crew-test"'+(crewRun.running?' disabled':'')+'>Tester la connexion aux services</button></div>'
     +'<div id="crewauto" aria-live="polite">'+crewStatusHTML()+'</div>'
     +'<p class="hint">Données © contributeurs OpenStreetMap. Itinéraires : OSRM (routing.openstreetmap.de).</p></div>';
 }
@@ -2654,6 +2702,7 @@ function act(b){
   if(a==='crew-auto'){runCrewAuto({});return;}
   if(a==='crew-auto-one'){runCrewAuto({onlyId:b.dataset.id});return;}
   if(a==='crew-cancel'){crewRun.cancel=true;return;}
+  if(a==='crew-test'){crewTest();return;}
   if(a==='park-pick'){
     const r=state.race,st=r&&r.stations.find(x=>x.id===b.dataset.id),alt=st&&(st.parkAlt||[])[+b.dataset.i];
     if(!alt)return;
