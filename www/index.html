@@ -107,6 +107,12 @@ input[type=range]{width:100%;accent-color:var(--accent);min-height:32px}
 .stn-grid .chk{grid-column:1 / -1}
 .crewauto{margin:12px 0}
 #crewauto .note{margin:3px 0}
+.plist{list-style:none;margin:4px 0;padding:0}
+.plist li{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px dashed var(--line)}
+.plist .maplinks{display:flex;gap:6px;margin:0}
+.plistc{flex-direction:column;align-items:stretch}
+.plistc .chip{width:100%;text-align:left;justify-content:flex-start}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .stn-crew{border-top:1px dashed var(--line);margin-top:10px;padding-top:6px}
 .stn-times{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;font-size:15px}
 ul.plain{list-style:none;padding:0;margin:0}
@@ -653,7 +659,7 @@ function parseOverpass(j,center){
 // Repli si Overpass est injoignable : recherche « parking » de Nominatim dans un carré autour du ravito (l'accès privé n'est pas connu).
 function nominatimUrl(lat,lon,R){
   const dLat=R/111320,dLon=R/(111320*Math.max(0.2,Math.cos(lat*Math.PI/180)));
-  return 'https://nominatim.openstreetmap.org/search?format=jsonv2&q=parking&bounded=1&limit=20&accept-language=fr&viewbox='+(lon-dLon).toFixed(6)+','+(lat+dLat).toFixed(6)+','+(lon+dLon).toFixed(6)+','+(lat-dLat).toFixed(6);
+  return 'https://nominatim.openstreetmap.org/search?format=jsonv2&q=parking&bounded=1&limit=40&accept-language=fr&viewbox='+(lon-dLon).toFixed(6)+','+(lat+dLat).toFixed(6)+','+(lon+dLon).toFixed(6)+','+(lat-dLat).toFixed(6);
 }
 function parseNominatim(arr,center){
   const out=[];
@@ -672,6 +678,44 @@ function parseNominatim(arr,center){
 function walkKey(c){return c.est?c.walkMin*1.5+2:c.walkMin;}
 function pickParking(c){return c.slice().sort((x,y)=>(walkKey(x)-walkKey(y))||(x.distM-y.distM));}
 function parkLabel(c){return ((c.name||'Parking sans nom')+(c.fee?' (payant)':'')).slice(0,80);}
+// ---------- copilote : liste des stationnements à pied et liens de navigation ----------
+// Liens vers Google Maps et Waze (itinéraire en voiture). Coordonnées si on les a, sinon le texte saisi.
+function navUrls(lat,lon,text){
+  if(lat!=null&&lon!=null&&lat!==''&&lon!==''&&isFinite(+lat)&&isFinite(+lon)){
+    const c=lat+','+lon;
+    return {maps:'https://www.google.com/maps/dir/?api=1&destination='+c+'&travelmode=driving',waze:'https://waze.com/ul?ll='+c+'&navigate=yes&zoom=17'};
+  }
+  if(text){
+    const q=encodeURIComponent(String(text));
+    return {maps:'https://www.google.com/maps/dir/?api=1&destination='+q+'&travelmode=driving',waze:'https://waze.com/ul?q='+q+'&navigate=yes'};
+  }
+  return null;
+}
+function mergeParkings(a,b){
+  const all=(a||[]).concat(b||[]).slice().sort((x,y)=>x.distM-y.distM),out=[];
+  all.forEach(c=>{if(!out.some(d=>distM(d,c)<20))out.push(c);});
+  return out;
+}
+// Liste stockée dans le plan : au plus 10 stationnements, du temps de marche le plus court au plus long.
+function cleanParkList(arr){
+  if(!Array.isArray(arr))return [];
+  const out=[];
+  arr.forEach(e=>{
+    if(!e)return;
+    const lat=okCoord(e.lat,90),lon=okCoord(e.lon,180),w=okMin(e.walkMin,180);
+    if(lat==null||lon==null||w==null)return;
+    out.push({name:String(e.name||'Parking sans nom').slice(0,80),lat:lat,lon:lon,walkMin:w,est:!!e.est});
+  });
+  out.sort((x,y)=>x.walkMin-y.walkMin);
+  return out.slice(0,10);
+}
+// Candidats munis d'un temps de marche -> ceux à moins de maxMin minutes ; à défaut, le plus court seulement.
+function buildParkList(c,maxMin){
+  const l=cleanParkList((c||[]).map(x=>({name:parkLabel(x),lat:x.lat,lon:x.lon,walkMin:x.walkMin,est:x.est})));
+  const near=l.filter(x=>x.walkMin<=maxMin);
+  return near.length?near:l.slice(0,1);
+}
+function isMainPark(st,e){return st.parkLat===e.lat&&st.parkLon===e.lon;}
 // </core>
 
 // ---------- stockage ----------
@@ -681,7 +725,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function defaultPrefs(){return {theme:'auto',defStop:3,defCarbs:60,defWater:500,defGel:25,gpsEvery:'auto'};}
 let state=load();
 state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
-const APP_VERSION='1.8';
+const APP_VERSION='1.9';
 function prefv(k){return (state.prefs&&state.prefs[k]!=null)?state.prefs[k]:defaultPrefs()[k];}
 function applyTheme(){const t=state.prefs.theme,el=document.documentElement;if(t==='light'||t==='dark')el.setAttribute('data-theme',t);else el.removeAttribute('data-theme');}
 applyTheme();
@@ -747,6 +791,7 @@ function applyAutoBarriers(r){
 }
 const OSM={overpass:['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter']};
 let osmDiag=[];
+const osmDown={};
 function osmWhy(e){return e&&e.status?'HTTP '+e.status:(e&&e.name==='AbortError')?'délai dépassé':(e&&e.name==='SyntaxError')?'réponse illisible':'pas de connexion au serveur (réseau ou blocage)';}
 function osmNote(url,e){let h=url;try{h=new URL(url).host;}catch(x){}osmDiag.push(h+' : '+osmWhy(e));if(osmDiag.length>8)osmDiag.shift();}
 let osmLast=0;
@@ -769,12 +814,12 @@ async function osmFindParking(o){
   if(hit)return hit;
   const body='data='+encodeURIComponent(overpassQuery(o.lat,o.lon,o.radiusM));
   let j=null,last=null;
-  for(const ep of OSM.overpass){
+  for(const ep of OSM.overpass.filter(e=>!(osmDown[e]>Date.now()))){
     try{
       const x=await osmFetch(ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body},25000);
-      if(x&&x.remark&&/error|timed out/i.test(String(x.remark))&&!(x.elements&&x.elements.length)){last=new Error('Serveur surchargé');continue;}
+      if(x&&x.remark&&/error|timed out/i.test(String(x.remark))&&!(x.elements&&x.elements.length)){last=new Error('Serveur surchargé');osmDown[ep]=Date.now()+600000;continue;}
       j=x;break;
-    }catch(e){last=e;}
+    }catch(e){last=e;osmDown[ep]=Date.now()+600000;}
   }
   if(!j){
     // dernier recours : Nominatim (l'accès privé n'y est pas indiqué, à vérifier)
@@ -819,8 +864,8 @@ async function crewAuto(r,opts){
   if(!prov.auto)throw new Error('Aucun service de recherche n’est activé.');
   if(!gpsAvailable(r))throw new Error('Ce plan n’a pas de coordonnées GPS : réimporte le fichier GPX pour utiliser la recherche.');
   const tot=r.profile.d[r.profile.d.length-1];
-  const accs=r.stations.filter(s=>s.access&&s.km>0&&s.km<tot).sort((x,y)=>x.km-y.km);
-  if(!accs.length)throw new Error('Aucun ravito avec accès pour l’assistance.');
+  const accs=r.stations.filter(s=>(s.access||s.watch)&&s.km>0&&s.km<tot).sort((x,y)=>x.km-y.km);
+  if(!accs.length)throw new Error('Aucun ravito accessible : coche « Accès pour l’assistance » ou « Accessible au public » dans la fiche d’un ravito.');
   const touched={};let fails=0;
   const alive=()=>state.race===r&&!crewRun.cancel;
   const safe=async fn=>{try{const v=await fn();fails=0;return v;}catch(e){fails++;if(fails>=2){crewRun.diag=osmDiag.slice();throw new Error(navigator.onLine===false?'Pas de réseau : lance la recherche chez toi, avec du réseau.':'Le service OpenStreetMap ne répond pas pour le moment. Réessaie plus tard ou saisis les valeurs à la main.');}return null;}};
@@ -839,31 +884,33 @@ async function crewAuto(r,opts){
         }
         continue;
       }
-      crewLog('Recherche d’un stationnement près de « '+s.name+' » (km '+km1(s.km)+')…');
+      crewLog('Recherche des stationnements près de « '+s.name+' » (km '+km1(s.km)+')…');
       let cands=[];
-      for(const R of [250,500,1000,1800]){
+      for(const R of [500,1800]){
         if(!alive())break;
         const c=await safe(()=>prov.findParking({lat:ll.lat,lon:ll.lon,radiusM:R}));
-        if(c)cands=c;
-        if(cands.length>=3)break;
+        if(c)cands=mergeParkings(cands,c);
       }
       if(!alive())break;
       if(!cands.length){crewLog('Aucun stationnement trouvé près de « '+s.name+' » : saisis-le à la main.');continue;}
-      const top=cands.slice(0,3);
+      // 20 min à pied = environ 1,5 km : on calcule la marche réelle des 8 candidats les plus proches
+      const near=cands.filter(c=>c.distM<=1500).slice(0,8),top=near.length?near:cands.slice(0,1);
       for(const c of top){
         if(!alive())break;
         const w=await safe(()=>prov.travelMin({from:c,to:ll,mode:'walk'}));
         if(w!=null){c.walkMin=w;c.est=false;}else{c.walkMin=estWalkMin(c.distM);c.est=true;}
       }
       if(!alive())break;
-      const ranked=pickParking(top),best=ranked[0];
-      s.parking=parkLabel(best);s.parkLat=best.lat;s.parkLon=best.lon;s.walkMin=best.walkMin;s.walkEst=!!best.est;s.parkAuto=true;
-      s.parkAlt=ranked.slice(1,3).map(c=>({name:parkLabel(c),lat:c.lat,lon:c.lon,walkMin:c.walkMin,est:!!c.est}));
+      const list=buildParkList(top,20),best=pickParking(list)[0];
+      s.parking=best.name;s.parkLat=best.lat;s.parkLon=best.lon;s.walkMin=best.walkMin;s.walkEst=!!best.est;s.parkAuto=true;
+      s.parkList=list;
       touched[s.id]=true;
-      crewLog('« '+s.name+' » : '+s.parking+', '+s.walkMin+' min à pied'+(best.est?' (estimé)':'')+(best.src==='nominatim'?' · service de secours, accès au parking à vérifier':'')+'.');
+      crewLog('« '+s.name+' » : '+(list[0].walkMin<=20?list.length+' stationnement'+(list.length>1?'s':'')+' à moins de 20 min à pied':'aucun stationnement à moins de 20 min à pied')+'. Conseillé : '+best.name+', '+best.walkMin+' min'+(best.est?' (estimé)':'')+(top[0].src==='nominatim'?' · service de secours, accès à vérifier':'')+'.');
     }
   }
-  // 2. trajets en voiture : de parking en parking, en partant du départ de la course
+  // 2. trajets en voiture : de parking en parking, en partant du départ de la course.
+  //    Un point « sans assistance » (accessible au public) reçoit son trajet depuis le dernier point de l'assistance,
+  //    mais ne déplace pas la voiture : la chaîne continue entre les ravitos avec assistance.
   if(alive()){
     let prev=pointAtKm(r.profile,0),prevTouched=false;
     for(const s of accs){
@@ -876,8 +923,7 @@ async function crewAuto(r,opts){
         const v=await safe(()=>prov.travelMin({from:prev,to:dest,mode:'drive'}));
         if(v!=null){s.driveMin=v;}else if(v===null){crewLog('Pas d’itinéraire trouvé jusqu’à « '+s.name+' » : saisis le trajet à la main.');}
       }
-      prevTouched=!!touched[s.id]||(need&&!manual);
-      prev=dest;
+      if(s.access){prevTouched=!!touched[s.id]||(need&&!manual);prev=dest;}
     }
   }
 }
@@ -908,22 +954,29 @@ async function runCrewAuto(opts){
   if(state.race===r){save();render();maybePush();}
 }
 function prevAccessName(r,st){const a=r.stations.filter(z=>z.access&&z.km<st.km).sort((x,y)=>x.km-y.km);return a.length?a[a.length-1].name:'le départ';}
+function watchBox(s){
+  if(s.access)return '';
+  return '<label class="fld chk" style="margin-top:6px"><input type="checkbox" data-s="'+s.id+'" data-f="watch"'+(s.watch?' checked':'')+'><span>Accessible au public (voir passer les coureurs)</span></label>'
+    +(s.watch?'':'<p class="hint" style="margin:2px 0 0">Pas d’assistance possible ici, mais on peut s’y rendre pour encourager : le stationnement et le trajet seront calculés.</p>');
+}
 function crewFields(r,s){
-  if(!s.access)return '';
+  if(!s.access&&!s.watch)return '';
   const park=s.parking||(s.parkLat!=null&&s.parkLon!=null?s.parkLat+', '+s.parkLon:'');
-  const prev=prevAccessName(r,s),canAuto=routeProvider().auto&&gpsAvailable(r);
-  const alts=(s.parkAlt||[]).map((x,i)=>'<button class="chip" data-act="park-pick" data-id="'+s.id+'" data-i="'+i+'">'+esc(x.name)+' · '+x.walkMin+' min à pied</button>').join('');
-  return '<div class="stn-crew"><label class="fld"><span>Stationnement (nom ou coordonnées)</span><input data-s="'+s.id+'" data-f="parking" value="'+esc(park)+'" maxlength="80" placeholder="ex. Parking de la mairie, ou 43.9152, 4.5069" autocomplete="off"></label>'
+  const prev=prevAccessName(r,s),canAuto=routeProvider().auto&&gpsAvailable(r),list=s.parkList||[];
+  const plist=list.length?('<p class="note" style="margin:8px 0 2px">Stationnements à moins de 20 min à pied, du plus proche au plus loin. Touche pour choisir celui qui sert au trajet :</p><div class="chips plistc">'
+    +list.map((e,i)=>{const on=isMainPark(s,e);return '<button class="chip" data-act="park-pick" data-id="'+s.id+'" data-i="'+i+'" aria-pressed="'+on+'">'+esc(e.name)+' · '+e.walkMin+' min'+(e.est?' (estimé)':'')+'</button>';}).join('')+'</div>'):'';
+  return '<div class="stn-crew">'+(s.access?'':'<p class="hint" style="margin:0 0 6px">Point sans assistance, accessible pour voir passer les coureurs.</p>')
+    +'<label class="fld"><span>Stationnement (nom ou coordonnées)</span><input data-s="'+s.id+'" data-f="parking" value="'+esc(park)+'" maxlength="80" placeholder="ex. Parking de la mairie, ou 43.9152, 4.5069" autocomplete="off"></label>'
     +'<div class="stn-grid"><label class="fld"><span>Marche jusqu’au ravito (min)'+(s.walkEst?' · estimée':'')+'</span><input type="number" inputmode="numeric" min="0" max="180" data-s="'+s.id+'" data-f="walkMin" value="'+(s.walkMin==null?'':s.walkMin)+'"></label>'
     +'<label class="fld"><span>Trajet depuis '+(prev==='le départ'?'le départ':'« '+esc(prev)+' »')+' (min)</span><input type="number" inputmode="numeric" min="0" max="600" data-s="'+s.id+'" data-f="driveMin" value="'+(s.driveMin==null?'':s.driveMin)+'"></label></div>'
     +(canAuto?'<div class="row" style="margin:4px 0 0"><button class="btn quiet small" data-act="crew-auto-one" data-id="'+s.id+'">'+(s.parkAuto===true?'Recalculer ce ravito':'Trouver le stationnement')+'</button></div>':'')
-    +(alts?'<p class="note" style="margin:6px 0 2px">Autres stationnements proches :</p><div class="chips">'+alts+'</div>':'')
+    +plist
     +(s.parkAuto===true?'<p class="hint">Trouvé avec OpenStreetMap. Modifie un champ pour le garder tel quel.</p>':'')
     +'</div>';
 }
 function crewAutoBlock(r){
   const p=routeProvider();
-  if(!p.auto||!r.stations.some(s=>s.access))return '';
+  if(!p.auto||!r.stations.some(s=>s.access||s.watch))return '';
   if(!gpsAvailable(r))return '<p class="hint">La recherche automatique du stationnement demande les coordonnées du tracé : réimporte le fichier GPX.</p>';
   return '<div class="crewauto"><button class="btn" data-act="crew-auto"'+(crewRun.running?' disabled':'')+'>Trouver les stationnements et les trajets</button>'
     +'<p class="hint">Recherche gratuite avec OpenStreetMap, sans compte. À lancer chez toi avec du réseau : les résultats restent dans le plan. Les temps de voiture sont hors circulation, la marge de sécurité couvre le reste. Tes saisies manuelles ne sont jamais écrasées.</p>'
@@ -937,7 +990,13 @@ function migrateRace(r){
   ['sodium','barG','gelShare'].forEach(k=>{if(r[k]===undefined)r[k]=nutr({},k);});
   if(r.startAt===undefined)r.startAt=null;
   if(r.crewMargin===undefined)r.crewMargin=15;
-  r.stations.forEach(x=>{if(x.barrierAuto===undefined)x.barrierAuto=!x.barrier;});
+  r.stations.forEach(x=>{
+    if(x.barrierAuto===undefined)x.barrierAuto=!x.barrier;
+    if(x.parkAlt){  // ancien format (v1.7 à 1.8) : stationnement conseillé + 2 autres
+      if(!x.parkList){const l=x.parkAlt.slice();if(x.parkLat!=null&&x.parkLon!=null)l.unshift({name:x.parking||'Parking',lat:x.parkLat,lon:x.parkLon,walkMin:x.walkMin,est:!!x.walkEst});x.parkList=cleanParkList(l);}
+      delete x.parkAlt;
+    }
+  });
   if(r.finishBarrierAuto===undefined)r.finishBarrierAuto=!r.finishBarrier;
   applyAutoBarriers(r);
 }
@@ -1007,7 +1066,7 @@ const PLAN_KEYS=['name','date','start','target','stopMin','finishBarrier','finis
 function planObj(r,withItems){
   const o={};PLAN_KEYS.forEach(k=>{o[k]=r[k];});
   o.profile=r.profile;
-  o.stations=r.stations.map(s=>{const x={id:s.id,name:s.name,km:s.km,access:!!s.access,barrier:s.barrier||'',barrierAuto:s.barrierAuto!==false};if(s.parking)x.parking=s.parking;if(s.parkLat!=null&&s.parkLon!=null){x.parkLat=s.parkLat;x.parkLon=s.parkLon;}if(s.walkMin!=null)x.walkMin=s.walkMin;if(s.driveMin!=null)x.driveMin=s.driveMin;if(withItems)x.items=(s.items||[]).map(i=>({id:i.id,t:i.t,q:i.q||1,cat:i.cat||'autre'}));return x;});
+  o.stations=r.stations.map(s=>{const x={id:s.id,name:s.name,km:s.km,access:!!s.access,barrier:s.barrier||'',barrierAuto:s.barrierAuto!==false};if(s.parking)x.parking=s.parking;if(s.parkLat!=null&&s.parkLon!=null){x.parkLat=s.parkLat;x.parkLon=s.parkLon;}if(s.walkMin!=null)x.walkMin=s.walkMin;if(s.driveMin!=null)x.driveMin=s.driveMin;if(s.watch)x.watch=true;if(s.parkList&&s.parkList.length)x.parkList=s.parkList;if(withItems)x.items=(s.items||[]).map(i=>({id:i.id,t:i.t,q:i.q||1,cat:i.cat||'autre'}));return x;});
   return o;
 }
 function planJSON(r){return JSON.stringify(planObj(r,true));}
@@ -1036,7 +1095,7 @@ function sanitizeRace(r){
     carbs:Math.max(0,Math.min(200,+r.carbs||0)),water:Math.max(0,Math.min(2000,+r.water||0)),gelG:Math.max(0,Math.min(100,+r.gelG||0)),
     profile:prof,points:{},extras:{},done:{},diary:{rating:0,nutrition:'',learn:'',gear:''},
     stations:r.stations.slice(0,30).map(s=>({id:String(s.id||uid()).replace(/[^A-Za-z0-9]/g,'').slice(0,12)||uid(),name:String(s.name||'Ravito').slice(0,80),km:Math.max(0,+s.km||0),access:!!s.access,barrier:hm.test(s.barrier||'')?s.barrier:'',barrierAuto:s.barrierAuto===undefined?!s.barrier:!!s.barrierAuto,
-       parking:String(s.parking||'').slice(0,80),parkLat:okCoord(s.parkLat,90),parkLon:okCoord(s.parkLon,180),walkMin:okMin(s.walkMin,180),driveMin:okMin(s.driveMin,600),
+       parking:String(s.parking||'').slice(0,80),parkLat:okCoord(s.parkLat,90),parkLon:okCoord(s.parkLon,180),walkMin:okMin(s.walkMin,180),driveMin:okMin(s.driveMin,600),watch:!!s.watch,parkList:cleanParkList(s.parkList),
        items:Array.isArray(s.items)?s.items.slice(0,30).map(it=>({id:String(it.id||uid()).replace(/[^A-Za-z0-9]/g,'').slice(0,12)||uid(),t:String(it.t||'').slice(0,60),q:Math.max(1,Math.min(99,parseInt(it.q,10)||1)),cat:String(it.cat||'autre').slice(0,12)})):[]}))
   };
   clean.stations.sort((a,b)=>a.km-b.km);
@@ -2022,6 +2081,7 @@ function landCardHTML(r,m,tl,L,row){
   if(row.margin!=null)t+='<p class="'+mcls(row.margin)+'">Marge sur la barrière : '+mfmt(row.margin)+'</p>';
   if(!st.access){
     t+='<p class="note"><b>Ce point n’est pas accessible à l’assistance.</b></p>';
+    if(st.watch)t+='<p class="note">Accessible au public pour voir passer les coureurs.</p>'+crewLine(r,st);
   }else{
     const run=st.items||[],ext=Object.keys(r.extras||{}).filter(k=>r.extras[k].s===st.id).map(k=>Object.assign({id:k},r.extras[k]));
     const li=it=>'<li>'+((r.done&&r.done[it.id])?'✓ ':'')+esc(itemLabel(it))+'</li>';
@@ -2031,7 +2091,7 @@ function landCardHTML(r,m,tl,L,row){
     if(!run.length&&!ext.length)t+='<p class="note">Aucun article pour l’instant.</p>';
     if(sg)t+='<p>Jusqu’à '+esc(sg.to)+' ('+km1(sg.km)+' km'+(sg.via.length?', via '+sg.via.map(esc).join(' et ')+', sans assistance':'')+') : <b>'+needsText(sg.needs)+'</b>.</p>';
   }
-  t+='<div class="row"><button class="btn primary small" data-act="land-edit" data-id="'+row.id+'">'+(st.access?(member?'Voir et préparer ce ravito':'Préparer ce ravito'):(member?'Voir ce ravito':'Modifier ce ravito'))+'</button></div>'+(st.access?'<div class="maplinks">'+mapsLinks(r,m,row.km)+'</div>':'');
+  t+='<div class="row"><button class="btn primary small" data-act="land-edit" data-id="'+row.id+'">'+(st.access?(member?'Voir et préparer ce ravito':'Préparer ce ravito'):(st.watch||member?'Voir ce ravito':'Modifier ce ravito'))+'</button></div>'+((st.access||st.watch)?'<div class="maplinks">'+mapsLinks(r,m,row.km)+'</div>':'');
   return t;
 }
 function renderLand(){
@@ -2354,10 +2414,11 @@ function mapsLinks(r,m,km){
   if(!gpsAvailable(r))return '';
   const lat=interp(m.p.d,m.p.la,km),lon=interp(m.p.d,m.p.lo,km),c=lat.toFixed(5)+','+lon.toFixed(5);
   return '<a class="btn quiet small" href="https://www.google.com/maps/@?api=1&map_action=map&center='+c+'&zoom=17&basemap=satellite" target="_blank" rel="noopener noreferrer">Vue satellite</a>'
-    +'<a class="btn quiet small" href="https://www.google.com/maps/dir/?api=1&destination='+c+'&travelmode=driving" target="_blank" rel="noopener noreferrer">Itinéraire</a>';
+    +'<a class="btn quiet small" href="https://www.google.com/maps/dir/?api=1&destination='+c+'&travelmode=driving" target="_blank" rel="noopener noreferrer">Itinéraire</a>'
+    +'<a class="btn quiet small" href="https://waze.com/ul?ll='+c+'&navigate=yes&zoom=17" target="_blank" rel="noopener noreferrer">Waze</a>';
 }
 function openStation(id){
-  const r=state.race,st=r&&r.stations.find(x=>x.id===id),toAssist=!!(st&&st.access);
+  const r=state.race,st=r&&r.stations.find(x=>x.id===id),toAssist=!!(st&&(st.access||st.watch));
   const wasFs=!!document.fullscreenElement;
   if(landOpen)closeLand();
   tab=toAssist?'assist':'plan';render(true);
@@ -2475,7 +2536,7 @@ function renderPlan(){
       +'<div class="stn-grid"><label class="fld"><span>Kilomètre</span><input type="number" inputmode="decimal" step="0.1" min="0" data-s="'+s.id+'" data-f="km" value="'+s.km+'"></label>'
       +'<label class="fld"><span>Barrière horaire'+(s.barrierAuto!==false?' (calculée)':'')+'</span><input type="time" data-s="'+s.id+'" data-f="barrier" value="'+esc(s.barrier)+'"></label>'
       +'<label class="fld chk"><input type="checkbox" data-s="'+s.id+'" data-f="access"'+(s.access?' checked':'')+'><span>Accès pour l’assistance</span></label></div>'
-       +crewFields(r,s)
+       +watchBox(s)+crewFields(r,s)
        +'<div class="stn-times">'+times+'</div></li>';
   }).join('');
   const segs=assistSegments(r,m,tl);
@@ -2531,29 +2592,42 @@ function renderPlan(){
   +'<p class="note">« Supprimer la course » efface le tracé GPX et tout le plan : tu reviens à l’écran de départ, sans avoir à en importer un autre.</p>'
   +'<div class="row">'+(member?'':'<button class="btn danger" data-act="reset-plan">Réinitialiser le plan</button>')+'<button class="btn danger" data-act="delete-race">Supprimer la course</button></div></section>';
 }
+function navBtns(u,label){
+  if(!u)return '';
+  return '<a class="btn quiet small" href="'+u.maps+'" target="_blank" rel="noopener noreferrer">'+(label||'Maps')+'</a><a class="btn quiet small" href="'+u.waze+'" target="_blank" rel="noopener noreferrer">Waze</a>';
+}
 function crewLine(r,st){
-  if(!st.parking&&st.walkMin==null&&st.driveMin==null&&st.parkLat==null)return '';
-  const prev=prevAccessName(r,st),hasC=st.parkLat!=null&&st.parkLon!=null;
-  const dest=hasC?st.parkLat+','+st.parkLon:(st.parking?encodeURIComponent(st.parking):'');
+  const hasC=st.parkLat!=null&&st.parkLon!=null,list=st.parkList||[];
+  if(!st.parking&&st.walkMin==null&&st.driveMin==null&&!hasC&&!list.length)return '';
+  const prev=prevAccessName(r,st);
   let t='<p class="note crewinfo">';
   if(st.parking||hasC)t+='<b>Stationnement :</b> '+esc(st.parking||(st.parkLat+', '+st.parkLon))+(st.walkMin!=null?' · '+st.walkMin+' min à pied jusqu’au ravito':'')+'. ';
   else if(st.walkMin!=null)t+='<b>Marche jusqu’au ravito :</b> '+st.walkMin+' min. ';
   if(st.driveMin!=null)t+='<b>Trajet depuis '+(prev==='le départ'?'le départ':esc(prev))+' :</b> '+st.driveMin+' min en voiture.';
   t+='</p>';
-  if(dest)t+='<div class="maplinks"><a class="btn quiet small" href="https://www.google.com/maps/dir/?api=1&destination='+dest+'&travelmode=driving" target="_blank" rel="noopener noreferrer">Aller au stationnement</a></div>';
+  const u=navUrls(st.parkLat,st.parkLon,st.parking);
+  if(u)t+='<div class="maplinks">'+navBtns(u,'Aller au stationnement')+'</div>';
+  if(list.length>1||(list.length===1&&!isMainPark(st,list[0]))){
+    t+='<p class="note" style="margin:8px 0 2px"><b>Stationnements à moins de 20 min à pied</b>, du plus proche au plus loin :</p><ul class="plist">'
+      +list.map(e=>'<li><span>'+esc(e.name)+' · <b>'+e.walkMin+' min</b>'+(e.est?' (estimé)':'')+(isMainPark(st,e)?' · conseillé':'')+'</span><span class="maplinks">'+navBtns(navUrls(e.lat,e.lon,e.name))+'</span></li>').join('')+'</ul>';
+  }
   return t;
 }
 function renderAssist(){
   const r=state.race;if(!r)return needRace();
   const m=model(r),tlN=timeline(r,m,{}),tlO=timeline(r,m,{mult:0.92}),tlP=timeline(r,m,{mult:1.12}),segs=assistSegments(r,m,timeline(r,m,{plan:true}));
   const rows=tlN.rows;
-  const withAccess=rows.filter(x=>!x.isFinish&&x.st.access);
-  const without=rows.filter(x=>!x.isFinish&&!x.st.access);
+  const withAccess=rows.filter(x=>!x.isFinish&&(x.st.access||x.st.watch));
+  const without=rows.filter(x=>!x.isFinish&&!x.st.access&&!x.st.watch);
   const cards=withAccess.map(x=>{
     const i=x.index,early=tlO.rows[i].adjArr,late=tlP.rows[i].adjArr,passed=x.actual!=null,sg=segs.find(z=>z.fromId===x.id);
+    if(!x.st.access)return '<article class="crew watch'+(passed?' passed':'')+'" id="crew-'+x.id+'"><h3><span>'+esc(x.name)+'</span><span class="km">km '+km1(x.km)+'</span></h3>'
+      +'<p class="note"><b>Sans assistance</b> : le coureur ne peut pas y être aidé, mais on peut le voir passer.</p>'
+      +(passed?'<p class="win">Le coureur est passé à '+clk(x.actual)+'.</p>':'<p class="win">Passage estimé entre '+clk(early)+' et '+clk(late)+'.<br>Être sur place avant <b>'+clk(early-crewMarginOf(r))+'</b>.</p>')
+      +crewLine(r,x.st)+(gpsAvailable(r)?'<div class="maplinks">'+mapsLinks(r,m,x.km)+'</div>':'')+'</article>';
     return '<article class="crew'+(passed?' passed':'')+'" id="crew-'+x.id+'"><h3><span>'+esc(x.name)+'</span><span class="km">km '+km1(x.km)+'</span></h3>'
       +(passed?'<p class="win">Le coureur est passé à '+clk(x.actual)+'.</p>'
-              :'<p class="win">Passage estimé entre '+clk(early)+' et '+clk(late)+'.<br>Être sur place avant <b>'+clk(early-15)+'</b>.</p>')
+              :'<p class="win">Passage estimé entre '+clk(early)+' et '+clk(late)+'.<br>Être sur place avant <b>'+clk(early-crewMarginOf(r))+'</b>.</p>')
       +(x.margin!=null&&!passed?'<p class="'+mcls(x.margin)+'">Marge sur la barrière : '+mfmt(x.margin)+'</p>':'')
       +crewLine(r,x.st)
       +(sg?'<p>Jusqu’à <b>'+esc(sg.to)+'</b> ('+km1(sg.km)+' km, +'+sg.up+' m, −'+sg.down+' m, environ '+fmtDur(sg.dur)+')'+(sg.via.length?', en passant par '+sg.via.map(esc).join(' et ')+' (sans accès assistance)':'')+' : prévoir <b>'+needsText(sg.needs)+'</b>.</p>':'')
@@ -2704,11 +2778,9 @@ function act(b){
   if(a==='crew-cancel'){crewRun.cancel=true;return;}
   if(a==='crew-test'){crewTest();return;}
   if(a==='park-pick'){
-    const r=state.race,st=r&&r.stations.find(x=>x.id===b.dataset.id),alt=st&&(st.parkAlt||[])[+b.dataset.i];
-    if(!alt)return;
-    const old={name:st.parking,lat:st.parkLat,lon:st.parkLon,walkMin:st.walkMin,est:!!st.walkEst};
-    st.parking=alt.name;st.parkLat=alt.lat;st.parkLon=alt.lon;st.walkMin=alt.walkMin;st.walkEst=!!alt.est;st.parkAuto=true;
-    st.parkAlt=(st.parkAlt||[]).filter((_,i)=>i!==+b.dataset.i);if(old.name)st.parkAlt.unshift(old);
+    const r=state.race,st=r&&r.stations.find(x=>x.id===b.dataset.id),e=st&&(st.parkList||[])[+b.dataset.i];
+    if(!e)return;
+    st.parking=e.name;st.parkLat=e.lat;st.parkLon=e.lon;st.walkMin=e.walkMin;st.walkEst=!!e.est;st.parkAuto=true;
     commit();runCrewAuto({driveOnly:true});return;
   }
   if(a==='land-open'){openLand();return;}
@@ -2963,6 +3035,7 @@ document.addEventListener('change',e=>{
   if(sid){
     const s=r.stations.find(x=>x.id===sid);if(!s)return;const f=t.dataset.f;
     if(f==='access')s.access=t.checked;
+    else if(f==='watch')s.watch=t.checked;
     else if(f==='km'){let v=parseFloat(String(t.value).replace(',','.'));if(isNaN(v))v=s.km;s.km=Math.max(0,Math.round(v*10)/10);}
     else if(f==='barrier'){s.barrier=t.value;s.barrierAuto=!t.value;}
     else if(f==='walkMin'||f==='driveMin'){
@@ -2972,7 +3045,7 @@ document.addEventListener('change',e=>{
     }
     else if(f==='parking'){
       const v=String(t.value).trim().slice(0,80),c=parseLatLon(v);
-      s.parking=v;s.parkLat=c?c.lat:null;s.parkLon=c?c.lon:null;s.parkAuto=false;s.parkAlt=[];
+      s.parking=v;s.parkLat=c?c.lat:null;s.parkLon=c?c.lon:null;s.parkAuto=false;
     }
     else s[f]=t.value;
     if(f==='km'||f==='barrier')applyAutoBarriers(r);
