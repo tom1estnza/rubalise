@@ -179,11 +179,13 @@ body input[type=checkbox]:focus-visible{outline:3px solid color-mix(in srgb,var(
 .crew.hl{background:color-mix(in srgb,var(--accent) 14%,transparent);border-radius:10px}
 .maplinks{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
 .maplinks a.btn{text-decoration:none}
-.c3d-credit{position:absolute;right:0;top:0;font-size:11px;color:var(--ink2);max-width:60%;text-align:right}
-.in:focus-visible,.fld select:focus-visible,.fld textarea:focus-visible,.fld input:not([type=checkbox]):not([type=range]):focus-visible,.in:focus,.fld input:not([type=checkbox]):not([type=range]):focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
-.stn-name:focus-visible,.race-name:focus-visible{outline:none;border-bottom-color:var(--accent)}
+.c3d-credit{position:absolute;right:4px;top:4px;font-size:11px;color:var(--ink);max-width:60%;text-align:right;background:color-mix(in srgb,var(--bg) 82%,transparent);padding:2px 8px;border-radius:999px}
+.c3d-credit:empty{display:none}
+.in:focus-visible,.fld select:focus-visible,.fld textarea:focus-visible,.fld input:not([type=checkbox]):not([type=range]):focus-visible,.in:focus,.fld input:not([type=checkbox]):not([type=range]):focus{outline:none;border-color:color-mix(in srgb,var(--accent) 40%,transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 40%,transparent)}
+.stn-name:focus-visible,.race-name:focus-visible{outline:none;border-bottom-color:color-mix(in srgb,var(--accent) 40%,transparent)}
 .grid2,.grid3{align-items:end}
 .fld input:not([type=checkbox]):not([type=range]),.fld select,select.in,input.in{height:46px}
+.fld input,.fld textarea,.fld select,.in{box-sizing:border-box;min-width:0;max-width:100%}
 .topbtns{display:flex;align-items:center;gap:8px}
 .icon-btn{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--line);background:transparent;font:700 18px var(--f-num);color:var(--ink2);cursor:pointer;touch-action:manipulation}
 .card{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:16px;margin:0 0 14px}
@@ -251,10 +253,11 @@ details p,details ol{margin:4px 0 10px;color:var(--ink);max-width:62ch}
 .land-mode button{min-height:34px;padding:0 14px;border-radius:999px;border:1.5px solid var(--line);background:transparent;font-weight:600;font-size:15px;cursor:pointer;color:var(--ink);touch-action:manipulation}
 .land-mode button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 #c3d{position:absolute;left:0;top:0;touch-action:none;cursor:grab}
+#c3dgl{position:absolute;left:0;top:0;pointer-events:none}
 .c3d-tools{position:absolute;left:0;bottom:0;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .c3d-tools .btn{min-height:34px;padding:0 10px;font-size:14px;background:var(--bg)}
 .c3d-tools .btn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.c3d-legend{position:absolute;right:0;bottom:0;display:flex;gap:10px;font-size:12px;color:var(--ink2);flex-wrap:wrap;justify-content:flex-end;max-width:60%}
+.c3d-legend{position:absolute;right:4px;bottom:4px;display:flex;gap:10px;font-size:12px;color:var(--ink);flex-wrap:wrap;justify-content:flex-end;max-width:60%;background:color-mix(in srgb,var(--bg) 82%,transparent);padding:3px 10px;border-radius:12px}
 .c3d-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
 .land-hint{font-size:13px;color:var(--ink2);flex:1}
 .land-body{flex:1;display:flex;gap:12px;min-height:0;margin-top:6px}
@@ -582,7 +585,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function defaultPrefs(){return {theme:'auto',defStop:3,defCarbs:60,defWater:500,defGel:25,gpsEvery:'auto'};}
 let state=load();
 state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
-const APP_VERSION='1.2';
+const APP_VERSION='1.4';
 function prefv(k){return (state.prefs&&state.prefs[k]!=null)?state.prefs[k]:defaultPrefs()[k];}
 function applyTheme(){const t=state.prefs.theme,el=document.documentElement;if(t==='light'||t==='dark')el.setAttribute('data-theme',t);else el.removeAttribute('data-theme');}
 applyTheme();
@@ -1182,7 +1185,7 @@ function tourSteps(){
     {tab:'live',target:'.tabs [data-tab="live"]',title:'3. Suis la course',text:'Le jour J, « pointer » un ravito, c’est noter l’heure de passage : les heures suivantes se recalculent. Ton téléphone peut aussi partager ta position GPS.'+(nat?' Android te demandera alors la localisation et les notifications.':'')},
     {tab:'diary',target:'.tabs [data-tab="diary"]',title:'4. Garde une trace',text:'Après la course, compare le prévu et le réel, note ton ressenti, puis archive la course dans ton carnet.'}
   ];
-  if(run)L.push({tab:'plan',target:'.tabs [data-tab="runner"]',title:'Ton espace coureur',text:'Renseigne ta fréquence cardiaque et une performance de référence : tu obtiens tes zones d’allure et de fréquence cardiaque, et un temps estimé pour ta course.'});
+  if(run)L.push({tab:'runner',target:'.tabs [data-tab="runner"]',title:'Ton espace coureur',text:'Renseigne ta fréquence cardiaque et une performance de référence : tu obtiens tes zones d’allure et de fréquence cardiaque, et un temps estimé pour ta course.'});
   else L.push({tab:'plan',target:'#acct',title:'Crée ton compte',text:'Un compte gratuit permet de partager ta course et d’enregistrer ton profil (zones d’allure et de fréquence cardiaque). Tu peux aussi t’en passer pour préparer une course.'});
   L.push({tab:'plan',target:'#helpbtn',title:'Besoin d’aide ?',text:'Le bouton « ? » rouvre ce guide, la FAQ et le mini-lexique à tout moment.'});
   L.push({tab:'plan',target:null,final:true,title:'À toi de jouer !',text:'Importe ton fichier GPX, ou essaie la course démo pour tout voir en action.'});
@@ -1772,75 +1775,230 @@ function satSource(bb){
   return fr?{name:'IGN',credit:'Photographies aériennes © IGN',url:(z,x,y)=>'https://data.geopf.fr/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&TILEMATRIXSET=PM&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&FORMAT=image/jpeg&TILEMATRIX='+z+'&TILEROW='+y+'&TILECOL='+x}
     :{name:'Esri',credit:'Imagerie : Esri, Maxar, Earthstar Geographics',url:(z,x,y)=>'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+z+'/'+y+'/'+x};
 }
-function pickTiles(bb){
-  for(let z=16;z>=7;z--){
+function pickTiles(bb,maxTiles,zmax,maxDim){
+  maxTiles=maxTiles||36;maxDim=maxDim||99;
+  for(let z=zmax||16;z>=5;z--){
     const a=mercPx(bb.latMax,bb.lonMin,z),b=mercPx(bb.latMin,bb.lonMax,z);
     const x0=Math.floor(a[0]/256),x1=Math.floor(b[0]/256),y0=Math.floor(a[1]/256),y1=Math.floor(b[1]/256);
-    if((x1-x0+1)*(y1-y0+1)<=36){const tiles=[];for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)tiles.push({x:x,y:y});return {z:z,tiles:tiles};}
+    const nx=x1-x0+1,ny=y1-y0+1;
+    if(nx*ny<=maxTiles&&nx<=maxDim&&ny<=maxDim){const tiles=[];for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)tiles.push({x:x,y:y});return {z:z,tiles:tiles};}
   }
   return null;
 }
-const tileCache={};
+// Zone chargée : bien plus large que le tracé, pour qu'il n'y ait pas de vide quand on tourne ou qu'on dézoome.
+function regionFor(p){
+  const n=p.d.length,la0=p.la.reduce((a,b)=>a+b,0)/n,lo0=p.lo.reduce((a,b)=>a+b,0)/n,cl=Math.cos(la0*Math.PI/180);
+  const xs=p.lo.map(v=>(v-lo0)*cl*111320),ys=p.la.map(v=>(v-la0)*110540);
+  const xmin=Math.min.apply(null,xs),xmax=Math.max.apply(null,xs),ymin=Math.min.apply(null,ys),ymax=Math.max.apply(null,ys);
+  const cx=(xmin+xmax)/2,cy=(ymin+ymax)/2,R=Math.hypot(xmax-xmin,ymax-ymin)*1.95+2000;   // couvre l'écran quel que soit l'angle de rotation (zoom arrière limité à 0,8)
+  return {la0:la0,lo0:lo0,cl:cl,cx:cx,cy:cy,R:R,bb:{latMin:la0+(cy-R)/110540,latMax:la0+(cy+R)/110540,lonMin:lo0+(cx-R)/(cl*111320),lonMax:lo0+(cx+R)/(cl*111320)}};
+}
+function demUrl(z,x,y){return window.__dem?window.__dem(z,x,y):'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/'+z+'/'+x+'/'+y+'.png';}
+const imgCache={};
+function loadImg(url,cors){
+  const k=(cors?'c|':'n|')+url;
+  return imgCache[k]||(imgCache[k]=new Promise(res=>{const im=new Image();if(cors)im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=()=>{delete imgCache[k];res(null);};im.src=url;}));
+}
+let glOkCache=null;
+function glSupported(){if(glOkCache!==null)return glOkCache;try{const c=document.createElement('canvas');glOkCache=!!(c.getContext('webgl')||c.getContext('experimental-webgl'));}catch(e){glOkCache=false;}return glOkCache;}
+let glCapsCache=null;
+function glCaps(){if(glCapsCache)return glCapsCache;let u=false;try{const c=document.createElement('canvas'),g=c.getContext('webgl');u=!!(g&&g.getExtension('OES_element_index_uint'));}catch(e){}glCapsCache={uint32:u};return glCapsCache;}
+let satData=null;
+function zMin3(){return (v3.sat&&satData&&satData.terrain)?0.8:0.5;}
 function updateSatInfo(){
-  const el=document.getElementById('c3dcredit');if(!el||!cur3||!cur3.sat)return;
-  const s0=cur3.sat;el.textContent=s0.loaded?s0.src.credit:(s0.failed>=s0.tiles.length?'Image satellite indisponible (hors ligne ?)':'Chargement de l’image satellite…');
+  const el=document.getElementById('c3dcredit');if(!el)return;
+  const s0=satData;if(!v3.sat||!s0){el.textContent='';return;}
+  if(s0.settled&&s0.failed>=(s0.tot||s0.tiles.length)){el.textContent='Image satellite indisponible (hors ligne ?)';return;}
+  if(!s0.settled){el.textContent='Chargement du relief et de l’image satellite… '+(s0.loaded+s0.failed)+'/'+(s0.tot||s0.tiles.length);return;}
+  el.textContent=s0.src.credit+(s0.terrain?' · Relief : AWS Terrain Tiles (SRTM, USGS)':' · Relief réel indisponible');
 }
 function ensureSat(){
   if(!cur3||!v3.sat)return;
-  const p=cur3.m.p;
-  let bb={latMin:Math.min.apply(null,p.la),latMax:Math.max.apply(null,p.la),lonMin:Math.min.apply(null,p.lo),lonMax:Math.max.apply(null,p.lo)};
-  const dl=(bb.latMax-bb.latMin)*0.08||0.002,dn=(bb.lonMax-bb.lonMin)*0.08||0.002;
-  bb={latMin:bb.latMin-dl,latMax:bb.latMax+dl,lonMin:bb.lonMin-dn,lonMax:bb.lonMax+dn};
-  const src=satSource(bb),pk=pickTiles(bb);if(!pk){cur3.sat=null;return;}
-  const sat={z:pk.z,src:src,loaded:0,failed:0,tiles:pk.tiles.map(t=>({x:t.x,y:t.y,img:null,url:src.url(pk.z,t.x,t.y)}))};
-  cur3.sat=sat;
-  sat.tiles.forEach(t=>{
-    const c=tileCache[t.url];
-    if(c){t.img=c;sat.loaded++;return;}
-    const im=new Image();
-    im.onload=()=>{tileCache[t.url]=im;t.img=im;sat.loaded++;updateSatInfo();requestAnimationFrame(draw3D);};
-    im.onerror=()=>{sat.failed++;updateSatInfo();};
-    im.src=t.url;
+  const p=cur3.m.p,rg=regionFor(p),src=satSource(rg.bb),key=[rg.la0.toFixed(4),rg.lo0.toFixed(4),Math.round(rg.R),src.name].join('|');
+  if(satData&&satData.key===key){updateSatInfo();return;}
+  const pk=pickTiles(rg.bb,25,16,5);if(!pk){satData=null;return;}
+  // image nette : uniquement autour du tracé (le reste de la zone reste à basse résolution)
+  const la1=Math.min.apply(null,p.la),la2=Math.max.apply(null,p.la),lo1=Math.min.apply(null,p.lo),lo2=Math.max.apply(null,p.lo);
+  const mla=(la2-la1)*0.2+0.01,mlo=(lo2-lo1)*0.2+0.015;
+  const pdt=pickTiles({latMin:la1-mla,latMax:la2+mla,lonMin:lo1-mlo,lonMax:lo2+mlo},64,16,8);
+  const detail=(pdt&&pdt.z>=pk.z+2)?pdt:null;
+  const pd=pickTiles(rg.bb,36,13,6);
+  const sd={key:key,rg:rg,src:src,z:pk.z,dz:detail?detail.z:0,loaded:0,failed:0,settled:false,terrain:null,
+    tiles:pk.tiles.map(t=>({x:t.x,y:t.y,img:null,cors:false,url:src.url(pk.z,t.x,t.y)})),
+    dtiles:detail?detail.tiles.map(t=>({x:t.x,y:t.y,img:null,cors:false,url:src.url(detail.z,t.x,t.y)})):[],
+    dem:pd?{z:pd.z,tiles:pd.tiles.map(t=>({x:t.x,y:t.y,img:null,url:demUrl(pd.z,t.x,t.y)}))}:null,path:p};
+  sd.tot=sd.tiles.length+sd.dtiles.length;
+  satData=sd;
+  const jobs=sd.tiles.concat(sd.dtiles).map(t=>loadImg(t.url,true).then(im=>{
+    if(im){t.cors=true;return im;}
+    return loadImg(t.url,false);          // sans CORS : suffisant pour l'image posée à plat
+  }).then(im=>{t.img=im;if(im)sd.loaded++;else sd.failed++;updateSatInfo();if(satData===sd)requestAnimationFrame(draw3D);}));
+  const demJob=sd.dem?Promise.all(sd.dem.tiles.map(t=>loadImg(t.url,true).then(im=>{t.img=im;return im;}))).then(arr=>arr.every(Boolean)):Promise.resolve(false);
+  Promise.all(jobs).then(()=>demJob).then(demOk=>{
+    sd.settled=true;
+    if(sd.dtiles.length&&!sd.dtiles.every(t=>t.img&&t.cors)){sd.dtiles=[];}       // couche nette incomplète : on s'en passe
+    try{if(demOk&&sd.loaded>0&&sd.tiles.every(t=>!t.img||t.cors)&&glSupported())sd.terrain=buildTerrain(sd);}catch(e){sd.terrain=null;}
+    updateSatInfo();if(satData===sd)requestAnimationFrame(draw3D);
   });
   updateSatInfo();
+}
+// ---------- relief réel : maillage d'altitudes (tuiles Terrarium) + image satellite plaquée dessus ----------
+function buildTerrain(sd){
+  const rg=sd.rg,D=sd.dem,u32=glCaps().uint32,N=u32?449:255;
+  const dx=D.tiles.map(t=>t.x),dy=D.tiles.map(t=>t.y),dx0=Math.min.apply(null,dx),dy0=Math.min.apply(null,dy),dx1=Math.max.apply(null,dx),dy1=Math.max.apply(null,dy);
+  const DW=(dx1-dx0+1)*256,DH=(dy1-dy0+1)*256,E=new Float32Array(DW*DH);
+  const tc=document.createElement('canvas');tc.width=tc.height=256;const tx=tc.getContext('2d',{willReadFrequently:true});
+  D.tiles.forEach(t=>{
+    tx.clearRect(0,0,256,256);tx.drawImage(t.img,0,0,256,256);
+    const d=tx.getImageData(0,0,256,256).data,ox=(t.x-dx0)*256,oy=(t.y-dy0)*256;
+    for(let j=0;j<256;j++)for(let i=0;i<256;i++){const k=(j*256+i)*4;E[(oy+j)*DW+ox+i]=d[k]*256+d[k+1]+d[k+2]/256-32768;}
+  });
+  const demAt=(lat,lon)=>{
+    const q=mercPx(lat,lon,D.z),u=clampN(q[0]-dx0*256-0.5,0,DW-1.001),v=clampN(q[1]-dy0*256-0.5,0,DH-1.001),i=Math.floor(u),j=Math.floor(v),fu=u-i,fv=v-j;
+    const a=E[j*DW+i],b=E[j*DW+i+1],c=E[(j+1)*DW+i],d=E[(j+1)*DW+i+1];
+    return (a*(1-fu)+b*fu)*(1-fv)+(c*(1-fu)+d*fu)*fv;
+  };
+  const mosaic=(list,z)=>{
+    const xs=list.map(t=>t.x),ys=list.map(t=>t.y),x0=Math.min.apply(null,xs),y0=Math.min.apply(null,ys),x1=Math.max.apply(null,xs),y1=Math.max.apply(null,ys);
+    let POT=256;while(POT<Math.max(x1-x0+1,y1-y0+1)*256)POT*=2;
+    const cv=document.createElement('canvas');cv.width=cv.height=POT;const cx=cv.getContext('2d');
+    cx.fillStyle='#58613f';cx.fillRect(0,0,POT,POT);
+    list.forEach(t=>{if(t.img)cx.drawImage(t.img,(t.x-x0)*256,(t.y-y0)*256,256,256);});
+    return {cv:cv,x0:x0,y0:y0,POT:POT,z:z,w:(x1-x0+1)*256/POT,h:(y1-y0+1)*256/POT};
+  };
+  const M1=mosaic(sd.tiles,sd.z),M2=sd.dtiles.length?mosaic(sd.dtiles,sd.dz):null;
+  // maillage resserré autour du tracé (cellules fines au centre, larges vers les bords de la zone)
+  const aG=0.3,gr=t=>(t<0?-1:1)*(aG*Math.abs(t)+(1-aG)*Math.pow(Math.abs(t),3));
+  const AX=new Float64Array(N),AY=new Float64Array(N);
+  for(let c=0;c<N;c++){const t=-1+2*c/(N-1);AX[c]=rg.cx+rg.R*gr(t);AY[c]=rg.cy+rg.R*gr(t);}
+  const Hh=new Float32Array(N*N),uv=new Float32Array(N*N*2),uv2=new Float32Array(N*N*2);
+  let hmin=1e9,hmax=-1e9;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const X=AX[c],Y=AY[r],lat=rg.la0+Y/110540,lon=rg.lo0+X/(rg.cl*111320),h=demAt(lat,lon),q=mercPx(lat,lon,M1.z),k=r*N+c;
+    Hh[k]=h;if(h<hmin)hmin=h;if(h>hmax)hmax=h;
+    uv[k*2]=(q[0]-M1.x0*256)/M1.POT;uv[k*2+1]=(q[1]-M1.y0*256)/M1.POT;
+    if(M2){const q2=mercPx(lat,lon,M2.z);uv2[k*2]=(q2[0]-M2.x0*256)/M2.POT;uv2[k*2+1]=(q2[1]-M2.y0*256)/M2.POT;}
+  }
+  const loc=(A,v)=>{let lo=0,hi=N-1;v=clampN(v,A[0],A[N-1]-1e-6);while(hi-lo>1){const m=(lo+hi)>>1;if(A[m]<=v)lo=m;else hi=m;}return lo;};
+  const gridRaw=(X,Y)=>{
+    const c=loc(AX,X),r=loc(AY,Y),fu=clampN((X-AX[c])/(AX[c+1]-AX[c]),0,1),fv=clampN((Y-AY[r])/(AY[r+1]-AY[r]),0,1);
+    return (Hh[r*N+c]*(1-fu)+Hh[r*N+c+1]*fu)*(1-fv)+(Hh[(r+1)*N+c]*(1-fu)+Hh[(r+1)*N+c+1]*fu)*fv;
+  };
+  const pth=sd.path,la0=rg.la0,lo0=rg.lo0,cl=rg.cl;
+  let ebase=1e9;
+  for(let i=0;i<pth.d.length;i++){const h=gridRaw((pth.lo[i]-lo0)*cl*111320,(pth.la[i]-la0)*110540);if(h<ebase)ebase=h;}
+  const pos=new Float32Array(N*N*3),sl=new Float32Array(N*N*2);
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const k=r*N+c,c0=Math.max(0,c-1),c1=Math.min(N-1,c+1),r0=Math.max(0,r-1),r1=Math.min(N-1,r+1);
+    pos[k*3]=AX[c];pos[k*3+1]=AY[r];pos[k*3+2]=Hh[k]-ebase;
+    sl[k*2]=(Hh[r*N+c1]-Hh[r*N+c0])/(AX[c1]-AX[c0]);sl[k*2+1]=(Hh[r1*N+c]-Hh[r0*N+c])/(AY[r1]-AY[r0]);
+  }
+  const idx=u32?new Uint32Array((N-1)*(N-1)*6):new Uint16Array((N-1)*(N-1)*6);let q=0;
+  for(let r=0;r<N-1;r++)for(let c=0;c<N-1;c++){const a=r*N+c,b=a+1,d=a+N,e=d+1;idx[q++]=a;idx[q++]=b;idx[q++]=d;idx[q++]=b;idx[q++]=e;idx[q++]=d;}
+  return {N:N,u32:u32,pos:pos,uv:uv,uv2:uv2,sl:sl,idx:idx,mc:M1.cv,mc2:M2?M2.cv:null,r2:M2?[0,0,M2.w,M2.h]:[0,0,0,0],cx:rg.cx,cy:rg.cy,R:rg.R,zspan:Math.max(Math.abs(hmax-ebase),Math.abs(hmin-ebase),50),ebase:ebase,gridAt:(X,Y)=>gridRaw(X,Y)-ebase};
+}
+const GL_VS='attribute vec3 aP;attribute vec2 aUV;attribute vec2 aUV2;attribute vec2 aS;uniform vec2 uCS;uniform vec2 uCT;uniform float uRel;uniform vec2 uO;uniform float uSc;uniform vec2 uWH;uniform float uDS;uniform vec3 uCR;varying vec2 vUV;varying vec2 vUV2;varying float vH;varying float vD;'
+ +'void main(){float x1=aP.x*uCS.x-aP.y*uCS.y;float y1=aP.x*uCS.y+aP.y*uCS.x;float z=aP.z*uRel;'
+ +'float px=uO.x+uSc*x1;float py=uO.y+uSc*(-(y1*uCT.y+z*uCT.x));float dp=y1*uCT.x-z*uCT.y;'
+ +'gl_Position=vec4(px/uWH.x*2.0-1.0,1.0-py/uWH.y*2.0,dp*uDS,1.0);vUV=aUV;vUV2=aUV2;vD=max(abs(aP.x-uCR.x),abs(aP.y-uCR.y))/uCR.z;'
+ +'vec3 n=normalize(vec3(-aS.x*uRel,-aS.y*uRel,1.0));vec3 L=normalize(vec3(-0.5,0.6,0.65));vH=max(dot(n,L),0.0);}';
+const GL_FS='#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n'
+ +'uniform sampler2D uT;uniform sampler2D uT2;uniform vec4 uR2;uniform float uHas2;varying vec2 vUV;varying vec2 vUV2;varying float vH;varying float vD;'
+ +'void main(){vec3 c=texture2D(uT,vUV).rgb;'
+ +'vec3 c2=texture2D(uT2,clamp(vUV2,uR2.xy,uR2.zw)).rgb;'
+ +'float e=min(min(vUV2.x-uR2.x,uR2.z-vUV2.x),min(vUV2.y-uR2.y,uR2.w-vUV2.y));float w=clamp(e/0.015,0.0,1.0)*uHas2;'
+ +'c=mix(c,c2,w);float a=1.0-smoothstep(0.80,1.0,vD);'
+ +'gl_FragColor=vec4(c*(0.40+0.80*vH)*a,a);}';
+function initGL(cvgl,T){
+  const gl=cvgl.getContext('webgl',{antialias:true,alpha:true,premultipliedAlpha:true})||cvgl.getContext('experimental-webgl');
+  if(!gl)return null;
+  const sh=(t,src)=>{const o=gl.createShader(t);gl.shaderSource(o,src);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(o));return o;};
+  const pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,GL_VS));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,GL_FS));gl.linkProgram(pr);
+  if(!gl.getProgramParameter(pr,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(pr));
+  const buf=(arr,type)=>{const b=gl.createBuffer();gl.bindBuffer(type,b);gl.bufferData(type,arr,gl.STATIC_DRAW);return b;};
+  if(T.u32&&!gl.getExtension('OES_element_index_uint'))throw new Error('indices 32 bits indisponibles');
+  const g={gl:gl,pr:pr,bp:buf(T.pos,gl.ARRAY_BUFFER),bu:buf(T.uv,gl.ARRAY_BUFFER),bu2:buf(T.uv2,gl.ARRAY_BUFFER),bs:buf(T.sl,gl.ARRAY_BUFFER),bi:buf(T.idx,gl.ELEMENT_ARRAY_BUFFER),n:T.idx.length,u32:T.u32};
+  const A=n=>gl.getAttribLocation(pr,n),U=n=>gl.getUniformLocation(pr,n);
+  g.a={P:A('aP'),UV:A('aUV'),UV2:A('aUV2'),S:A('aS')};g.u={CS:U('uCS'),CT:U('uCT'),Rel:U('uRel'),O:U('uO'),Sc:U('uSc'),WH:U('uWH'),DS:U('uDS'),CR:U('uCR'),T:U('uT'),T2:U('uT2'),R2:U('uR2'),Has2:U('uHas2')};
+  const mk=(cv)=>{
+    const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,cv);gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    const an=gl.getExtension('EXT_texture_filter_anisotropic');
+    if(an)gl.texParameterf(gl.TEXTURE_2D,an.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl.getParameter(an.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+    return tex;
+  };
+  g.tex=mk(T.mc);g.has2=!!T.mc2;g.tex2=T.mc2?mk(T.mc2):g.tex;
+  return g;
+}
+
+function drawTerrain(T,P){
+  if(!cur3.g){
+    try{cur3.g=initGL(cur3.cvgl,T);}catch(e){cur3.g=null;}
+    if(!cur3.g){cur3.glOK=false;requestAnimationFrame(draw3D);return false;}
+  }
+  const g=cur3.g,gl=g.gl;
+  gl.viewport(0,0,P.W,P.H);gl.clearColor(0,0,0,0);gl.clearDepth(1);gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LESS);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(g.pr);
+  gl.bindBuffer(gl.ARRAY_BUFFER,g.bp);gl.enableVertexAttribArray(g.a.P);gl.vertexAttribPointer(g.a.P,3,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,g.bu);gl.enableVertexAttribArray(g.a.UV);gl.vertexAttribPointer(g.a.UV,2,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,g.bu2);gl.enableVertexAttribArray(g.a.UV2);gl.vertexAttribPointer(g.a.UV2,2,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,g.bs);gl.enableVertexAttribArray(g.a.S);gl.vertexAttribPointer(g.a.S,2,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,g.bi);
+  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,g.tex);gl.uniform1i(g.u.T,0);
+  gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,g.tex2);gl.uniform1i(g.u.T2,1);gl.uniform4f(g.u.R2,T.r2[0],T.r2[1],T.r2[2],T.r2[3]);gl.uniform1f(g.u.Has2,g.has2?1:0);gl.uniform3f(g.u.CR,T.cx,T.cy,T.R);gl.activeTexture(gl.TEXTURE0);
+  gl.uniform2f(g.u.CS,P.cy,P.sy);gl.uniform2f(g.u.CT,P.ct,P.st);gl.uniform1f(g.u.Rel,v3.relief);
+  gl.uniform2f(g.u.O,P.ox,P.oy);gl.uniform1f(g.u.Sc,P.sc);gl.uniform2f(g.u.WH,P.W,P.H);
+  gl.uniform1f(g.u.DS,1/(2.4*T.R+T.zspan*v3.relief));
+  gl.drawElements(gl.TRIANGLES,g.n,g.u32?gl.UNSIGNED_INT:gl.UNSIGNED_SHORT,0);
+  return true;
 }
 function draw3D(){
   if(!cur3)return;
   const {cv,m,tl,kmNow}=cur3,p=m.p,n=p.d.length,ctx=cv.getContext('2d'),W=cv.width,H=cv.height,dpr=W/(cv.clientWidth||W);
   ctx.clearRect(0,0,W,H);
   const la0=p.la.reduce((a,b)=>a+b,0)/n,lo0=p.lo.reduce((a,b)=>a+b,0)/n,cl=Math.cos(la0*Math.PI/180),emin=Math.min.apply(null,p.e);
+  const terr=(v3.sat&&satData&&satData.terrain&&cur3.glOK!==false&&cur3.cvgl)?satData.terrain:null;
+  if(terr){v3.pitch=Math.max(v3.pitch,0.3);v3.zoom=Math.max(v3.zoom,0.8);}
   const X=[],Y=[],Z=[];
-  for(let i=0;i<n;i++){X.push((p.lo[i]-lo0)*cl*111320);Y.push((p.la[i]-la0)*110540);Z.push((p.e[i]-emin)*v3.relief);}
+  for(let i=0;i<n;i++){const xx=(p.lo[i]-lo0)*cl*111320,yy=(p.la[i]-la0)*110540;X.push(xx);Y.push(yy);Z.push(terr?terr.gridAt(xx,yy)*v3.relief:(p.e[i]-emin)*v3.relief);}
   const cy=Math.cos(v3.yaw),sy=Math.sin(v3.yaw),ct=Math.cos(v3.pitch),st=Math.sin(v3.pitch);
   const proj=(x,y,z)=>{const x1=x*cy-y*sy,y1=x*sy+y*cy;return [x1,-(y1*st+z*ct)];};
   const P=[],G=[];
   for(let i=0;i<n;i++){P.push(proj(X[i],Y[i],Z[i]));G.push(proj(X[i],Y[i],0));}
   let x0=1e12,x1=-1e12,y0=1e12,y1=-1e12;
-  P.concat(G).forEach(q=>{x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);});
+  (terr?P:P.concat(G)).forEach(q=>{x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);});
   const pad=34*dpr,sc=Math.min((W-2*pad)/Math.max(1,x1-x0),(H-2*pad)/Math.max(1,y1-y0))*v3.zoom;
   const ox=W/2-(x0+x1)/2*sc,oy=H/2-(y0+y1)/2*sc,S=q=>[ox+q[0]*sc,oy+q[1]*sc];
   if(window.__debug3d)cur3.dbg={ox:ox,oy:oy,sc:sc,cy:cy,sy:sy,st:st,la0:la0,lo0:lo0,cl:cl,W:W,H:H};
   // image satellite posée au sol (les tuiles subissent la même transformation que le tracé)
-  if(v3.sat&&cur3.sat){
-    const sat=cur3.sat,z=sat.z,pp=mercPx(la0,lo0,z),kd=360/(256*Math.pow(2,z));
-    const sxm=kd*cl*111320,sym=kd*Math.cos(la0*Math.PI/180)*110540;
-    ctx.imageSmoothingEnabled=true;
-    sat.tiles.forEach(t=>{
-      if(!t.img)return;
-      const nw=t.img.naturalWidth||256,kk=256/nw,X0=(t.x*256-pp[0])*sxm,Y0=-(t.y*256-pp[1])*sym;
-      ctx.save();
-      ctx.setTransform(sc*sxm*kk*cy,-sc*st*sxm*kk*sy,sc*sym*kk*sy,sc*st*sym*kk*cy,ox+sc*(X0*cy-Y0*sy),oy-sc*st*(X0*sy+Y0*cy));
-      ctx.drawImage(t.img,0,0);ctx.restore();
-    });
+  if(terr){drawTerrain(terr,{W:W,H:H,cy:cy,sy:sy,ct:ct,st:st,ox:ox,oy:oy,sc:sc});}
+  else if(v3.sat&&satData){
+    const flat=(list,z)=>{
+      const pp=mercPx(la0,lo0,z),kd=360/(256*Math.pow(2,z)),sxm=kd*cl*111320,sym=kd*Math.cos(la0*Math.PI/180)*110540;
+      ctx.imageSmoothingEnabled=true;
+      list.forEach(t=>{
+        if(!t.img)return;
+        const nw=t.img.naturalWidth||256,kk=256/nw,X0=(t.x*256-pp[0])*sxm,Y0=-(t.y*256-pp[1])*sym;
+        ctx.save();
+        ctx.setTransform(sc*sxm*kk*cy,-sc*st*sxm*kk*sy,sc*sym*kk*sy,sc*st*sym*kk*cy,ox+sc*(X0*cy-Y0*sy),oy-sc*st*(X0*sy+Y0*cy));
+        ctx.drawImage(t.img,0,0);ctx.restore();
+      });
+    };
+    flat(satData.tiles,satData.z);if(satData.dtiles&&satData.dtiles.length)flat(satData.dtiles,satData.dz);
   }
   const ink=cssv('--ink','#10312b'),ink2=cssv('--ink2','#4a625c'),line=cssv('--line','#c7d5ce'),acc=cssv('--accent','#1e6f8e'),bg=cssv('--bg','#edf2ee'),live=cssv('--live','#c2125f'),fill=cssv('--fill','#d3e3db');
-  // « rideau » sous le tracé : donne la hauteur
+  // « rideau » sous le tracé : donne la hauteur (inutile avec le relief réel : le tracé est posé sur le sol)
+  if(!terr){
   ctx.globalAlpha=0.55;ctx.fillStyle=fill;
   for(let i=0;i<n-1;i++){const a=S(P[i]),b=S(P[i+1]),c=S(G[i+1]),d=S(G[i]);ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.lineTo(c[0],c[1]);ctx.lineTo(d[0],d[1]);ctx.closePath();ctx.fill();}
   ctx.globalAlpha=0.5;ctx.strokeStyle=line;ctx.lineWidth=1*dpr;
   for(let i=0;i<n;i+=4){const a=S(P[i]),d=S(G[i]);ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();}
   ctx.globalAlpha=0.7;ctx.strokeStyle=ink2;ctx.lineWidth=1.5*dpr;ctx.beginPath();G.forEach((q,i)=>{const a=S(q);if(i)ctx.lineTo(a[0],a[1]);else ctx.moveTo(a[0],a[1]);});ctx.stroke();
+  }
   ctx.globalAlpha=1;ctx.lineCap='round';ctx.lineJoin='round';
+  if(terr){ctx.strokeStyle='rgba(255,255,255,.92)';ctx.lineWidth=8*dpr;ctx.beginPath();P.forEach((q,i)=>{const a=S(q);if(i)ctx.lineTo(a[0],a[1]);else ctx.moveTo(a[0],a[1]);});ctx.stroke();}
   // tracé, coloré selon la pente
   for(let i=0;i<n-1;i++){
     const dk=(p.d[i+1]-p.d[i])*1000,g=dk>0?(p.e[i+1]-p.e[i])/dk:0,a=S(P[i]),b=S(P[i+1]);
@@ -1875,10 +2033,10 @@ function attach3D(cv){
   cv.addEventListener('pointermove',e=>{
     if(!ptrs.has(e.pointerId))return;
     const o=ptrs.get(e.pointerId),dx=e.clientX-o.x,dy=e.clientY-o.y;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(ptrs.size===2){const d=pd();if(pinch>0)v3.zoom=clampN(v3.zoom*d/pinch,0.5,4);pinch=d;moved+=99;draw3D();return;}
+    if(ptrs.size===2){const d=pd();if(pinch>0)v3.zoom=clampN(v3.zoom*d/pinch,zMin3(),4);pinch=d;moved+=99;draw3D();return;}
     moved+=Math.abs(dx)+Math.abs(dy);
     const ddx=rot()?dy:dx,ddy=rot()?-dx:dy;
-    v3.yaw+=ddx*0.008;v3.pitch=clampN(v3.pitch-ddy*0.006,0.12,1.5);draw3D();
+    v3.yaw+=ddx*0.008;v3.pitch=clampN(v3.pitch-ddy*0.006,(v3.sat&&satData&&satData.terrain)?0.3:0.12,1.5);draw3D();
   });
   cv.addEventListener('pointerup',e=>{
     const wasTap=moved<8&&ptrs.size===1;ptrs.delete(e.pointerId);pinch=0;
@@ -1888,16 +2046,19 @@ function attach3D(cv){
     if(best){landSel=(landSel===best.id)?null:best.id;renderLand();}
   });
   cv.addEventListener('pointercancel',e=>{ptrs.delete(e.pointerId);pinch=0;});
-  cv.addEventListener('wheel',e=>{e.preventDefault();v3.zoom=clampN(v3.zoom*(e.deltaY<0?1.12:0.89),0.5,4);draw3D();},{passive:false});
+  cv.addEventListener('wheel',e=>{e.preventDefault();v3.zoom=clampN(v3.zoom*(e.deltaY<0?1.12:0.89),zMin3(),4);draw3D();},{passive:false});
 }
 function show3D(ch,r,m,tl,kmNow,w,h){
   if(!gpsAvailable(r)){ch.innerHTML='<p class="note" style="padding:16px">Ce tracé n’a pas de coordonnées GPS (importé avec une ancienne version) : réimporte le fichier GPX pour voir la 3D.</p>';cur3=null;return;}
   const dpr=Math.min(2,window.devicePixelRatio||1);
-  ch.innerHTML='<canvas id="c3d" aria-label="Tracé 3D du parcours : fais glisser pour tourner"></canvas>'
+  ch.innerHTML=(v3.sat?'<canvas id="c3dgl" aria-hidden="true"></canvas>':'')+'<canvas id="c3d" aria-label="Tracé 3D du parcours : fais glisser pour tourner"></canvas>'
     +'<div class="c3d-tools"><button class="btn quiet" data-act="c3d-zoom" data-v="1.25" aria-label="Zoom avant">+</button><button class="btn quiet" data-act="c3d-zoom" data-v="0.8" aria-label="Zoom arrière">−</button><button class="btn quiet" data-act="c3d-relief">Relief ×'+v3.relief+'</button><button class="btn quiet" data-act="c3d-sat" aria-pressed="'+v3.sat+'">Satellite</button><button class="btn quiet" data-act="c3d-reset">Recentrer</button></div><div class="c3d-credit" id="c3dcredit"></div>'
     +'<div class="c3d-legend"><span><i style="background:'+slopeCol(0.2)+'"></i>Raide</span><span><i style="background:'+slopeCol(0.08)+'"></i>Montée</span><span><i style="background:'+slopeCol(0.03)+'"></i>Douce</span><span><i style="background:'+slopeCol(0)+'"></i>Plat</span><span><i style="background:'+slopeCol(-0.1)+'"></i>Descente</span></div>';
   const cv=document.getElementById('c3d');cv.style.width=w+'px';cv.style.height=h+'px';cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
-  cur3={cv:cv,m:m,tl:tl,kmNow:kmNow,sel:landSel,hits:[]};
+  const cvgl=document.getElementById('c3dgl');
+  if(cvgl){cvgl.style.width=w+'px';cvgl.style.height=h+'px';cvgl.width=cv.width;cvgl.height=cv.height;}
+  cur3={cv:cv,cvgl:cvgl,g:null,m:m,tl:tl,kmNow:kmNow,sel:landSel,hits:[]};
+  if(window.__debug3d)window.__d3={draw:()=>draw3D(),get cur(){return cur3;},v3:v3,get sat(){return satData;}};
   attach3D(cv);ensureSat();draw3D();
 }
 
@@ -2236,10 +2397,10 @@ function act(b){
   if(a==='back'){tab=prevTab||'plan';render(true);return;}
   if(a==='land-open'){openLand();return;}
   if(a==='land-mode'){landMode=b.dataset.v==='3d'?'3d':'profile';renderLand();return;}
-  if(a==='c3d-zoom'){v3.zoom=clampN(v3.zoom*(+b.dataset.v||1),0.5,4);draw3D();return;}
+  if(a==='c3d-zoom'){v3.zoom=clampN(v3.zoom*(+b.dataset.v||1),zMin3(),4);draw3D();return;}
   if(a==='c3d-relief'){const L=[1,2,3,5];v3.relief=L[(L.indexOf(v3.relief)+1)%L.length];renderLand();return;}
-  if(a==='c3d-sat'){v3.sat=!v3.sat;renderLand();return;}
-  if(a==='c3d-reset'){v3={yaw:-0.7,pitch:0.9,zoom:1,relief:3,sat:v3.sat};renderLand();return;}
+  if(a==='c3d-sat'){v3.sat=!v3.sat;if(v3.sat){v3.pitch=Math.min(v3.pitch,0.62);v3.relief=Math.max(v3.relief,2);}renderLand();return;}
+  if(a==='c3d-reset'){v3={yaw:-0.7,pitch:v3.sat?0.62:0.9,zoom:1,relief:3,sat:v3.sat};renderLand();return;}
   if(a==='land-close'){closeLand();return;}
   if(a==='land-edit'){openStation(b.dataset.id);return;}
   if(a==='set-theme'){state.prefs.theme=b.dataset.v;save();applyTheme();commit();return;}
