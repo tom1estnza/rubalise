@@ -36,7 +36,8 @@ jobs:
           p = 'android/app/src/main/AndroidManifest.xml'
           s = open(p, encoding='utf-8').read()
           perms = ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION', 'FOREGROUND_SERVICE',
-                   'FOREGROUND_SERVICE_LOCATION', 'POST_NOTIFICATIONS', 'WAKE_LOCK']
+                   'FOREGROUND_SERVICE_LOCATION', 'POST_NOTIFICATIONS', 'WAKE_LOCK',
+                   'SCHEDULE_EXACT_ALARM', 'USE_EXACT_ALARM']
           add = ''.join('    <uses-permission android:name="android.permission.%s" />\n' % x
                         for x in perms if 'android.permission.%s"' % x not in s)
           assert '</manifest>' in s
