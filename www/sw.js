@@ -1,5 +1,5 @@
 // Pour publier une mise à jour : change le numéro de version ci-dessous.
-const CACHE = 'rubalise-v20';
+const CACHE = 'rubalise-v22';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {

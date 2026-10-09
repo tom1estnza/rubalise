@@ -107,6 +107,9 @@ input[type=range]{width:100%;accent-color:var(--accent);min-height:32px}
 .stn-grid .chk{grid-column:1 / -1}
 .crewauto{margin:12px 0}
 #crewauto .note{margin:3px 0}
+.plistd{margin:8px 0;border:1.5px solid var(--line);border-radius:12px;padding:0 12px}
+.plistd summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600}
+.plistd[open] summary{border-bottom:1px dashed var(--line);margin-bottom:6px}
 .plist{list-style:none;margin:4px 0;padding:0}
 .plist li{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px dashed var(--line)}
 .plist .maplinks{display:flex;gap:6px;margin:0}
@@ -682,12 +685,12 @@ function parkLabel(c){return ((c.name||'Parking sans nom')+(c.fee?' (payant)':''
 // Liens vers Google Maps et Waze (itinéraire en voiture). Coordonnées si on les a, sinon le texte saisi.
 function navUrls(lat,lon,text){
   if(lat!=null&&lon!=null&&lat!==''&&lon!==''&&isFinite(+lat)&&isFinite(+lon)){
-    const c=lat+','+lon;
-    return {maps:'https://www.google.com/maps/dir/?api=1&destination='+c+'&travelmode=driving',waze:'https://waze.com/ul?ll='+c+'&navigate=yes&zoom=17'};
+    const c=lat+','+lon,lab=String(text||'').replace(/[()]/g,'').slice(0,60);
+    return {maps:'https://www.google.com/maps/dir/?api=1&destination='+c+'&travelmode=driving',waze:'https://waze.com/ul?ll='+c+'&navigate=yes&zoom=17',geo:'geo:0,0?q='+c+(lab?'('+encodeURIComponent(lab)+')':'')};
   }
   if(text){
     const q=encodeURIComponent(String(text));
-    return {maps:'https://www.google.com/maps/dir/?api=1&destination='+q+'&travelmode=driving',waze:'https://waze.com/ul?q='+q+'&navigate=yes'};
+    return {maps:'https://www.google.com/maps/dir/?api=1&destination='+q+'&travelmode=driving',waze:'https://waze.com/ul?q='+q+'&navigate=yes',geo:'geo:0,0?q='+q};
   }
   return null;
 }
@@ -716,6 +719,46 @@ function buildParkList(c,maxMin){
   return near.length?near:l.slice(0,1);
 }
 function isMainPark(st,e){return st.parkLat===e.lat&&st.parkLon===e.lon;}
+// ---------- copilote de l'assistance, étape 2 : départ conseillé ----------
+// Départ conseillé = arrivée estimée du coureur au prochain ravito accessible − trajet − marche − marge de sécurité.
+// Toutes les heures sont des minutes de course (comme `adjArr`), et `now` vient de nowMin(race).
+const CREW_STALE_MIN=30,CREW_DEV=0.20;
+function crewAdvice(race,m,now,opts){
+  opts=opts||{};
+  const mode=opts.etaMode==='central'?'central':'fast';   // 'fast' : borne rapide (coureur 8 % plus rapide), pour arriver avant lui
+  const tl=timeline(race,m,{}),tlF=timeline(race,m,{mult:0.92}),rows=tl.rows,margin=crewMarginOf(race);
+  let last=null;
+  Object.keys(race.points||{}).forEach(id=>{const v=+race.points[id];if(isFinite(v)&&(last==null||v>last))last=v;});
+  if(race.fix&&isFinite(+race.fix.t)&&(last==null||+race.fix.t>last))last=+race.fix.t;
+  const base={status:'none',target:null,eta:null,etaCentral:null,etaFast:null,driveMin:null,walkMin:null,margin:margin,departAt:null,latestAt:null,countdown:null,lateBy:null,overdue:false,
+    deviation:null,deviationPct:0,deviationMin:null,source:(tl.useFix&&race.fix)?'gps':(tl.ref>=0?'pointage':'plan'),ageMin:last==null?null:Math.max(0,Math.round(now-last)),stale:false,mode:mode,now:now};
+  base.stale=base.ageMin!=null&&base.ageMin>CREW_STALE_MIN;
+  const idx=rows.findIndex(x=>!x.isFinish&&x.st&&x.st.access&&x.actual==null&&!x.passedEst);
+  if(idx<0)return Object.assign(base,{status:rows.some(x=>!x.isFinish&&x.st&&x.st.access)?'done':'none'});
+  const row=rows[idx],st=row.st,etaC=row.adjArr,etaF=tlF.rows[idx].adjArr,eta=mode==='central'?etaC:etaF;
+  const drive=(st.driveMin==null||!isFinite(+st.driveMin))?null:+st.driveMin,walk=(st.walkMin==null||!isFinite(+st.walkMin))?0:+st.walkMin;
+  const f=tl.f||1,dev=f-1;
+  const out=Object.assign(base,{target:{id:row.id,name:row.name,km:row.km,index:idx},eta:eta,etaCentral:etaC,etaFast:etaF,driveMin:drive,walkMin:st.walkMin==null?null:walk,overdue:eta<now,
+    deviationPct:Math.round(dev*100),deviationMin:Math.round(row.adjArr-row.plannedArr),
+    deviation:((tl.nLegs>0||tl.useFix)&&Math.abs(dev)>CREW_DEV)?(dev>0?'slow':'fast'):null});
+  if(drive==null)return Object.assign(out,{status:'no_drive'});
+  const latest=eta-drive-walk,depart=Math.floor(latest-margin);   // minute entière, par défaut : on part plutôt trop tôt que trop tard
+  Object.assign(out,{latestAt:latest,departAt:depart,countdown:Math.round(depart-now)});
+  if(now>latest)return Object.assign(out,{status:'late',lateBy:Math.round(now-latest)});
+  if(now>=depart)return Object.assign(out,{status:'go'});
+  return Object.assign(out,{status:'wait'});
+}
+// Notification à programmer : 5 min avant le départ conseillé (tout de suite si on l'apprend plus tard). null = rien à programmer.
+function crewNotifPlan(adv,race,now,lead){
+  lead=lead==null?5:lead;
+  if(!adv||!adv.target||adv.departAt==null||adv.status==='late'||adv.status==='no_drive')return null;
+  const clk=x=>fmtClock(x).s,go=adv.status==='go';
+  const at=go?now+0.25:Math.max(adv.departAt-lead,now+0.25),left=Math.max(0,Math.round(adv.departAt-at));
+  const title=go?'Partez maintenant pour « '+adv.target.name+' »':(left>0?'Départ dans '+left+' min pour « '+adv.target.name+' »':'C’est l’heure de partir pour « '+adv.target.name+' »');
+  let body='Départ conseillé à '+clk(adv.departAt)+' : trajet '+adv.driveMin+' min'+(adv.walkMin?', marche '+adv.walkMin+' min':'')+', marge '+adv.margin+' min. Coureur attendu vers '+clk(adv.eta)+'.';
+  if(adv.deviation)body+=' Il est '+Math.abs(adv.deviationPct)+' % plus '+(adv.deviation==='slow'?'lent':'rapide')+' que prévu.';
+  return {key:adv.target.id+'|'+Math.round(adv.departAt)+'|'+(go?'go':'w'),at:at,title:title,body:body,kind:adv.status};
+}
 // </core>
 
 // ---------- stockage ----------
@@ -725,7 +768,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function defaultPrefs(){return {theme:'auto',defStop:3,defCarbs:60,defWater:500,defGel:25,gpsEvery:'auto'};}
 let state=load();
 state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
-const APP_VERSION='1.9';
+const APP_VERSION='2.1';
 function prefv(k){return (state.prefs&&state.prefs[k]!=null)?state.prefs[k]:defaultPrefs()[k];}
 function applyTheme(){const t=state.prefs.theme,el=document.documentElement;if(t==='light'||t==='dark')el.setAttribute('data-theme',t);else el.removeAttribute('data-theme');}
 applyTheme();
@@ -963,7 +1006,7 @@ function crewFields(r,s){
   if(!s.access&&!s.watch)return '';
   const park=s.parking||(s.parkLat!=null&&s.parkLon!=null?s.parkLat+', '+s.parkLon:'');
   const prev=prevAccessName(r,s),canAuto=routeProvider().auto&&gpsAvailable(r),list=s.parkList||[];
-  const plist=list.length?('<p class="note" style="margin:8px 0 2px">Stationnements à moins de 20 min à pied, du plus proche au plus loin. Touche pour choisir celui qui sert au trajet :</p><div class="chips plistc">'
+  const plist=list.length?parkDetails('p-'+s.id,list.length,'<p class="note" style="margin:6px 0 4px">Du plus proche au plus loin. Touche pour choisir celui qui sert au trajet :</p><div class="chips plistc">'
     +list.map((e,i)=>{const on=isMainPark(s,e);return '<button class="chip" data-act="park-pick" data-id="'+s.id+'" data-i="'+i+'" aria-pressed="'+on+'">'+esc(e.name)+' · '+e.walkMin+' min'+(e.est?' (estimé)':'')+'</button>';}).join('')+'</div>'):'';
   return '<div class="stn-crew">'+(s.access?'':'<p class="hint" style="margin:0 0 6px">Point sans assistance, accessible pour voir passer les coureurs.</p>')
     +'<label class="fld"><span>Stationnement (nom ou coordonnées)</span><input data-s="'+s.id+'" data-f="parking" value="'+esc(park)+'" maxlength="80" placeholder="ex. Parking de la mairie, ou 43.9152, 4.5069" autocomplete="off"></label>'
@@ -2414,8 +2457,7 @@ function mapsLinks(r,m,km){
   if(!gpsAvailable(r))return '';
   const lat=interp(m.p.d,m.p.la,km),lon=interp(m.p.d,m.p.lo,km),c=lat.toFixed(5)+','+lon.toFixed(5);
   return '<a class="btn quiet small" href="https://www.google.com/maps/@?api=1&map_action=map&center='+c+'&zoom=17&basemap=satellite" target="_blank" rel="noopener noreferrer">Vue satellite</a>'
-    +'<a class="btn quiet small" href="https://www.google.com/maps/dir/?api=1&destination='+c+'&travelmode=driving" target="_blank" rel="noopener noreferrer">Itinéraire</a>'
-    +'<a class="btn quiet small" href="https://waze.com/ul?ll='+c+'&navigate=yes&zoom=17" target="_blank" rel="noopener noreferrer">Waze</a>';
+    +navBtns(navUrls(lat.toFixed(5),lon.toFixed(5),''),'Itinéraire');
 }
 function openStation(id){
   const r=state.race,st=r&&r.stations.find(x=>x.id===id),toAssist=!!(st&&(st.access||st.watch));
@@ -2567,7 +2609,7 @@ function renderPlan(){
   +'</section>'
 
   +'<section class="sec" id="sec-stations"><h2>Ravitaillements</h2><p class="hint">Ajoute chaque ravito (kilomètre, barrière horaire). Coche « Accès pour l’assistance » si ton équipe peut y venir : les ravitos sans accès sont pris en compte dans ta nutrition.</p>'
-  +'<label class="fld" style="max-width:280px"><span>Marge de sécurité de l’assistance (min)</span><input type="number" inputmode="numeric" min="0" max="60" data-r="crewMargin" data-num value="'+crewMarginOf(r)+'"></label><p class="hint">Temps prévu pour se garer et marcher jusqu’au ravito, en plus du trajet.</p>'
+  +'<label class="fld" style="max-width:280px"><span>Marge de sécurité de l’assistance (min)</span><input type="number" inputmode="numeric" min="0" max="60" data-r="crewMargin" data-num value="'+crewMarginOf(r)+'"></label><p class="hint">Temps de sécurité ajouté au trajet et à la marche : départ conseillé = arrivée estimée du coureur − trajet − marche − marge.</p>'
   +crewAutoBlock(r)
   +'<ul class="plain">'+stn
   +'<li class="stn finish"><div class="stn-head"><span class="stn-n" aria-hidden="true">&nbsp;</span><span class="stn-name" style="border:0;display:flex;align-items:center">Arrivée</span></div>'
@@ -2592,9 +2634,74 @@ function renderPlan(){
   +'<p class="note">« Supprimer la course » efface le tracé GPX et tout le plan : tu reviens à l’écran de départ, sans avoir à en importer un autre.</p>'
   +'<div class="row">'+(member?'':'<button class="btn danger" data-act="reset-plan">Réinitialiser le plan</button>')+'<button class="btn danger" data-act="delete-race">Supprimer la course</button></div></section>';
 }
+const parkOpen={};
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.classList&&d.classList.contains('plistd')&&d.dataset.k)parkOpen[d.dataset.k]=d.open;},true);
+function parkDetails(key,count,inner){
+  return '<details class="plistd" data-k="'+key+'"'+(parkOpen[key]?' open':'')+'><summary>Stationnements à moins de 20 min à pied ('+count+')</summary>'+inner+'</details>';
+}
+function isAndroid(){return /Android/i.test(navigator.userAgent||'');}
+// Un seul lien par destination. Sur Android, le lien « geo: » ouvre la fenêtre du système qui demande avec quelle appli
+// ouvrir (Google Maps, Waze…). Ailleurs (ordinateur, iPhone), on ouvre l'itinéraire Google Maps.
 function navBtns(u,label){
   if(!u)return '';
-  return '<a class="btn quiet small" href="'+u.maps+'" target="_blank" rel="noopener noreferrer">'+(label||'Maps')+'</a><a class="btn quiet small" href="'+u.waze+'" target="_blank" rel="noopener noreferrer">Waze</a>';
+  const g=isAndroid();
+  return '<a class="btn quiet small" href="'+esc(g?u.geo:u.maps)+'"'+(g?'':' target="_blank" rel="noopener noreferrer"')+'>'+(label||'Y aller')+'</a>';
+}
+const CREW_NOTIF_ID=4242;
+let crewNotifBusy=false,crewChannelOk=false,crewT=0;
+function hasNotif(){const N=window.RubaliseNative;return !!(N&&N.LocalNotifications);}
+// Par défaut : prévenu sur le téléphone de l'assistance (rôle équipe), pas sur celui du coureur. Réglable.
+function crewNotifOn(r){const v=state.prefs&&state.prefs.crewNotif;return (v===undefined||v===null)?isMember(r):!!v;}
+// Programme (ou annule, ou reprogramme) la notification « Départ dans 5 min » quand l'heure conseillée change.
+async function crewNotifSync(){
+  if(crewNotifBusy)return;
+  crewNotifBusy=true;
+  try{
+    const N=window.RubaliseNative,r=state.race,rec=state.crewNotifRec||null;
+    const cancel=async()=>{
+      if(rec&&hasNotif()){try{await N.LocalNotifications.cancel({notifications:[{id:CREW_NOTIF_ID}]});}catch(e){}}
+      if(state.crewNotifRec){state.crewNotifRec=null;save();}
+    };
+    if(!r||!hasNotif()||!crewNotifOn(r)){if(rec)await cancel();return;}
+    const m=model(r),now=nowMin(r),adv=crewAdvice(r,m,now,{}),plan=crewNotifPlan(adv,r,now,5);
+    if(!plan){if(rec)await cancel();return;}
+    if(rec&&rec.key===plan.key)return;   // déjà programmée (ou déjà partie) pour ce départ
+    let perm;try{perm=await N.LocalNotifications.checkPermissions();}catch(e){return;}
+    permState.notif=perm.display;
+    if(perm.display!=='granted')return;
+    if(rec)await cancel();
+    if(!crewChannelOk){try{await N.LocalNotifications.createChannel({id:'copilote',name:'Copilote de l’assistance',description:'Prévient avant l’heure de départ conseillée',importance:4,visibility:1,vibration:true});}catch(e){}crewChannelOk=true;}
+    const atMs=Date.now()+Math.round((plan.at-now)*60000);
+    await N.LocalNotifications.schedule({notifications:[{id:CREW_NOTIF_ID,title:plan.title,body:plan.body,channelId:'copilote',schedule:{at:new Date(atMs),allowWhileIdle:true}}]});
+    state.crewNotifRec={key:plan.key,atMs:atMs};save();
+  }catch(e){}
+  finally{crewNotifBusy=false;}
+}
+function cdText(n){n=Math.max(0,Math.round(n));return n>=60?Math.floor(n/60)+' h '+pad2(n%60):n+' min';}
+function crewAdviceInner(r,m){
+  const now=nowMin(r),a=crewAdvice(r,m,now,{}),t=x=>'<b class="t">'+fmtClock(x).s+'</b>';
+  if(a.status==='none')return '<p class="note">Aucun ravito avec assistance. Coche « Accès pour l’assistance » dans l’onglet Plan.</p>';
+  if(a.status==='done')return '<p>Le coureur a passé tous les ravitos avec assistance.</p>';
+  const name='<b>'+esc(a.target.name)+'</b> (km '+km1(a.target.km)+')';
+  let h='';
+  if(a.status==='no_drive')h+='<p>Prochain ravito : '+name+'. Coureur attendu vers '+t(a.eta)+'.</p><p class="warn">Temps de trajet inconnu : renseigne-le dans la fiche du ravito (onglet Plan) pour calculer l’heure de départ.</p>';
+  else if(a.status==='late')h+='<p class="warn"><b>Trop tard pour arriver avant le coureur</b> à '+name+' : il est attendu vers '+t(a.eta)+'. Il fallait partir à '+t(a.departAt)+' (dernier moment : '+t(a.latestAt)+', dépassé de '+a.lateBy+' min).</p>';
+  else if(a.status==='go')h+='<p class="warn"><b>Partez maintenant</b> pour '+name+'. Départ conseillé à '+t(a.departAt)+', coureur attendu vers '+t(a.eta)+'.</p>';
+  else h+='<p>Prochain ravito : '+name+'.<br>Départ conseillé à '+t(a.departAt)+', <b>dans '+cdText(a.countdown)+'</b>.</p>';
+  if(a.driveMin!=null)h+='<p class="note">Coureur attendu vers '+t(a.eta)+(a.mode==='fast'?' (estimation rapide, pour arriver avant lui)':'')+' · trajet '+a.driveMin+' min · marche '+(a.walkMin==null?'non renseignée':a.walkMin+' min')+' · marge '+a.margin+' min.</p>';
+  if(a.deviation)h+='<p class="warn">Le coureur est '+Math.abs(a.deviationPct)+' % plus '+(a.deviation==='slow'?'lent':'rapide')+' que prévu ('+dsign(a.deviationMin)+' à ce ravito) : le départ conseillé est recalculé.</p>';
+  if(a.overdue&&a.status!=='late')h+='<p class="note">L’heure estimée du coureur est dépassée et il n’a pas encore été pointé.</p>';
+  if(a.source==='plan')h+='<p class="note">Estimation d’après le plan : aucune position ni aucun pointage reçu.</p>';
+  else h+='<p class="note'+(a.stale?' warn':'')+'">Dernière information du coureur : il y a '+(a.ageMin<1?'moins d’1 min':cdText(a.ageMin))+'.'+(a.stale?' Position ancienne : l’heure peut avoir changé.':'')+'</p>';
+  return h;
+}
+function crewCard(r,m){
+  const on=crewNotifOn(r),nat=hasNotif();
+  return '<section class="sec crewcard"><h2>Copilote : prochain départ</h2><div id="crewadv" aria-live="polite">'+crewAdviceInner(r,m)+'</div>'
+    +(nat?'<label class="fld chk" style="margin-top:6px"><input type="checkbox" data-crewnotif'+(on?' checked':'')+'><span>Me prévenir 5 min avant le départ</span></label>'
+        +(on&&permState.notif!=='granted'?'<div class="row" style="margin:4px 0"><button class="btn small" data-act="crew-notif-perm">Autoriser les notifications</button></div><p class="hint">Android demande ton accord une fois.</p>':'')
+        :'<p class="hint">Les notifications fonctionnent dans l’appli Android. Ici, cette carte se met à jour toute seule.</p>')
+    +'</section>';
 }
 function crewLine(r,st){
   const hasC=st.parkLat!=null&&st.parkLon!=null,list=st.parkList||[];
@@ -2608,8 +2715,8 @@ function crewLine(r,st){
   const u=navUrls(st.parkLat,st.parkLon,st.parking);
   if(u)t+='<div class="maplinks">'+navBtns(u,'Aller au stationnement')+'</div>';
   if(list.length>1||(list.length===1&&!isMainPark(st,list[0]))){
-    t+='<p class="note" style="margin:8px 0 2px"><b>Stationnements à moins de 20 min à pied</b>, du plus proche au plus loin :</p><ul class="plist">'
-      +list.map(e=>'<li><span>'+esc(e.name)+' · <b>'+e.walkMin+' min</b>'+(e.est?' (estimé)':'')+(isMainPark(st,e)?' · conseillé':'')+'</span><span class="maplinks">'+navBtns(navUrls(e.lat,e.lon,e.name))+'</span></li>').join('')+'</ul>';
+    t+=parkDetails('a-'+st.id,list.length,'<p class="note" style="margin:6px 0 2px">Du plus proche au plus loin :</p><ul class="plist">'
+      +list.map(e=>'<li><span>'+esc(e.name)+' · <b>'+e.walkMin+' min</b>'+(e.est?' (estimé)':'')+(isMainPark(st,e)?' · conseillé':'')+'</span><span class="maplinks">'+navBtns(navUrls(e.lat,e.lon,e.name),'Y aller')+'</span></li>').join('')+'</ul>');
   }
   return t;
 }
@@ -2638,6 +2745,7 @@ function renderAssist(){
   const fin=rows[rows.length-1],finE=tlO.rows[rows.length-1].adjArr,finL=tlP.rows[rows.length-1].adjArr;
   return '<section class="empty"><h1>Équipe d’assistance</h1>'
   +'<p class="lead">Fenêtres de passage (course 8 % plus rapide ou 12 % plus lente que prévu), ce qu’il faut préparer et ce qu’il faut remplir à chaque ravito.</p></section>'
+  +crewCard(r,m)
   +syncPanel(r)
   +trackPanel(r)
   +gpsPanel(r)
@@ -2755,6 +2863,7 @@ function render(top){
   root.innerHTML=html;
   window.scrollTo(0,top?0:y);
   if(tab==='assist')checkPerms();
+  clearTimeout(crewT);crewT=setTimeout(()=>{crewNotifSync();},800);
   if(tab==='settings'&&isRunner()&&provInfo===null&&!provLoading){provLoading=true;loadProviders();}
 }
 
@@ -2776,6 +2885,11 @@ function act(b){
   if(a==='crew-auto'){runCrewAuto({});return;}
   if(a==='crew-auto-one'){runCrewAuto({onlyId:b.dataset.id});return;}
   if(a==='crew-cancel'){crewRun.cancel=true;return;}
+  if(a==='crew-notif-perm'){
+    const N=window.RubaliseNative;
+    if(N&&N.LocalNotifications)N.LocalNotifications.requestPermissions().then(pr=>{permState.notif=pr.display;if(pr.display!=='granted')flash('Notifications refusées : autorise-les dans les réglages du téléphone.');else crewNotifSync();render();}).catch(()=>flash('Impossible de demander l’autorisation.'));
+    return;
+  }
   if(a==='crew-test'){crewTest();return;}
   if(a==='park-pick'){
     const r=state.race,st=r&&r.stations.find(x=>x.id===b.dataset.id),e=st&&(st.parkList||[])[+b.dataset.i];
@@ -3012,6 +3126,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{
   const t=e.target,r=state.race;
   if(t.dataset&&t.dataset.gpx!==undefined){const f=t.files&&t.files[0];if(f)importGPX(f);return;}
+  if(t.dataset&&t.dataset.crewnotif!==undefined){state.prefs.crewNotif=!!t.checked;save();crewNotifSync();render();return;}
   if(t.dataset&&t.dataset.gpsevery!==undefined){state.prefs.gpsEvery=(t.value==='auto')?'auto':(+t.value||120);save();return;}
   if(t.dataset&&t.dataset.pref){
     const k=t.dataset.pref;let v=parseFloat(String(t.value).replace(',','.'));if(!isFinite(v)||v<0)v=defaultPrefs()[k];
@@ -3099,10 +3214,17 @@ setInterval(()=>{
 },5000);
 document.addEventListener('click',e=>{
   const l=e.target.closest&&e.target.closest('.maplinks a'),N=window.RubaliseNative;
+  if(l&&/^geo:/i.test(l.getAttribute('href')||''))return;
   if(l&&N&&N.Browser){e.preventDefault();N.Browser.open({url:l.href}).catch(()=>flash('Impossible d’ouvrir le navigateur.'));}
 });
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){syncNow();maybeAutoGps();}});
 setInterval(maybeAutoGps,5000);
+// Copilote : la carte se met à jour toute seule, et la notification est reprogrammée si l'heure conseillée change.
+setInterval(()=>{
+  const r=state.race,el=document.getElementById('crewadv');
+  if(tab==='assist'&&el&&r){try{el.innerHTML=crewAdviceInner(r,model(r));}catch(e){}}
+  crewNotifSync();
+},20000);
 window.addEventListener('online',()=>syncNow());
 
 if(state.tmpRace){state.race=null;state.tmpRace=false;save();}
