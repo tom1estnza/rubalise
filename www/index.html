@@ -4,12 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
+<meta name="application-name" content="Rubalise">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Rubalise">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <title>Rubalise, plan de course trail</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -528,23 +532,6 @@ function demoProfile(){
   for(let i=0;i<n;i++){const km=tot*i/(n-1);d.push(Math.round(km*1000)/1000);e.push(Math.round(interp(xs,ys,km)+12*Math.sin(km*2.3)));la.push(Math.round((45+0.004*Math.sin(km/3))*1e5)/1e5);lo.push(Math.round((3+km*0.0127)*1e5)/1e5);}
   return {d,e,la,lo};
 }
-function matchKm(profile,lat,lon,hintKm){
-  const la=profile.la,lo=profile.lo,d=profile.d;
-  if(!la||!lo||la.length!==d.length||d.length<2)return null;
-  const cl=Math.cos(lat*Math.PI/180),cands=[];
-  for(let i=1;i<d.length;i++){
-    const ax=(lo[i-1]-lon)*cl*111320,ay=(la[i-1]-lat)*110540,bx=(lo[i]-lon)*cl*111320,by=(la[i]-lat)*110540;
-    const dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy;
-    let t=L2>0?-(ax*dx+ay*dy)/L2:0;t=Math.max(0,Math.min(1,t));
-    const px=ax+t*dx,py=ay+t*dy;
-    cands.push({km:d[i-1]+(d[i]-d[i-1])*t,dist:Math.sqrt(px*px+py*py)});
-  }
-  const best=a=>a.reduce((m,c)=>(!m||c.dist<m.dist)?c:m,null);
-  let b=null;
-  if(hintKm!=null){const w=best(cands.filter(c=>c.km>=hintKm-1&&c.km<=hintKm+25));if(w&&w.dist<=300)b=w;}
-  if(!b){const g=best(cands);if(g&&g.dist<=300)b=g;}
-  return b;
-}
 function vdotFrom(distM,tMin){const v=distM/tMin;const pct=0.8+0.1894393*Math.exp(-0.012778*tMin)+0.2989558*Math.exp(-0.1932605*tMin);const vo2=-4.6+0.182258*v+0.000104*v*v;return vo2/pct;}
 function paceAtVO2(vo2){const a=0.000104,b=0.182258,c=-(4.6+vo2);const v=(-b+Math.sqrt(b*b-4*a*c))/(2*a);return 1000/v;}
 const PACE_ZONES=[['Z1','Récupération',0.59,0.65],['Z2','Endurance',0.65,0.75],['Z3','Tempo, allure marathon',0.75,0.84],['Z4','Seuil',0.84,0.92],['Z5','VMA, intervalles',0.92,1.00]];
@@ -731,7 +718,7 @@ function crewAdvice(race,m,now,opts){
   Object.keys(race.points||{}).forEach(id=>{const v=+race.points[id];if(isFinite(v)&&(last==null||v>last))last=v;});
   if(race.fix&&isFinite(+race.fix.t)&&(last==null||+race.fix.t>last))last=+race.fix.t;
   const base={status:'none',target:null,eta:null,etaCentral:null,etaFast:null,driveMin:null,walkMin:null,margin:margin,departAt:null,latestAt:null,countdown:null,lateBy:null,overdue:false,
-    deviation:null,deviationPct:0,deviationMin:null,source:(tl.useFix&&race.fix)?'gps':(tl.ref>=0?'pointage':'plan'),ageMin:last==null?null:Math.max(0,Math.round(now-last)),stale:false,mode:mode,now:now};
+    deviation:null,deviationPct:0,deviationMin:null,source:(tl.useFix&&race.fix)?'position':(tl.ref>=0?'pointage':'plan'),ageMin:last==null?null:Math.max(0,Math.round(now-last)),stale:false,mode:mode,now:now};
   base.stale=base.ageMin!=null&&base.ageMin>CREW_STALE_MIN;
   const idx=rows.findIndex(x=>!x.isFinish&&x.st&&x.st.access&&x.actual==null&&!x.passedEst);
   if(idx<0)return Object.assign(base,{status:rows.some(x=>!x.isFinish&&x.st&&x.st.access)?'done':'none'});
@@ -765,10 +752,10 @@ function crewNotifPlan(adv,race,now,lead){
 const KEY='rubalise:v1';
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&typeof s==='object')return Object.assign({race:null,journal:[],profile:defaultProfile(),prefs:defaultPrefs(),profileDirty:false,welcomed:false,tourDone:false},s);}}catch(e){}return {race:null,journal:[],profile:defaultProfile(),prefs:defaultPrefs(),profileDirty:false,welcomed:false,tourDone:false};}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
-function defaultPrefs(){return {theme:'auto',defStop:3,defCarbs:60,defWater:500,defGel:25,gpsEvery:'auto'};}
+function defaultPrefs(){return {theme:'auto',defStop:3,defCarbs:60,defWater:500,defGel:25};}
 let state=load();
 state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
-const APP_VERSION='2.1';
+const APP_VERSION='2.3';
 function prefv(k){return (state.prefs&&state.prefs[k]!=null)?state.prefs[k]:defaultPrefs()[k];}
 function applyTheme(){const t=state.prefs.theme,el=document.documentElement;if(t==='light'||t==='dark')el.setAttribute('data-theme',t);else el.removeAttribute('data-theme');}
 applyTheme();
@@ -905,7 +892,7 @@ async function crewAuto(r,opts){
   opts=opts||{};
   const prov=routeProvider();
   if(!prov.auto)throw new Error('Aucun service de recherche n’est activé.');
-  if(!gpsAvailable(r))throw new Error('Ce plan n’a pas de coordonnées GPS : réimporte le fichier GPX pour utiliser la recherche.');
+  if(!hasCoords(r))throw new Error('Ce plan n’a pas de coordonnées : réimporte le fichier GPX pour utiliser la recherche.');
   const tot=r.profile.d[r.profile.d.length-1];
   const accs=r.stations.filter(s=>(s.access||s.watch)&&s.km>0&&s.km<tot).sort((x,y)=>x.km-y.km);
   if(!accs.length)throw new Error('Aucun ravito accessible : coche « Accès pour l’assistance » ou « Accessible au public » dans la fiche d’un ravito.');
@@ -1005,7 +992,7 @@ function watchBox(s){
 function crewFields(r,s){
   if(!s.access&&!s.watch)return '';
   const park=s.parking||(s.parkLat!=null&&s.parkLon!=null?s.parkLat+', '+s.parkLon:'');
-  const prev=prevAccessName(r,s),canAuto=routeProvider().auto&&gpsAvailable(r),list=s.parkList||[];
+  const prev=prevAccessName(r,s),canAuto=routeProvider().auto&&hasCoords(r),list=s.parkList||[];
   const plist=list.length?parkDetails('p-'+s.id,list.length,'<p class="note" style="margin:6px 0 4px">Du plus proche au plus loin. Touche pour choisir celui qui sert au trajet :</p><div class="chips plistc">'
     +list.map((e,i)=>{const on=isMainPark(s,e);return '<button class="chip" data-act="park-pick" data-id="'+s.id+'" data-i="'+i+'" aria-pressed="'+on+'">'+esc(e.name)+' · '+e.walkMin+' min'+(e.est?' (estimé)':'')+'</button>';}).join('')+'</div>'):'';
   return '<div class="stn-crew">'+(s.access?'':'<p class="hint" style="margin:0 0 6px">Point sans assistance, accessible pour voir passer les coureurs.</p>')
@@ -1020,7 +1007,7 @@ function crewFields(r,s){
 function crewAutoBlock(r){
   const p=routeProvider();
   if(!p.auto||!r.stations.some(s=>s.access||s.watch))return '';
-  if(!gpsAvailable(r))return '<p class="hint">La recherche automatique du stationnement demande les coordonnées du tracé : réimporte le fichier GPX.</p>';
+  if(!hasCoords(r))return '<p class="hint">La recherche automatique du stationnement demande les coordonnées du tracé : réimporte le fichier GPX.</p>';
   return '<div class="crewauto"><button class="btn" data-act="crew-auto"'+(crewRun.running?' disabled':'')+'>Trouver les stationnements et les trajets</button>'
     +'<p class="hint">Recherche gratuite avec OpenStreetMap, sans compte. À lancer chez toi avec du réseau : les résultats restent dans le plan. Les temps de voiture sont hors circulation, la marge de sécurité couvre le reste. Tes saisies manuelles ne sont jamais écrasées.</p>'
     +'<div class="row" style="margin:4px 0"><button class="btn quiet small" data-act="crew-test"'+(crewRun.running?' disabled':'')+'>Tester la connexion aux services</button></div>'
@@ -1033,6 +1020,7 @@ function migrateRace(r){
   ['sodium','barG','gelShare'].forEach(k=>{if(r[k]===undefined)r[k]=nutr({},k);});
   if(r.startAt===undefined)r.startAt=null;
   if(r.crewMargin===undefined)r.crewMargin=15;
+  delete r.gpsArmed;delete r.gpsAutoStarted;   // suivi GPS retiré en v2.3
   r.stations.forEach(x=>{
     if(x.barrierAuto===undefined)x.barrierAuto=!x.barrier;
     if(x.parkAlt){  // ancien format (v1.7 à 1.8) : stationnement conseillé + 2 autres
@@ -1195,7 +1183,7 @@ function genCode(){
 function pKey(id){return id.indexOf('x:')===0?'x_'+id.slice(2):id.indexOf('d:')===0?'d_'+id.slice(2):'p_'+id;}
 function pVal(v){return typeof v==='string'?{stringValue:v}:{integerValue:String(Math.round(v))};}
 function allFields(r){
-  const f=ptsToFields(Object.assign({},r.points,(r.fix?{fixkm:Math.round(r.fix.km*100),fixt:r.fix.t,fixsrc:r.fix.src?1:0}:{}),(r.startAt!=null?{startat:r.startAt}:{})));
+  const f=ptsToFields(Object.assign({},r.points,(r.fix?{fixkm:Math.round(r.fix.km*100),fixt:r.fix.t}:{}),(r.startAt!=null?{startat:r.startAt}:{})));
   Object.keys(r.extras||{}).forEach(id=>{f['x_'+id]={stringValue:JSON.stringify(r.extras[id])};});
   Object.keys(r.done||{}).forEach(id=>{if(r.done[id])f['d_'+id]={integerValue:'1'};});
   return f;
@@ -1226,7 +1214,7 @@ function applyRemote(r,doc){
   });
   r.extras=extras;r.done=done;
   r.startAt=(merged.startat!=null)?merged.startat:null;delete merged.startat;
-  if(merged.fixkm!=null&&merged.fixt!=null)r.fix={km:merged.fixkm/100,t:merged.fixt,src:merged.fixsrc?1:0};else r.fix=null;
+  if(merged.fixkm!=null&&merged.fixt!=null)r.fix={km:merged.fixkm/100,t:merged.fixt};else r.fix=null;
   delete merged.fixkm;delete merged.fixt;delete merged.fixsrc;
   r.points=merged;
   if(r.sync.role!=='owner'&&f.plan&&f.plan.stringValue&&f.plan.stringValue!==r.sync.lastPlan){
@@ -1296,7 +1284,6 @@ async function syncNow(){
   }finally{
     syncing=false;save();
     if(changed&&state.race===r&&!typing())render();else updateSyncUI();
-    maybeAutoGps();
     if(resync){resync=false;setTimeout(syncNow,150);}
   }
 }
@@ -1505,7 +1492,6 @@ async function doAuth(){
 async function signOutRunner(){
   try{if(state.profileDirty)await pushProfile();}catch(e){}
   cacheProfile();
-  await gpsStop();
   const r=state.race;if(r&&r.sync&&r.sync.role==='owner'){delete r.sync;r.pending={};}
   setAuth(null);loginMode='in';state.profile=defaultProfile();state.profileDirty=false;state.profileErr='';tab='plan';commit();window.scrollTo(0,0);flash('Déconnecté.');
 }
@@ -1572,7 +1558,7 @@ function tourSteps(){
     {tab:'plan',target:null,title:'Bienvenue dans Rubalise',text:'En une minute, découvre comment préparer ta course, la partager avec ton équipe et la suivre en direct.'},
     {tab:'plan',target:'.tabs [data-tab="plan"]',title:'1. Prépare ta course',text:'Dans Plan, importe le fichier GPX de ton parcours (ou lance la course démo) et fixe ton temps visé. Rubalise calcule tes heures de passage à chaque ravito et ta nutrition.'},
     {tab:'assist',target:'.tabs [data-tab="assist"]',title:'2. Invite ton équipe',text:'Dans Assistance, crée un code de course : ton assistance et tes supporters le saisissent, sans compte, pour voir tes heures de passage et préparer ce qu’il faut à chaque ravito.'},
-    {tab:'live',target:'.tabs [data-tab="live"]',title:'3. Suis la course',text:'Le jour J, « pointer » un ravito, c’est noter l’heure de passage : les heures suivantes se recalculent. Ton téléphone peut aussi partager ta position GPS.'+(nat?' Android te demandera alors la localisation et les notifications.':'')},
+    {tab:'live',target:'.tabs [data-tab="live"]',title:'3. Suis la course',text:'Le jour J, « pointer » un ravito, c’est noter l’heure de passage : les heures suivantes se recalculent chez tout le monde.'+(nat?' Sur Android, autorise les notifications pour être prévenu au bon moment.':'')},
     {tab:'diary',target:'.tabs [data-tab="diary"]',title:'4. Garde une trace',text:'Après la course, compare le prévu et le réel, note ton ressenti, puis archive la course dans ton carnet.'}
   ];
   if(run)L.push({tab:'runner',target:'.tabs [data-tab="runner"]',title:'Ton espace coureur',text:'Renseigne ta fréquence cardiaque et une performance de référence : tu obtiens tes zones d’allure et de fréquence cardiaque, et un temps estimé pour ta course.'});
@@ -1641,7 +1627,7 @@ function endTour(){
   tourOn=false;document.getElementById('tour').hidden=true;document.body.classList.remove('touring');
   if(!landOpen)document.body.classList.remove('noscroll');
   if(tourTemp){state.race=null;state.tmpRace=false;tourTemp=false;tab='plan';}
-  state.tourDone=true;save();render(true);maybeAskPerms();
+  state.tourDone=true;save();render(true);
 }
 function tourAct(k){
   if(k==='next'){if(tourList[tourI].final){endTour();}else{tourI++;showTourStep();}return;}
@@ -1652,11 +1638,7 @@ function tourAct(k){
 function enterApp(dest){
   state.welcomed=true;save();
   if(!state.tourDone){tab='plan';commit();window.scrollTo(0,0);startTour();}
-  else{tab=dest||'plan';commit();window.scrollTo(0,0);maybeAskPerms();}
-}
-function maybeAskPerms(){
-  if(!isNativeApp()||tab==='welcome'||tourOn)return;
-  if(!state.permAsked){state.permAsked=true;save();setTimeout(()=>{ensurePermissions();},700);}else checkPerms();
+  else{tab=dest||'plan';commit();window.scrollTo(0,0);}
 }
 
 function kmh(pace){return (60/pace).toFixed(1).replace('.',',');}
@@ -1777,13 +1759,13 @@ function renderHelp(){
   +'<details><summary>Importer un parcours GPX</summary><p>Dans l’onglet Plan, appuie sur « Importer un fichier GPX » et choisis le fichier. Si le sélecteur ne l’ouvre pas, utilise « Coller son contenu » : ouvre le GPX dans un éditeur de texte, copie tout et colle-le. L’organisateur de la course fournit en général le GPX, sinon tu peux l’exporter depuis ta montre ou ton application de suivi.</p></details>'
   +'<details><summary>Partager une course en direct</summary><ol><li>Connecte-toi (rond en haut à droite).</li><li>Onglet Assistance, « Partager en direct » : un code de 6 caractères apparaît.</li><li>Ton assistance et tes supporters saisissent ce code dans « Rejoindre », sans compte.</li></ol></details>'
   +'<details><summary>Pointer un passage</summary><p>Dans l’onglet En course, indique l’heure de passage au ravito et appuie sur « Pointer le passage ». Les heures suivantes se recalculent chez tout le monde. Sans réseau, le pointage est gardé sur le téléphone et envoyé dès que le signal revient.</p></details>'
-  +'<details><summary>Suivre le coureur</summary><p>Si le coureur partage sa position GPS (onglet Assistance, « Démarrer le suivi GPS »), la position et les heures d’arrivée se mettent à jour toutes seules. Sinon, il peut coller le lien de suivi de sa montre (LiveTrack chez Garmin, Live Tracking chez Coros) : l’assistance l’ouvre, lit où il se trouve et saisit son kilomètre dans En course. À chaque ravito pointé, la position suit.</p></details>'
+  +'<details><summary>Suivre le coureur</summary><p>À chaque ravito pointé (onglet En course), les heures suivantes se recalculent chez tout le monde. Le coureur peut aussi coller le lien de suivi de sa montre (LiveTrack chez Garmin, Live Tracking chez Coros) : l’assistance l’ouvre, lit où il se trouve et saisit son kilomètre dans En course.</p></details>'
   +'<details><summary>Se connecter avec Google</summary><p>Sur l’écran de connexion, appuie sur « Continuer avec Google » : Google s’ouvre dans le navigateur du téléphone, puis tu reviens dans Rubalise. Une adresse e-mail correspond à un seul compte. Si tu as déjà un compte avec ton e-mail et ton mot de passe, connecte-toi avec, puis associe Google dans Paramètres du compte, « Méthodes de connexion ».</p></details>'
   +'<details><summary>Vue horizontale du profil</summary><p>Sur le Plan ou En course, appuie sur « Vue horizontale », puis sur un point numéroté du profil : tu vois le nom du ravito, l’heure d’arrivée prévue et le matériel à prévoir, avec un lien pour le modifier. Le bouton « 3D » remplace le profil par un tracé en relief : fais-le tourner du doigt, pince pour zoomer.</p></details>'
   +'<details><summary>Zones d’allure et de fréquence cardiaque</summary><p>Elles sont calculées dans l’espace coureur à partir de ta performance de référence (indice de forme de Daniels) et de tes fréquences cardiaques (réserve cardiaque de Karvonen, pourcentage de la FC max ou FC de seuil). Les allures sont données sur terrain plat.</p></details>'
   +'<details><summary>Installer une mise à jour</summary><p>Télécharge le nouvel APK compilé sur GitHub et installe-le par-dessus l’ancien : tes données sont conservées.</p></details>'
   +'<details><summary>Mini-lexique</summary><p><b>Ravito</b> : point de ravitaillement sur le parcours.</p><p><b>Barrière horaire</b> : heure limite pour passer à un point. La marge indique l’avance que tu as sur cette limite.</p><p><b>Pointer</b> : noter l’heure à laquelle le coureur passe à un ravito.</p><p><b>D+ / D−</b> : dénivelé positif (montée) et négatif (descente) cumulés.</p><p><b>Zone d’allure</b> : plage de vitesse adaptée à un type d’effort, calculée à partir de ta performance de référence.</p></details>'
-  +'<details><summary>À propos</summary><p>Rubalise, version '+APP_VERSION+' (prototype). Environnement : '+(isNativeApp()?'application Android':'navigateur')+', module de localisation '+(nativeGeo()?'présent':'absent')+'. Les heures de passage sont des estimations : elles ne remplacent ni ton expérience, ni les barrières horaires officielles de l’organisateur, à vérifier avant le départ.</p></details>'
+  +'<details><summary>À propos</summary><p>Rubalise, version '+APP_VERSION+' (prototype). Environnement : '+(isNativeApp()?'application Android':'navigateur')+'. Les heures de passage sont des estimations : elles ne remplacent ni ton expérience, ni les barrières horaires officielles de l’organisateur, à vérifier avant le départ.</p></details>'
   +'</section>';
 }
 function exportMyData(){
@@ -1816,14 +1798,12 @@ async function leaveFollowNow(){
 }
 async function stopShareNow(){
   const r=state.race;if(!r||!r.sync)return;
-  await gpsStop();
   const ok=await deleteCloudRace(r);
   delete r.sync;r.pending={};r.fix=null;commit();
   flash(ok?'Partage arrêté : le code ne fonctionne plus.':'Partage arrêté sur ce téléphone (le code n’a pas pu être supprimé du serveur, réessaie avec du réseau).');
 }
 async function deleteRaceNow(){
   const r=state.race;if(!r)return;
-  await gpsStop();
   const okCloud=await deleteCloudRace(r);
   state.race=null;landOpen&&closeLand();commit();
   flash(okCloud?'Course supprimée.':'Course supprimée sur ce téléphone (le suivi en ligne n’a pas pu être supprimé, réessaie avec du réseau).');
@@ -1921,10 +1901,10 @@ function cleanUrl(v){
   if(!/^[a-z][a-z0-9+.-]*:/i.test(v)&&/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(v))v='https://'+v;
   return /^https?:\/\/[^\s<>"']{3,280}$/i.test(v)?v:null;
 }
-function setFix(r,km,t,src){
-  r.fix={km:km,t:t,src:src?1:0};queuePoint(r,'fixkm',Math.round(km*100));queuePoint(r,'fixt',Math.round(t));queuePoint(r,'fixsrc',src?1:0);
+function setFix(r,km,t){
+  r.fix={km:km,t:t};queuePoint(r,'fixkm',Math.round(km*100));queuePoint(r,'fixt',Math.round(t));
 }
-function clearFix(r){if(r.fix||(r.pending&&(r.pending.fixkm!=null||r.pending.fixt!=null))){queuePoint(r,'fixkm',null);queuePoint(r,'fixt',null);queuePoint(r,'fixsrc',null);}r.fix=null;}
+function clearFix(r){if(r.fix||(r.pending&&(r.pending.fixkm!=null||r.pending.fixt!=null))){queuePoint(r,'fixkm',null);queuePoint(r,'fixt',null);}r.fix=null;}
 function trackLink(r,cls){
   return r.trackUrl?'<a class="btn '+(cls||'')+'" href="'+esc(r.trackUrl)+'" target="_blank" rel="noopener noreferrer">Ouvrir le suivi de la montre</a>':'';
 }
@@ -1937,162 +1917,33 @@ function trackPanel(r){
               +'<label class="fld"><span>Lien de suivi</span><input class="in" data-r="trackUrl" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://…" value="'+esc(r.trackUrl||'')+'"></label>')
     +(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'')+'</section>';
 }
-function gpsLive(r){
-  if(gpsOn&&r.sync&&r.sync.role==='owner')return true;
-  const fx=r.fix;return !!(fx&&fx.src&&(nowMin(r)-fx.t)<=10);
-}
 function fixPanel(r,m){
-  const fx=r.fix,live=gpsLive(r);
+  const fx=r.fix;
   let last='';
   if(fx){
-    const age=Math.round(nowMin(r)-fx.t),st=!fx.src?r.stations.find(x=>Math.abs(x.km-fx.km)<0.06):null;
-    const src=fx.src?'GPS':(st?'pointage au ravito '+esc(st.name||'Ravito'):(Math.abs(fx.km-m.tot)<0.06?'pointage à l’arrivée':'saisie manuelle'));
-    const stale=fx.src&&age>10;
-    last='<p'+(stale?' class="warn"':'')+'>Dernière position ('+src+') : <b class="t">km '+km1(fx.km)+'</b> à '+clk(fx.t)+(fx.src&&age>=0?', il y a '+(age<1?'moins d’1':age)+' min':'')+(stale?'. Signal perdu ?':'.')+'</p>';
+    const st=r.stations.find(x=>Math.abs(x.km-fx.km)<0.06);
+    const src=st?'pointage au ravito '+esc(st.name||'Ravito'):(Math.abs(fx.km-m.tot)<0.06?'pointage à l’arrivée':'saisie manuelle');
+    last='<p>Dernière position ('+src+') : <b class="t">km '+km1(fx.km)+'</b> à '+clk(fx.t)+'.</p>';
   }
-  const manual='<p class="note">'+(fx&&fx.src?'Le signal GPS est perdu depuis un moment. ':'Pas de position GPS en direct. ')+'Regarde où est le coureur sur la carte du lien et indique son kilomètre, ou touche le profil plus haut. Quand tu pointes un ravito, la position se met à jour toute seule.</p>'
+  const manual='<p class="note">'+'Regarde où est le coureur sur la carte du lien et indique son kilomètre, ou touche le profil plus haut. Quand tu pointes un ravito, la position se met à jour toute seule.</p>'
     +'<div class="row"><label class="fld" style="flex:1;min-width:110px"><span>Kilomètre</span><input class="in" id="fix-km" type="number" inputmode="decimal" step="0.1" min="0" max="'+(Math.round(m.tot*10)/10)+'" placeholder="ex. 23,4"></label>'
     +'<label class="fld" style="flex:1;min-width:120px"><span>Heure</span><input class="in" type="time" id="fix-t" value="'+hhmmNow()+'"></label></div>'
-    +'<div class="row"><button class="btn primary" data-act="set-fix">Enregistrer la position</button>'+(fx&&!fx.src?'<button class="btn quiet" data-act="clear-fix">Annuler la dernière position</button>':'')+'</div>';
+    +'<div class="row"><button class="btn primary" data-act="set-fix">Enregistrer la position</button>'+(fx?'<button class="btn quiet" data-act="clear-fix">Annuler la dernière position</button>':'')+'</div>';
   return '<section class="sec"><h2>Position du coureur</h2>'
     +(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'')
-    +(live?'<p class="note">Position GPS en direct : les heures d’arrivée se recalculent toutes seules.</p>':manual+(r.trackUrl?'':'<p class="note">Aucun lien de suivi : le coureur peut en ajouter un dans l’onglet Assistance.</p>'))
+    +manual+(r.trackUrl?'':'<p class="note">Aucun lien de suivi : le coureur peut en ajouter un dans l’onglet Assistance.</p>')
     +last+'</section>';
 }
 
-// ---------- autorisations du téléphone ----------
-let permState={loc:'?',notif:'?'};
+// ---------- notifications (appli Android) ----------
+let permState={notif:'?'};
 function isNativeApp(){return !!(window.Capacitor&&typeof window.Capacitor.isNativePlatform==='function'&&window.Capacitor.isNativePlatform());}
-function permLabel(v){return v==='granted'?'autorisée':v==='denied'?'refusée':(v==='prompt'||v==='prompt-with-rationale')?'pas encore demandée':'inconnue';}
-function permText(){return 'Localisation : '+permLabel(permState.loc)+(isNativeApp()?'. Notifications : '+permLabel(permState.notif):'')+'.';}
-function updatePermUI(){const el=document.getElementById('permstat');if(el)el.textContent=permText();}
 async function checkPerms(){
   const N=window.RubaliseNative;
-  try{
-    if(N&&N.Geolocation){permState.loc=(await N.Geolocation.checkPermissions()).location;}
-    else if(navigator.permissions&&navigator.permissions.query){permState.loc=(await navigator.permissions.query({name:'geolocation'})).state;}
-  }catch(e){}
   try{if(N&&N.LocalNotifications)permState.notif=(await N.LocalNotifications.checkPermissions()).display;}catch(e){}
-  updatePermUI();
 }
-async function ensurePermissions(){
-  const N=window.RubaliseNative;
-  try{
-    if(N&&N.Geolocation){
-      let p=await N.Geolocation.checkPermissions();
-      if(p.location!=='granted')p=await N.Geolocation.requestPermissions({permissions:['location','coarseLocation']});
-      permState.loc=p.location;
-    }else if(navigator.geolocation){
-      permState.loc=await new Promise(res=>navigator.geolocation.getCurrentPosition(()=>res('granted'),e=>res(e.code===1?'denied':'prompt'),{timeout:10000,maximumAge:600000}));
-    }
-  }catch(e){permState.loc='denied';}
-  try{
-    if(N&&N.LocalNotifications){
-      let p=await N.LocalNotifications.checkPermissions();
-      if(p.display!=='granted')p=await N.LocalNotifications.requestPermissions();
-      permState.notif=p.display;
-    }
-  }catch(e){}
-  updatePermUI();return permState;
-}
-
-// ---------- suivi GPS du téléphone ----------
-let gpsOn=false,gpsMode='',gpsWatch=null,gpsMsg='',gpsOkTxt='',gpsSentAt=0,gpsSentKm=-1,wakeLock=null;
-let battLevel=null;
-try{if(navigator.getBattery)navigator.getBattery().then(bt=>{battLevel=bt.level;bt.addEventListener('levelchange',()=>{battLevel=bt.level;});}).catch(()=>{});}catch(e){}
-function gpsGap(){
-  if(window.__gpsGap!=null)return window.__gpsGap;
-  const ev=state.prefs&&state.prefs.gpsEvery;
-  if(ev&&ev!=='auto')return Math.max(30,+ev||120)*1000;
-  let s=120;
-  if(battLevel!=null){if(battLevel<0.15)s=600;else if(battLevel<0.30)s=300;}
-  return s*1000;
-}
-function gpsAvailable(r){return !!(r&&r.profile&&r.profile.la&&r.profile.lo);}
-function gpsText(){
-  const r=state.race;
-  return gpsOn?(gpsMsg||'Suivi GPS actif : en attente d’un signal.'):((r&&r.gpsArmed)?'GPS armé : il démarrera automatiquement quand le départ sera donné. Garde l’appli ouverte à ce moment-là : sinon il démarre à la réouverture.':'');
-}
-let gpsStarting=false;
-function maybeAutoGps(){
-  const r=state.race;
-  if(!r||!r.gpsArmed||gpsOn||gpsStarting||document.hidden||!r.sync||r.sync.role!=='owner'||r.startAt==null)return;
-  if(r.points&&r.points.finish!=null)return;
-  gpsStarting=true;r.gpsAutoStarted=true;
-  Promise.resolve(gpsStart()).catch(()=>{}).then(()=>{gpsStarting=false;});
-}
-function setGpsStatus(t){gpsMsg=t;const el=document.getElementById('gpsstat');if(el)el.textContent=gpsText();}
-function nativeGeo(){return (window.RubaliseNative&&window.RubaliseNative.BackgroundGeolocation)?window.RubaliseNative:null;}
-async function gpsStart(){
-  const r=state.race;
-  if(gpsOn)return;
-  if(!r||!r.sync||r.sync.role!=='owner'){flash('Partage d’abord ta course en direct.');return;}
-  if(!gpsAvailable(r)){flash('Ce tracé n’a pas de coordonnées GPS : réimporte le fichier GPX.');return;}
-  const ps=await ensurePermissions();
-  if(ps.loc==='denied'){flash('Localisation refusée. Autorise-la pour Rubalise : bouton « Ouvrir les réglages du téléphone ».');commit();return;}
-  gpsOn=true;gpsSentAt=0;gpsSentKm=-1;gpsMsg='';gpsOkTxt='';
-  const N=nativeGeo();
-  try{
-    if(N){
-      gpsMode='native';
-      gpsWatch=await N.BackgroundGeolocation.addWatcher({backgroundTitle:'Rubalise : suivi de course',backgroundMessage:'Ton kilomètre sur le parcours est partagé avec ton assistance.',requestPermissions:true,stale:false,distanceFilter:40},(loc,err)=>{
-        if(err){setGpsStatus(err.code==='NOT_AUTHORIZED'?'Localisation refusée : autorise-la pour Rubalise dans les réglages du téléphone.':'Erreur GPS : '+(err.message||err.code));return;}
-        if(loc)onGps(loc.latitude,loc.longitude,loc.accuracy);
-      });
-    }else if(navigator.geolocation){
-      gpsMode='web';
-      gpsWatch=navigator.geolocation.watchPosition(p=>onGps(p.coords.latitude,p.coords.longitude,p.coords.accuracy),e=>setGpsStatus(e.code===1?'Localisation refusée : autorise-la dans les réglages du navigateur.':'GPS : signal momentanément indisponible.'),{enableHighAccuracy:true,maximumAge:10000,timeout:30000});
-      try{if(navigator.wakeLock)wakeLock=await navigator.wakeLock.request('screen');}catch(e){}
-    }else{gpsOn=false;flash('Ce téléphone ne permet pas la localisation.');return;}
-  }catch(e){gpsOn=false;gpsMode='';flash('Impossible de démarrer le GPS : '+(e.message||e));return;}
-  gpsMsg='Suivi GPS actif : en attente d’un signal.';commit();
-}
-async function gpsStop(){
-  if(!gpsOn)return;
-  const mode=gpsMode,w=gpsWatch;gpsOn=false;gpsMode='';gpsWatch=null;gpsMsg='';
-  try{
-    if(mode==='native'){const N=nativeGeo();if(N)await N.BackgroundGeolocation.removeWatcher({id:w});}
-    else if(mode==='web'&&w!=null){navigator.geolocation.clearWatch(w);}
-  }catch(e){}
-  try{if(wakeLock){await wakeLock.release();wakeLock=null;}}catch(e){}
-  if(tab==='assist')render();
-}
-function onGps(lat,lon,acc){
-  const r=state.race;
-  if(!gpsOn||!r||!r.sync||r.sync.role!=='owner')return;
-  if(typeof lat!=='number'||typeof lon!=='number')return;
-  if(acc&&acc>200){setGpsStatus('Signal GPS imprécis (±'+Math.round(acc)+' m) : en attente d’un meilleur signal.');return;}
-  const mt=matchKm(r.profile,lat,lon,(r.fix&&r.fix.src)?r.fix.km:null);
-  if(!mt){setGpsStatus('Tu sembles hors du parcours (à plus de 300 m du tracé). Rien n’est envoyé.');return;}
-  const now=Date.now(),arrived=mt.km>=r.profile.d[r.profile.d.length-1]-0.05;
-  if(!arrived&&(now-gpsSentAt<gpsGap()||(now-gpsSentAt<2.5*gpsGap()&&Math.abs(mt.km-gpsSentKm)<0.1))){
-    if(gpsOkTxt&&gpsMsg!==gpsOkTxt)setGpsStatus(gpsOkTxt);
-    return;
-  }
-  const m=Math.round(nowMin(r)),km=Math.round(mt.km*100)/100;
-  setFix(r,km,m,1);gpsSentAt=now;gpsSentKm=mt.km;save();syncSoon();
-  gpsOkTxt='Position envoyée : km '+km1(km)+' à '+fmtClock(m).s+(acc?' (précision ±'+Math.round(acc)+' m)':'')+'.';
-  setGpsStatus(gpsOkTxt);
-  if(arrived){r.gpsArmed=false;gpsStop();flash('Arrivée atteinte : suivi GPS arrêté.');}
-}
-function gpsPanel(r){
-  if(!r||(r.sync&&r.sync.role==='member'))return '';
-  const owner=!!(r.sync&&r.sync.role==='owner');
-  let t='<section class="sec"><h2>Position GPS du téléphone</h2>'
-    +'<p class="note">Ton téléphone envoie ton kilomètre sur le parcours à ton assistance, toutes les 2 minutes environ (réglable ci-dessous). Seul le kilomètre est partagé, jamais tes coordonnées. Le GPS consomme de la batterie et n’envoie rien sans réseau. Pour économiser la batterie, choisis « Activer au départ » : il ne démarre que lorsque le départ est donné et s’arrête à l’arrivée.</p>';
-  if(!owner)t+='<p class="note" id="permstat">'+esc(permText())+'</p><p class="note">Partage d’abord ta course en direct (section « Suivi en direct » ci-dessus).</p>';
-  else if(!gpsAvailable(r))t+='<p class="warn">Ce tracé n’a pas de coordonnées GPS (importé avec une ancienne version). Réimporte le fichier GPX pour activer cette fonction.</p>';
-  else t+='<div class="row">'+(gpsOn?'<button class="btn danger" data-act="gps-stop">Arrêter le suivi GPS</button>'
-      :(r.gpsArmed?'<button class="btn" data-act="gps-disarm">Désarmer</button><button class="btn quiet" data-act="gps-start">Démarrer maintenant</button>'
-                  :'<button class="btn primary" data-act="gps-arm">Activer au départ (recommandé)</button><button class="btn quiet" data-act="gps-start">Démarrer maintenant</button>'))+'</div>'
-    +'<p class="note" id="gpsstat">'+esc(gpsText())+'</p>'
-    +'<label class="fld" style="margin-top:8px"><span>Fréquence d’envoi de ta position</span><select class="in" data-gpsevery>'
-    +[['auto','Automatique (2 min, plus espacé si la batterie baisse)'],['60','Toutes les minutes'],['120','Toutes les 2 minutes'],['300','Toutes les 5 minutes'],['600','Toutes les 10 minutes']].map(o=>'<option value="'+o[0]+'"'+(String((state.prefs&&state.prefs.gpsEvery)||'auto')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>'
-    +'<p class="note">Envoyer une position toutes les 15 à 40 secondes garde la radio mobile presque tout le temps allumée : Android le déconseille. À 8 km/h, 2 minutes représentent environ 270 m, largement assez pour ton assistance. Espace davantage si ta batterie est juste.</p>'
-    +'<p class="note" id="permstat">'+esc(permText())+'</p><div class="row"><button class="btn quiet small" data-act="perm-request">Autoriser la localisation</button>'+(nativeGeo()?'<button class="btn quiet small" data-act="perm-settings">Ouvrir les réglages du téléphone</button>':'')+'</div>'
-    +((!nativeGeo())?'<p class="note">Dans le navigateur, le suivi ne marche que si l’écran reste allumé et la page ouverte. L’appli installée (APK) peut suivre l’écran éteint.</p>':'');
-  return t+'</section>';
-}
+// Le tracé contient-il des coordonnées (fichier GPX récent) ? Nécessaire pour les liens de carte, la 3D et la recherche de stationnements.
+function hasCoords(r){return !!(r&&r.profile&&r.profile.la&&r.profile.lo);}
 
 // ---------- vue horizontale du profil ----------
 function landDims(){const portrait=window.innerHeight>window.innerWidth;return {portrait:portrait,w:portrait?window.innerHeight:window.innerWidth,h:portrait?window.innerWidth:window.innerHeight};}
@@ -2440,7 +2291,7 @@ function attach3D(cv){
   cv.addEventListener('wheel',e=>{e.preventDefault();v3.zoom=clampN(v3.zoom*(e.deltaY<0?1.12:0.89),zMin3(),4);draw3D();},{passive:false});
 }
 function show3D(ch,r,m,tl,kmNow,w,h){
-  if(!gpsAvailable(r)){ch.innerHTML='<p class="note" style="padding:16px">Ce tracé n’a pas de coordonnées GPS (importé avec une ancienne version) : réimporte le fichier GPX pour voir la 3D.</p>';cur3=null;return;}
+  if(!hasCoords(r)){ch.innerHTML='<p class="note" style="padding:16px">Ce tracé n’a pas de coordonnées (importé avec une ancienne version) : réimporte le fichier GPX pour voir la 3D.</p>';cur3=null;return;}
   const dpr=Math.min(2,window.devicePixelRatio||1);
   ch.innerHTML=(v3.sat?'<canvas id="c3dgl" aria-hidden="true"></canvas>':'')+'<canvas id="c3d" aria-label="Tracé 3D du parcours : fais glisser pour tourner"></canvas>'
     +'<div class="c3d-tools"><button class="btn quiet" data-act="c3d-zoom" data-v="1.25" aria-label="Zoom avant">+</button><button class="btn quiet" data-act="c3d-zoom" data-v="0.8" aria-label="Zoom arrière">−</button><button class="btn quiet" data-act="c3d-relief">Relief ×'+v3.relief+'</button><button class="btn quiet" data-act="c3d-sat" aria-pressed="'+v3.sat+'">Satellite</button><button class="btn quiet" data-act="c3d-reset">Recentrer</button></div><div class="c3d-credit" id="c3dcredit"></div>'
@@ -2454,7 +2305,7 @@ function show3D(ch,r,m,tl,kmNow,w,h){
 }
 
 function mapsLinks(r,m,km){
-  if(!gpsAvailable(r))return '';
+  if(!hasCoords(r))return '';
   const lat=interp(m.p.d,m.p.la,km),lon=interp(m.p.d,m.p.lo,km),c=lat.toFixed(5)+','+lon.toFixed(5);
   return '<a class="btn quiet small" href="https://www.google.com/maps/@?api=1&map_action=map&center='+c+'&zoom=17&basemap=satellite" target="_blank" rel="noopener noreferrer">Vue satellite</a>'
     +navBtns(navUrls(lat.toFixed(5),lon.toFixed(5),''),'Itinéraire');
@@ -2731,14 +2582,14 @@ function renderAssist(){
     if(!x.st.access)return '<article class="crew watch'+(passed?' passed':'')+'" id="crew-'+x.id+'"><h3><span>'+esc(x.name)+'</span><span class="km">km '+km1(x.km)+'</span></h3>'
       +'<p class="note"><b>Sans assistance</b> : le coureur ne peut pas y être aidé, mais on peut le voir passer.</p>'
       +(passed?'<p class="win">Le coureur est passé à '+clk(x.actual)+'.</p>':'<p class="win">Passage estimé entre '+clk(early)+' et '+clk(late)+'.<br>Être sur place avant <b>'+clk(early-crewMarginOf(r))+'</b>.</p>')
-      +crewLine(r,x.st)+(gpsAvailable(r)?'<div class="maplinks">'+mapsLinks(r,m,x.km)+'</div>':'')+'</article>';
+      +crewLine(r,x.st)+(hasCoords(r)?'<div class="maplinks">'+mapsLinks(r,m,x.km)+'</div>':'')+'</article>';
     return '<article class="crew'+(passed?' passed':'')+'" id="crew-'+x.id+'"><h3><span>'+esc(x.name)+'</span><span class="km">km '+km1(x.km)+'</span></h3>'
       +(passed?'<p class="win">Le coureur est passé à '+clk(x.actual)+'.</p>'
               :'<p class="win">Passage estimé entre '+clk(early)+' et '+clk(late)+'.<br>Être sur place avant <b>'+clk(early-crewMarginOf(r))+'</b>.</p>')
       +(x.margin!=null&&!passed?'<p class="'+mcls(x.margin)+'">Marge sur la barrière : '+mfmt(x.margin)+'</p>':'')
       +crewLine(r,x.st)
       +(sg?'<p>Jusqu’à <b>'+esc(sg.to)+'</b> ('+km1(sg.km)+' km, +'+sg.up+' m, −'+sg.down+' m, environ '+fmtDur(sg.dur)+')'+(sg.via.length?', en passant par '+sg.via.map(esc).join(' et ')+' (sans accès assistance)':'')+' : prévoir <b>'+needsText(sg.needs)+'</b>.</p>':'')
-      +(gpsAvailable(r)?'<div class="maplinks">'+mapsLinks(r,m,x.km)+'</div>':'')
+      +(hasCoords(r)?'<div class="maplinks">'+mapsLinks(r,m,x.km)+'</div>':'')
       +itemsBlock(r,x.st)+'</article>';
   }).join('');
   const startNote=(segs.length&&segs[0].fromId==='start')?'<section class="sec"><h2>Au départ</h2><p>Le coureur doit partir avec de quoi aller jusqu’à <b>'+esc(segs[0].to)+'</b> ('+km1(segs[0].km)+' km'+(segs[0].via.length?', en passant par '+segs[0].via.map(esc).join(' et ')+', sans accès assistance':'')+') : <b>'+needsText(segs[0].needs)+'</b>.</p></section>':'';
@@ -2748,8 +2599,7 @@ function renderAssist(){
   +crewCard(r,m)
   +syncPanel(r)
   +trackPanel(r)
-  +gpsPanel(r)
-  +startNote
+    +startNote
   +(cards||'<p class="note">Aucun ravito avec accès assistance. Coche « Accès pour l’assistance » dans l’onglet Plan.</p>')
   +(without.length?'<p class="note">Sans accès assistance : '+without.map(x=>esc(x.name)).join(', ')+'.</p>':'')
   +'<section class="sec"><h2>Pour les supporters à l’arrivée</h2><p>'+(fin.actual!=null?'Arrivée pointée à '+clk(fin.actual)+'.':'Arrivée estimée entre '+clk(finE)+' et '+clk(finL)+'.')+'</p></section>'
@@ -2873,7 +2723,7 @@ function act(b){
   if(a==='menu'){toggleMenu();return;}
   if(a==='open-help'){closeMenu();go('help');return;}
   if(a==='tour-start'){startTour();return;}
-  if(a==='skip-welcome'){state.welcomed=true;save();tab='plan';commit();window.scrollTo(0,0);if(!state.tourDone)startTour();else maybeAskPerms();return;}
+  if(a==='skip-welcome'){state.welcomed=true;save();tab='plan';commit();window.scrollTo(0,0);if(!state.tourDone)startTour();return;}
   if(a==='jump'){const el=document.getElementById(b.dataset.id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});return;}
   if(a==='save-profile'){
     if(!isRunner())return;
@@ -2955,10 +2805,6 @@ function act(b){
     return;
   }
   if(a==='sync-now'){flash('Synchronisation…');syncNow();return;}
-  if(a==='gps-start'){askConfirm({title:'Partager ma position ?',text:'Rubalise utilisera la localisation de ton téléphone et enverra ton kilomètre sur le parcours à ton assistance (jamais tes coordonnées). Cela consomme de la batterie.',okLabel:'Démarrer',onOk:gpsStart});return;}
-  if(a==='gps-stop'){if(r)r.gpsArmed=false;gpsStop();commit();flash('Suivi GPS arrêté.');return;}
-  if(a==='perm-request'){ensurePermissions().then(ps=>flash(ps.loc==='granted'?'Localisation autorisée.':'Localisation non autorisée : ouvre les réglages du téléphone pour l’activer.'));return;}
-  if(a==='perm-settings'){const N=nativeGeo();try{if(N&&N.BackgroundGeolocation.openSettings)N.BackgroundGeolocation.openSettings();}catch(e){}return;}
   if(a==='stop-sync'){
     if(r.sync&&r.sync.role==='member'){
       const n=Object.keys(r.pending||{}).length;
@@ -3035,7 +2881,7 @@ function act(b){
     while(min<floor-5)min+=1440;
     const prow=tl.rows[idx];
     r.points[prow.id]=min;queuePoint(r,prow.id,min);
-    if(!r.fix||min>=r.fix.t-1)setFix(r,Math.round(prow.km*100)/100,min,0);
+    if(!r.fix||min>=r.fix.t-1)setFix(r,Math.round(prow.km*100)/100,min);
     commit();syncSoon();flash('Passage pointé : '+prow.name+'.');return;
   }
   if(a==='undo'){
@@ -3046,7 +2892,7 @@ function act(b){
       if(r.fix&&!r.fix.src&&Math.abs(r.fix.km-urow.km)<0.011&&Math.round(r.fix.t)===Math.round(was)){
         clearFix(r);
         const prev=tl.rows.slice(0,k).filter(x=>x.actual!=null).pop();
-        if(prev)setFix(r,Math.round(prev.km*100)/100,prev.actual,0);
+        if(prev)setFix(r,Math.round(prev.km*100)/100,prev.actual);
       }
       commit();syncSoon();
     }
@@ -3065,17 +2911,15 @@ function act(b){
     const m=model(r),tv=(b.dataset.at==='plan')?m.startMin:parseClock((document.getElementById('start-time')||{}).value);
     if(tv==null){flash('Indique l’heure du départ.');return;}
     let min=tv;const floor=m.startMin-360;while(min<floor)min+=1440;
-    r.startAt=min;queuePoint(r,'startat',min);commit();syncSoon();maybeAutoGps();flash('Départ enregistré à '+fmtClock(min).s+'.');return;
+    r.startAt=min;queuePoint(r,'startat',min);commit();syncSoon();flash('Départ enregistré à '+fmtClock(min).s+'.');return;
   }
-  if(a==='clear-start'){r.startAt=null;queuePoint(r,'startat',null);if(r.gpsAutoStarted&&gpsOn)gpsStop();commit();syncSoon();flash('Départ annulé.');return;}
+  if(a==='clear-start'){r.startAt=null;queuePoint(r,'startat',null);commit();syncSoon();flash('Départ annulé.');return;}
   if(a==='set-plan-start'){
     if(isMember(r))return;
     const v=(document.getElementById('plan-start')||{}).value;
     if(parseClock(v)==null){flash('Indique une heure.');return;}
     r.start=v;applyAutoBarriers(r);commit();syncSoon();flash('Heure de départ prévue : '+v+'.');return;
   }
-  if(a==='gps-arm'){r.gpsArmed=true;r.gpsAutoStarted=false;save();maybeAutoGps();commit();flash(r.startAt!=null?'GPS activé.':'GPS armé : il démarrera quand le départ sera donné.');return;}
-  if(a==='gps-disarm'){r.gpsArmed=false;commit();flash('GPS désarmé.');return;}
   if(a==='clear-fix'){clearFix(r);commit();syncSoon();flash('Position annulée.');return;}
   if(a==='simulate'){
     const m=model(r),tl=timeline(r,m,{plan:true}),stop=+r.stopMin||0;
@@ -3088,7 +2932,6 @@ function act(b){
     const m=model(r),tl=timeline(r,m,{}),st=profileStats(m.p),fin=tl.rows[tl.rows.length-1],d=r.diary||{};
     state.journal=state.journal||[];
     state.journal.unshift({id:uid(),name:r.name,date:r.date,km:st.km,up:st.up,planned:m.target,actual:fin.actual!=null?fin.actual-m.startMin:null,rating:d.rating||0,learn:(d.learn||'').slice(0,160)});
-    gpsStop();
     if(r.sync){delete r.sync;r.pending={};}
     r.fix=null;r.startAt=null;r.points={};r.diary={rating:0,nutrition:'',learn:'',gear:''};commit();flash('Course archivée dans le carnet.');return;
   }
@@ -3127,7 +2970,6 @@ document.addEventListener('change',e=>{
   const t=e.target,r=state.race;
   if(t.dataset&&t.dataset.gpx!==undefined){const f=t.files&&t.files[0];if(f)importGPX(f);return;}
   if(t.dataset&&t.dataset.crewnotif!==undefined){state.prefs.crewNotif=!!t.checked;save();crewNotifSync();render();return;}
-  if(t.dataset&&t.dataset.gpsevery!==undefined){state.prefs.gpsEvery=(t.value==='auto')?'auto':(+t.value||120);save();return;}
   if(t.dataset&&t.dataset.pref){
     const k=t.dataset.pref;let v=parseFloat(String(t.value).replace(',','.'));if(!isFinite(v)||v<0)v=defaultPrefs()[k];
     state.prefs[k]=v;t.value=v;save();return;
@@ -3217,8 +3059,7 @@ document.addEventListener('click',e=>{
   if(l&&/^geo:/i.test(l.getAttribute('href')||''))return;
   if(l&&N&&N.Browser){e.preventDefault();N.Browser.open({url:l.href}).catch(()=>flash('Impossible d’ouvrir le navigateur.'));}
 });
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){syncNow();maybeAutoGps();}});
-setInterval(maybeAutoGps,5000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){syncNow();}});
 // Copilote : la carte se met à jour toute seule, et la notification est reprogrammée si l'heure conseillée change.
 setInterval(()=>{
   const r=state.race,el=document.getElementById('crewadv');
@@ -3233,7 +3074,6 @@ if(!state.welcomed&&(state.race||(state.journal&&state.journal.length)||isRunner
 if(!state.welcomed&&!isRunner())tab='welcome';
 lastW=root.clientWidth;
 render(true);
-maybeAskPerms();
 if(state.race&&state.race.sync)syncSoon();
 if(isRunner()&&state.profileDirty)pushProfile().catch(()=>{});
 setInterval(()=>{if(isRunner()&&state.profileDirty&&!document.hidden)pushProfile().catch(()=>{});},30000);
