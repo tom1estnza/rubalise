@@ -120,6 +120,9 @@ input[type=range]{width:100%;accent-color:var(--accent);min-height:32px}
 .plistc{flex-direction:column;align-items:stretch}
 .plistc .chip{width:100%;text-align:left;justify-content:flex-start}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.spinner{display:inline-block;width:16px;height:16px;margin-right:8px;border:3px solid currentColor;border-top-color:transparent;border-radius:50%;vertical-align:-3px;opacity:.85;animation:rbspin .8s linear infinite}
+@keyframes rbspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner{animation-duration:2.4s}}
 .stn-crew{border-top:1px dashed var(--line);margin-top:10px;padding-top:6px}
 .stn-times{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;font-size:15px}
 ul.plain{list-style:none;padding:0;margin:0}
@@ -755,7 +758,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
 function defaultPrefs(){return {theme:'auto',defStop:3,defCarbs:60,defWater:500,defGel:25};}
 let state=load();
 state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
-const APP_VERSION='2.3';
+const APP_VERSION='2.6';
 function prefv(k){return (state.prefs&&state.prefs[k]!=null)?state.prefs[k]:defaultPrefs()[k];}
 function applyTheme(){const t=state.prefs.theme,el=document.documentElement;if(t==='light'||t==='dark')el.setAttribute('data-theme',t);else el.removeAttribute('data-theme');}
 applyTheme();
@@ -876,16 +879,18 @@ const ROUTE_PROVIDERS={
 };
 function routeProvider(){return ROUTE_PROVIDERS[(state.prefs&&state.prefs.routeProvider)||'osm']||ROUTE_PROVIDERS.manual;}
 let crewRun={running:false,cancel:false,lines:[],err:'',diag:[]};
+// Mode test : toutes les étapes et les détails techniques. Mode bêta : seulement ce qui demande une action (« à traiter »), la fin et les erreurs en clair.
 function crewStatusHTML(){
-  const c=crewRun;
-  return c.lines.map(l=>'<p class="note">'+esc(l)+'</p>').join('')
+  const c=crewRun,tm=testMode();
+  const lines=tm?c.lines:c.lines.filter(l=>l.k==='warn'||l.k==='end');
+  return lines.map(l=>'<p class="'+(l.k==='warn'?'warn':'note')+'">'+esc(l.t)+'</p>').join('')
     +(c.err?'<p class="warn">'+esc(c.err)+'</p>':'')
-    +((c.diag&&c.diag.length)?'<p class="note"><b>Détails techniques :</b><br>'+Array.from(new Set(c.diag)).map(esc).join('<br>')+'</p>':'')
-    +(c.test?c.test.map(l=>'<p class="note">'+esc(l)+'</p>').join(''):'')
+    +((tm&&c.diag&&c.diag.length)?'<p class="note"><b>Détails techniques :</b><br>'+Array.from(new Set(c.diag)).map(esc).join('<br>')+'</p>':'')
+    +((tm&&c.test)?c.test.map(l=>'<p class="note">'+esc(l)+'</p>').join(''):'')
     +(c.running?'<div class="row"><button class="btn quiet small" data-act="crew-cancel">Arrêter</button></div>':'');
 }
 function setCrewStatus(){const el=document.getElementById('crewauto');if(el)el.innerHTML=crewStatusHTML();}
-function crewLog(t){crewRun.lines.push(t);if(crewRun.lines.length>14)crewRun.lines.shift();setCrewStatus();}
+function crewLog(t,k){crewRun.lines.push({t:t,k:k||'step'});if(crewRun.lines.length>14)crewRun.lines.shift();setCrewStatus();}
 // Cherche le stationnement le plus proche de chaque ravito accessible, puis le temps de voiture entre ravitos.
 // opts.onlyId : un seul ravito (on écrase ses valeurs) ; opts.driveOnly : on ne recalcule que les trajets.
 async function crewAuto(r,opts){
@@ -922,7 +927,7 @@ async function crewAuto(r,opts){
         if(c)cands=mergeParkings(cands,c);
       }
       if(!alive())break;
-      if(!cands.length){crewLog('Aucun stationnement trouvé près de « '+s.name+' » : saisis-le à la main.');continue;}
+      if(!cands.length){crewLog('Aucun stationnement trouvé près de « '+s.name+' » : saisis-le à la main.','warn');continue;}
       // 20 min à pied = environ 1,5 km : on calcule la marche réelle des 8 candidats les plus proches
       const near=cands.filter(c=>c.distM<=1500).slice(0,8),top=near.length?near:cands.slice(0,1);
       for(const c of top){
@@ -935,7 +940,7 @@ async function crewAuto(r,opts){
       s.parking=best.name;s.parkLat=best.lat;s.parkLon=best.lon;s.walkMin=best.walkMin;s.walkEst=!!best.est;s.parkAuto=true;
       s.parkList=list;
       touched[s.id]=true;
-      crewLog('« '+s.name+' » : '+(list[0].walkMin<=20?list.length+' stationnement'+(list.length>1?'s':'')+' à moins de 20 min à pied':'aucun stationnement à moins de 20 min à pied')+'. Conseillé : '+best.name+', '+best.walkMin+' min'+(best.est?' (estimé)':'')+(top[0].src==='nominatim'?' · service de secours, accès à vérifier':'')+'.');
+      crewLog('« '+s.name+' » : '+(list[0].walkMin<=20?list.length+' stationnement'+(list.length>1?'s':'')+' à moins de 20 min à pied':'aucun stationnement à moins de 20 min à pied')+'. Conseillé : '+best.name+', '+best.walkMin+' min'+(best.est?' (estimé)':'')+(top[0].src==='nominatim'?' · service de secours, accès à vérifier':'')+'.','ok');
     }
   }
   // 2. trajets en voiture : de parking en parking, en partant du départ de la course.
@@ -951,7 +956,7 @@ async function crewAuto(r,opts){
       if(need){
         crewLog('Trajet en voiture jusqu’à « '+s.name+' »…');
         const v=await safe(()=>prov.travelMin({from:prev,to:dest,mode:'drive'}));
-        if(v!=null){s.driveMin=v;}else if(v===null){crewLog('Pas d’itinéraire trouvé jusqu’à « '+s.name+' » : saisis le trajet à la main.');}
+        if(v!=null){s.driveMin=v;}else if(v===null){crewLog('Pas d’itinéraire trouvé jusqu’à « '+s.name+' » : saisis le trajet à la main.','warn');}
       }
       if(s.access){prevTouched=!!touched[s.id]||(need&&!manual);prev=dest;}
     }
@@ -977,8 +982,9 @@ async function crewTest(){
 }
 async function runCrewAuto(opts){
   const r=state.race;if(!r||crewRun.running)return;
-  osmDiag=[];crewRun={running:true,cancel:false,lines:[],err:'',diag:[]};setCrewStatus();
-  try{await crewAuto(r,opts);if(crewRun.cancel)crewRun.lines.push('Recherche arrêtée.');else crewRun.lines.push('Terminé. Vérifie les résultats, ils restent modifiables.');}
+  osmDiag=[];crewRun={running:true,cancel:false,lines:[],err:'',diag:[],onlyId:(opts&&opts.onlyId)||null};
+  if(testMode())setCrewStatus();else render();   // bêta : les boutons affichent l'icône de chargement
+  try{await crewAuto(r,opts);if(crewRun.cancel)crewRun.lines.push({t:'Recherche arrêtée.',k:'end'});else crewRun.lines.push({t:'Terminé. Vérifie les résultats, ils restent modifiables.',k:'end'});}
   catch(e){crewRun.err=e.message||'Erreur pendant la recherche.';}
   crewRun.running=false;
   if(state.race===r){save();render();maybePush();}
@@ -999,20 +1005,22 @@ function crewFields(r,s){
     +'<label class="fld"><span>Stationnement (nom ou coordonnées)</span><input data-s="'+s.id+'" data-f="parking" value="'+esc(park)+'" maxlength="80" placeholder="ex. Parking de la mairie, ou 43.9152, 4.5069" autocomplete="off"></label>'
     +'<div class="stn-grid"><label class="fld"><span>Marche jusqu’au ravito (min)'+(s.walkEst?' · estimée':'')+'</span><input type="number" inputmode="numeric" min="0" max="180" data-s="'+s.id+'" data-f="walkMin" value="'+(s.walkMin==null?'':s.walkMin)+'"></label>'
     +'<label class="fld"><span>Trajet depuis '+(prev==='le départ'?'le départ':'« '+esc(prev)+' »')+' (min)</span><input type="number" inputmode="numeric" min="0" max="600" data-s="'+s.id+'" data-f="driveMin" value="'+(s.driveMin==null?'':s.driveMin)+'"></label></div>'
-    +(canAuto?'<div class="row" style="margin:4px 0 0"><button class="btn quiet small" data-act="crew-auto-one" data-id="'+s.id+'">'+(s.parkAuto===true?'Recalculer ce ravito':'Trouver le stationnement')+'</button></div>':'')
+    +(canAuto?'<div class="row" style="margin:4px 0 0"><button class="btn quiet small" data-act="crew-auto-one" data-id="'+s.id+'"'+(crewRun.running?' disabled':'')+'>'+((crewRun.running&&crewRun.onlyId===s.id&&!testMode())?'<span class="spinner" aria-hidden="true"></span>Recherche…':(s.parkAuto===true?'Recalculer ce ravito':'Trouver le stationnement'))+'</button></div>':'')
     +plist
-    +(s.parkAuto===true?'<p class="hint">Trouvé avec OpenStreetMap. Modifie un champ pour le garder tel quel.</p>':'')
+    +((s.parkAuto===true&&testMode())?'<p class="hint">Trouvé avec OpenStreetMap. Modifie un champ pour le garder tel quel.</p>':'')
     +'</div>';
 }
 function crewAutoBlock(r){
   const p=routeProvider();
   if(!p.auto||!r.stations.some(s=>s.access||s.watch))return '';
   if(!hasCoords(r))return '<p class="hint">La recherche automatique du stationnement demande les coordonnées du tracé : réimporte le fichier GPX.</p>';
-  return '<div class="crewauto"><button class="btn" data-act="crew-auto"'+(crewRun.running?' disabled':'')+'>Trouver les stationnements et les trajets</button>'
-    +'<p class="hint">Recherche gratuite avec OpenStreetMap, sans compte. À lancer chez toi avec du réseau : les résultats restent dans le plan. Les temps de voiture sont hors circulation, la marge de sécurité couvre le reste. Tes saisies manuelles ne sont jamais écrasées.</p>'
-    +'<div class="row" style="margin:4px 0"><button class="btn quiet small" data-act="crew-test"'+(crewRun.running?' disabled':'')+'>Tester la connexion aux services</button></div>'
+  const tm=testMode(),busy=crewRun.running;
+  return '<div class="crewauto"><button class="btn" data-act="crew-auto"'+(busy?' disabled':'')+'>'+(busy&&!tm?'<span class="spinner" aria-hidden="true"></span>Recherche en cours…':'Trouver les stationnements et les trajets')+'</button>'
+    +(tm?'<p class="hint">Recherche gratuite avec OpenStreetMap, sans compte. À lancer chez toi avec du réseau : les résultats restent dans le plan. Les temps de voiture sont hors circulation, la marge de sécurité couvre le reste. Tes saisies manuelles ne sont jamais écrasées.</p>'
+        +'<div class="row" style="margin:4px 0"><button class="btn quiet small" data-act="crew-test"'+(busy?' disabled':'')+'>Tester la connexion aux services</button></div>'
+       :'<p class="hint">À lancer avec du réseau. Tes saisies manuelles ne sont jamais écrasées.</p>')
     +'<div id="crewauto" aria-live="polite">'+crewStatusHTML()+'</div>'
-    +'<p class="hint">Données © contributeurs OpenStreetMap. Itinéraires : OSRM (routing.openstreetmap.de).</p></div>';
+    +'<p class="hint">'+(tm?'Données © contributeurs OpenStreetMap. Itinéraires : OSRM (routing.openstreetmap.de).':'© contributeurs OpenStreetMap')+'</p></div>';
 }
 function migrateRace(r){
   if(!r)return;
@@ -1163,7 +1171,17 @@ async function getToken(){
       const r=await fetchJSON('https://securetoken.googleapis.com/v1/token?key='+FB.apiKey,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(authState.refreshToken)});
       setAuth({idToken:r.id_token,refreshToken:r.refresh_token,expiresAt:now+(+r.expires_in)*1000,uid:r.user_id,email:authState.email||''});
       return authState.idToken;
-    }catch(e){if(e.network)throw e;setAuth(null);}
+    }catch(e){
+      if(e.network)throw e;
+      // Seule une réponse qui dit « cette session n'existe plus » déconnecte. Un incident passager (serveur indisponible,
+      // trop de requêtes…) garde la session : on réessaiera au prochain appel.
+      if(!(e.status===400&&/TOKEN_EXPIRED|INVALID_REFRESH_TOKEN|USER_DISABLED|USER_NOT_FOUND|INVALID_GRANT_TYPE|MISSING_REFRESH_TOKEN/.test(String(e.message)))){
+        const er=new Error('Connexion momentanément indisponible : réessaie dans un instant.');er.network=true;throw er;
+      }
+      const hadAccount=!!authState.email;
+      setAuth(null);
+      if(hadAccount){const er=new Error('Ta session a expiré : reconnecte-toi.');er.expired=true;flash(er.message);throw er;}
+    }
   }
   const r=await fetchJSON('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+FB.apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({returnSecureToken:true})});
   setAuth({idToken:r.idToken,refreshToken:r.refreshToken,expiresAt:now+(+r.expiresIn)*1000,uid:r.localId});
@@ -1369,7 +1387,7 @@ async function googleExchange(idToken,claims,st){
       }
       storeSession(r,r.email||claims.email);
       if(link){flash('Google est maintenant associé à ton compte.');commit();return;}
-      await afterLogin();loginMode='in';enterApp('runner');
+      await afterLogin();loginMode='in';enterApp('runner',!!r.isNewUser);
       flash(state.profileErr?'Connecté, mais ton profil ne peut pas être enregistré. '+state.profileErr:(r.isNewUser?'Compte créé avec Google.':'Connecté avec Google.'));
     }catch(e){flash(authErr(e));}
     finally{authBusy=false;}
@@ -1481,10 +1499,10 @@ async function doAuth(){
   if(authBusy)return;
   const em=((document.getElementById('authmail')||{}).value||'').trim(),pw=(document.getElementById('authpass')||{}).value||'';
   if(!em||!pw){flash('Saisis ton e-mail et ton mot de passe.');return;}
-  authBusy=true;flash(loginMode==='up'?'Création du compte…':'Connexion…');
+  authBusy=true;const isNewAcc=(loginMode==='up');flash(isNewAcc?'Création du compte…':'Connexion…');
   try{
-    if(loginMode==='up')await runnerSignUp(em,pw);else await runnerSignIn(em,pw);
-    await afterLogin();loginMode='in';enterApp('runner');
+    if(isNewAcc)await runnerSignUp(em,pw);else await runnerSignIn(em,pw);
+    await afterLogin();loginMode='in';enterApp('runner',isNewAcc);
     flash(state.profileErr?'Connecté, mais ton profil ne peut pas être enregistré. '+state.profileErr:'Connecté.');
   }catch(e){flash(authErr(e));}
   finally{authBusy=false;}
@@ -1635,10 +1653,11 @@ function tourAct(k){
   if(k==='skip'){endTour();return;}
   if(k==='demo'){tourTemp=false;state.tmpRace=false;endTour();state.race=demoRace();animateNext=true;tab='plan';commit();window.scrollTo(0,0);return;}
 }
-function enterApp(dest){
-  state.welcomed=true;save();
-  if(!state.tourDone){tab='plan';commit();window.scrollTo(0,0);startTour();}
-  else{tab=dest||'plan';commit();window.scrollTo(0,0);}
+// isNew : le compte vient d'être créé (inscription). Le guide ne se lance que dans ce cas ; une simple connexion ne le relance jamais.
+function enterApp(dest,isNew){
+  state.welcomed=true;
+  if(isNew){state.tourDone=false;save();tab='plan';commit();window.scrollTo(0,0);startTour();}
+  else{state.tourDone=true;save();tab=dest||'plan';commit();window.scrollTo(0,0);}
 }
 
 function kmh(pace){return (60/pace).toFixed(1).replace('.',',');}
@@ -1765,7 +1784,7 @@ function renderHelp(){
   +'<details><summary>Zones d’allure et de fréquence cardiaque</summary><p>Elles sont calculées dans l’espace coureur à partir de ta performance de référence (indice de forme de Daniels) et de tes fréquences cardiaques (réserve cardiaque de Karvonen, pourcentage de la FC max ou FC de seuil). Les allures sont données sur terrain plat.</p></details>'
   +'<details><summary>Installer une mise à jour</summary><p>Télécharge le nouvel APK compilé sur GitHub et installe-le par-dessus l’ancien : tes données sont conservées.</p></details>'
   +'<details><summary>Mini-lexique</summary><p><b>Ravito</b> : point de ravitaillement sur le parcours.</p><p><b>Barrière horaire</b> : heure limite pour passer à un point. La marge indique l’avance que tu as sur cette limite.</p><p><b>Pointer</b> : noter l’heure à laquelle le coureur passe à un ravito.</p><p><b>D+ / D−</b> : dénivelé positif (montée) et négatif (descente) cumulés.</p><p><b>Zone d’allure</b> : plage de vitesse adaptée à un type d’effort, calculée à partir de ta performance de référence.</p></details>'
-  +'<details><summary>À propos</summary><p>Rubalise, version '+APP_VERSION+' (prototype). Environnement : '+(isNativeApp()?'application Android':'navigateur')+'. Les heures de passage sont des estimations : elles ne remplacent ni ton expérience, ni les barrières horaires officielles de l’organisateur, à vérifier avant le départ.</p></details>'
+  +'<details><summary>À propos</summary><p>Rubalise, version '+APP_VERSION+' (prototype)'+(window.__swVersion?', cache hors connexion '+window.__swVersion:'')+'. Environnement : '+(isNativeApp()?'application Android':'navigateur')+(testMode()?', mode test':'')+'. Les heures de passage sont des estimations : elles ne remplacent ni ton expérience, ni les barrières horaires officielles de l’organisateur, à vérifier avant le départ.</p><p class="note" id="offstat">Hors connexion : vérification…</p></details>'
   +'</section>';
 }
 function exportMyData(){
@@ -2500,6 +2519,22 @@ function navBtns(u,label){
 }
 const CREW_NOTIF_ID=4242;
 let crewNotifBusy=false,crewChannelOk=false,crewT=0;
+// Deux affichages. « test » : étapes de chargement, erreurs détaillées, bouton de test des services.
+// « bêta » : icône de chargement et messages simples. Par défaut : test dans l'appli Android, bêta dans le navigateur et la PWA.
+// Réglable : cinq touches rapides sur « À propos » (Aide). Le choix est gardé sur l'appareil.
+function testMode(){
+  let v=null;try{v=localStorage.getItem('rubalise:test');}catch(e){}
+  if(v==='1')return true;
+  if(v==='0')return false;
+  return isNativeApp();
+}
+function toggleTestMode(){
+  const on=!testMode();
+  try{localStorage.setItem('rubalise:test',on?'1':'0');}catch(e){}
+  flash(on?'Mode test activé : détails techniques visibles.':'Mode test désactivé : affichage simplifié.');
+  render();
+}
+let aboutTaps=0,aboutT=0;
 function hasNotif(){const N=window.RubaliseNative;return !!(N&&N.LocalNotifications);}
 // Par défaut : prévenu sur le téléphone de l'assistance (rôle équipe), pas sur celui du coureur. Réglable.
 function crewNotifOn(r){const v=state.prefs&&state.prefs.crewNotif;return (v===undefined||v===null)?isMember(r):!!v;}
@@ -2701,6 +2736,23 @@ function renderJournal(){
 }
 
 // ---------- rendu ----------
+// Dit si l'appli peut s'ouvrir sans réseau (service worker actif et fichiers en cache).
+async function refreshOfflineStat(){
+  const el=document.getElementById('offstat');if(!el)return;
+  let t='Hors connexion : non disponible sur ce navigateur.';
+  try{
+    if(isNativeApp())t='Hors connexion : l’appli Android contient déjà tous ses fichiers.';
+    else if('serviceWorker' in navigator&&window.caches){
+      const reg=await navigator.serviceWorker.getRegistration();
+      const keys=(await caches.keys()).filter(k=>/^rubalise-\d/.test(k));
+      if(reg&&reg.active&&keys.length)t='Hors connexion : prêt (version '+keys[0].replace('rubalise-','')+'). Le plan, les heures de passage et ton fichier GPX fonctionnent sans réseau ; la recherche de stationnements et les cartes demandent du réseau.';
+      else if(reg)t='Hors connexion : préparation en cours. Laisse l’appli ouverte quelques secondes avec du réseau.';
+      else if(location.protocol==='file:'||/^(localhost|127\.0\.0\.1)$/.test(location.hostname))t='Hors connexion : désactivé en local. Ouvre l’appli depuis son adresse en ligne.';
+      else t='Hors connexion : pas encore prêt. Ouvre l’appli une fois avec du réseau, puis recharge-la.';
+    }
+  }catch(e){}
+  const e2=document.getElementById('offstat');if(e2)e2.textContent=t;
+}
 function render(top){
   document.body.classList.toggle('welcome',tab==='welcome');
   document.querySelectorAll('.tabbtn').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false'));
@@ -2714,6 +2766,7 @@ function render(top){
   window.scrollTo(0,top?0:y);
   if(tab==='assist')checkPerms();
   clearTimeout(crewT);crewT=setTimeout(()=>{crewNotifSync();},800);
+  setTimeout(refreshOfflineStat,60);
   if(tab==='settings'&&isRunner()&&provInfo===null&&!provLoading){provLoading=true;loadProviders();}
 }
 
@@ -3055,6 +3108,8 @@ setInterval(()=>{
   if(age>=every||Object.keys(r.pending||{}).length)syncNow();
 },5000);
 document.addEventListener('click',e=>{
+  const sm=e.target.closest&&e.target.closest('summary');
+  if(sm&&/^À propos/.test(sm.textContent||'')){aboutTaps++;clearTimeout(aboutT);aboutT=setTimeout(()=>{aboutTaps=0;},3000);if(aboutTaps>=5){aboutTaps=0;toggleTestMode();}}
   const l=e.target.closest&&e.target.closest('.maplinks a'),N=window.RubaliseNative;
   if(l&&/^geo:/i.test(l.getAttribute('href')||''))return;
   if(l&&N&&N.Browser){e.preventDefault();N.Browser.open({url:l.href}).catch(()=>flash('Impossible d’ouvrir le navigateur.'));}
@@ -3074,14 +3129,38 @@ if(!state.welcomed&&(state.race||(state.journal&&state.journal.length)||isRunner
 if(!state.welcomed&&!isRunner())tab='welcome';
 lastW=root.clientWidth;
 render(true);
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});}catch(e){}
 if(state.race&&state.race.sync)syncSoon();
 if(isRunner()&&state.profileDirty)pushProfile().catch(()=>{});
 setInterval(()=>{if(isRunner()&&state.profileDirty&&!document.hidden)pushProfile().catch(()=>{});},30000);
 })();
 </script>
 <script>
+// Hors connexion et mises à jour (PWA). Désactivé en local (fichier, localhost) : le service worker ne sert qu'en ligne.
 if('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && location.hostname!=='localhost' && location.hostname!=='127.0.0.1'){
-  window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
+  var hadCtl=!!navigator.serviceWorker.controller,updShown=false;
+  // Demande au service worker son numéro de version (affiché dans « Aide », « À propos »).
+  var askVer=function(){var c=navigator.serviceWorker.controller;if(!c)return;try{var ch=new MessageChannel();ch.port1.onmessage=function(e){if(e.data&&e.data.version)window.__swVersion=e.data.version;};c.postMessage({type:'GET_VERSION'},[ch.port2]);}catch(x){}};
+  navigator.serviceWorker.addEventListener('controllerchange',function(){
+    askVer();
+    if(!hadCtl){hadCtl=true;return;}      // première installation : rien à signaler
+    if(updShown)return;updShown=true;
+    var b=document.createElement('div');b.id='updbar';b.setAttribute('role','status');
+    b.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:60;background:#10312B;color:#fff;border-radius:14px;padding:10px 12px 10px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;font:600 15px/1.3 system-ui,-apple-system,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.3)';
+    var t=document.createElement('span');t.textContent='Une nouvelle version de Rubalise est prête.';
+    var r=document.createElement('button');r.textContent='Recharger';
+    r.style.cssText='min-height:44px;padding:0 16px;border:0;border-radius:10px;background:#fff;color:#10312B;font:700 15px system-ui,-apple-system,sans-serif;cursor:pointer';
+    r.onclick=function(){location.reload();};
+    b.appendChild(t);b.appendChild(r);document.body.appendChild(b);
+  });
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').then(function(reg){
+      askVer();
+      navigator.serviceWorker.ready.then(function(){askVer();});
+      // Retour dans l'appli (iPhone : réveil depuis l'arrière-plan) : on cherche une nouvelle version.
+      document.addEventListener('visibilitychange',function(){if(!document.hidden)reg.update().catch(function(){});});
+    }).catch(function(){});
+  });
 }
 </script>
 </body>
