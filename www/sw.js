@@ -1,7 +1,7 @@
 // Rubalise : hors connexion et mises à jour.
 // VERSION change à chaque livraison (version de l'appli + empreinte de index.html) : c'est ce qui fait arriver
 // les mises à jour chez les testeurs. Ne la modifie pas à la main.
-const VERSION = '2.6-24fdb193';
+const VERSION = '2.6-0fc05036';
 const CACHE = 'rubalise-' + VERSION;
 const FONTS = 'rubalise-fonts';   // polices : gardées d'une version à l'autre
 const CORE = ['./', 'index.html', 'manifest.webmanifest'];   // indispensables : sans eux, la nouvelle version n'est pas installée

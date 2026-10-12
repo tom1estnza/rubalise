@@ -1333,7 +1333,7 @@ async function runnerSignIn(email,password){storeSession(await authRequest('sign
 async function resetPassword(email){await authRequest('sendOobCode',{requestType:'PASSWORD_RESET',email:email});}
 
 // ---------- connexion Google (par le navigateur du téléphone) ----------
-const GOOGLE={clientId:'1093421630351-n4q84n5hle2o4ke181in3ctsmcf1tdk5.apps.googleusercontent.com',callback:'https://tom1estnza.github.io/rubalise/auth-callback.html'};
+const GOOGLE={clientId:'1093421630351-n4q84n5hle2o4ke181in3ctsmcf1tdk5.apps.googleusercontent.com',callback:'https://rubalise.run/auth-callback.html'};
 const OAUTH_KEY='rubalise:oauth';
 function randHex(n){const b=new Uint8Array(n);try{crypto.getRandomValues(b);}catch(e){for(let i=0;i<n;i++)b[i]=Math.floor(Math.random()*256);}return Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');}
 function googleAuthUrl(state,nonce){
