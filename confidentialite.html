@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Politique de confidentialité · Rubalise</title>
+<meta name="theme-color" content="#10312B">
+<style>
+:root{--bg:#EDF2EE;--ink:#10312B;--ink2:#4A6560;--line:#C9D6CF;--accent:#1E6F8E;--surface:#FAFBFA}
+@media (prefers-color-scheme:dark){:root{--bg:#0D1F1B;--ink:#E5F0EB;--ink2:#9DB8AF;--line:#2A433C;--accent:#6CC0E0;--surface:#13302A}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:20px 18px 60px}
+header.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.brand{font-weight:800;font-size:22px;text-decoration:none;color:var(--ink)}
+.brand span{color:#C2125F;font-size:12px;border:1.5px solid #C2125F;border-radius:999px;padding:1px 7px;margin-left:8px;vertical-align:middle;letter-spacing:.06em}
+nav a{color:var(--accent);margin-right:14px;text-decoration:underline}
+h1{font-size:30px;line-height:1.2;margin:18px 0 6px}
+h2{font-size:21px;margin:28px 0 6px}
+p,li{color:var(--ink)}
+.note{color:var(--ink2);font-size:15px}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:15px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--surface)}
+a{color:var(--accent)}
+mark.todo{background:#FFE08A;color:#4A3200;padding:1px 5px;border-radius:4px}
+.box{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:12px 14px;margin:14px 0}
+footer{margin-top:36px;color:var(--ink2);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<header class="top"><a class="brand" href="/www/">Rubalise<span>BÊTA</span></a>
+<nav aria-label="Pages légales"><a href="/confidentialite.html">Confidentialité</a><a href="/conditions.html">Conditions</a><a href="/mentions-legales.html">Mentions légales</a></nav></header>
+<h1>Politique de confidentialité</h1>
+<p class="note">Dernière mise à jour : 13 octobre 2026.</p>
+
+<div class="box"><p><b>En bref.</b> Sans compte, tes plans restent sur ton téléphone. Avec un compte, ton e-mail et ton profil coureur (dont ta photo, si tu en ajoutes une) sont enregistrés dans ton compte. Si tu partages une course, son plan est visible de toute personne qui connaît le code. Rubalise n’utilise pas ta position GPS, n’affiche pas de publicité et ne mesure pas ton audience.</p></div>
+
+<h2>1. Qui est responsable de tes données ?</h2>
+<p>Rubalise est éditée à titre non professionnel. Éditeur : Rubalise. Contact pour toute question sur tes données : <a href="mailto:contact@rubalise.run">contact@rubalise.run</a>.</p>
+
+<h2>2. Quelles données, pourquoi, où ?</h2>
+<table>
+<tr><th>Donnée</th><th>Quand</th><th>Où elle est gardée</th><th>Pourquoi</th></tr>
+<tr><td>Plans de course : tracé GPX, ravitos, heures, nutrition, pointages, carnet</td><td>Toujours</td><td>Sur ton appareil (stockage du navigateur ou de l’appli)</td><td>Faire fonctionner l’appli, même sans réseau</td></tr>
+<tr><td>E-mail, identifiant technique, mode de connexion (mot de passe ou Google)</td><td>Si tu crées un compte</td><td>Firebase Authentication (Google)</td><td>Te connecter</td></tr>
+<tr><td>Profil coureur facultatif : prénom, date de naissance, fréquences cardiaques, performance de référence, photo de profil</td><td>Si tu le remplis, avec un compte</td><td>Firestore (Google), dans ton espace personnel</td><td>Calculer tes zones d’allure et de fréquence cardiaque, t’afficher dans l’appli, et retrouver ton profil sur un autre téléphone. La photo n’est montrée à personne d’autre que toi.</td></tr>
+<tr><td>Plan partagé en direct : parcours, ravitos, heures, pointages, position saisie à la main</td><td>Si tu partages une course</td><td>Firestore (Google). <b>Visible de toute personne qui connaît le code de 6 caractères.</b></td><td>Suivi en direct par ton assistance et tes supporters</td></tr>
+<tr><td>Identifiant anonyme technique</td><td>Quand tu rejoins une course avec un code, sans compte</td><td>Firebase Authentication (Google)</td><td>Autoriser la lecture de la course</td></tr>
+<tr><td>Journal des erreurs (les 12 dernières, sans donnée personnelle)</td><td>Toujours</td><td>Sur ton appareil. Il n’est transmis que si tu copies les infos techniques pour les envoyer.</td><td>Comprendre un problème</td></tr>
+<tr><td>Ton nom WhatsApp, ton numéro de téléphone et tes messages</td><td>Si tu rejoins la communauté WhatsApp des testeurs (facultatif)</td><td>WhatsApp (Meta). <b>Ton nom et ton numéro peuvent être visibles des autres membres, selon les réglages de WhatsApp.</b></td><td>Poser des questions, signaler un problème, proposer des idées</td></tr>
+</table>
+<p><b>Données de santé.</b> Tes fréquences cardiaques et ta performance de référence peuvent donner des indications sur ta condition physique. Tu les renseignes volontairement, et tu acceptes leur enregistrement dans ton compte en cochant la case à la création du compte. Tu peux les effacer à tout moment.</p>
+<p><b>Photo de profil.</b> Facultative. Elle est recadrée et réduite sur ton appareil avant d’être enregistrée dans ton compte. Tu peux la retirer à tout moment dans les paramètres du compte ; elle disparaît aussi avec la suppression du compte.</p>
+
+<h2>3. Services extérieurs utilisés par l’appli</h2>
+<p>Pour fonctionner, Rubalise contacte les services suivants. Ils reçoivent ton adresse IP et les informations techniques habituelles de ta connexion.</p>
+<table>
+<tr><th>Service</th><th>À quoi il sert</th><th>Ce qui lui est envoyé</th></tr>
+<tr><td>Google (Firebase Authentication, Firestore, Connexion Google, Polices Google)</td><td>Comptes, profil, partage en direct, police d’écriture</td><td>Ce que tu saisis dans ces fonctions</td></tr>
+<tr><td>GitHub (GitHub Pages)</td><td>Hébergement de l’appli</td><td>Ton adresse IP, comme pour tout site web</td></tr>
+<tr><td>OVHcloud</td><td>Nom de domaine rubalise.run</td><td>Les demandes d’adresse du domaine</td></tr>
+<tr><td>OpenStreetMap (Nominatim, Overpass, OSRM)</td><td>Recherche de stationnements et d’itinéraires à pied et en voiture</td><td>Les coordonnées des ravitos de ton tracé. <b>Pas ta position : l’appli n’utilise pas la géolocalisation.</b></td></tr>
+<tr><td>IGN Géoplateforme, Esri, Amazon (relief)</td><td>Fonds de carte et relief de la vue 3D</td><td>La zone de carte affichée</td></tr>
+<tr><td>WhatsApp (Meta)</td><td>Communauté des testeurs, facultative</td><td>Seulement si tu touches le lien d’invitation : ton appareil ouvre WhatsApp. Rubalise ne reçoit rien de WhatsApp.</td></tr>
+<tr><td>Google Maps, Waze</td><td>Navigation vers un stationnement</td><td>Seulement si tu touches le lien : les coordonnées du stationnement</td></tr>
+</table>
+
+<h2>4. Bases légales</h2>
+<ul>
+<li><b>Faire fonctionner le service que tu demandes</b> (conditions d’utilisation) : compte, plans, partage en direct.</li>
+<li><b>Ton consentement</b> : enregistrement de ton profil coureur dans ton compte. Tu peux le retirer en supprimant ces données.</li>
+<li><b>Notre intérêt légitime</b> : sécurité de l’appli, diagnostic des erreurs.</li>
+</ul>
+
+<h2>5. Combien de temps ?</h2>
+<ul>
+<li>Sur ton appareil : jusqu’à ce que tu les effaces (« Effacer les données de cet appareil »), ou que tu désinstalles l’appli.</li>
+<li>Compte et profil : jusqu’à la suppression de ton compte (« Supprimer mon compte »).</li>
+<li>Course partagée : jusqu’à l’arrêt du partage, la suppression de la course ou celle de ton compte.</li>
+<li>Messages de la communauté WhatsApp : selon WhatsApp et les règles de la communauté. Tu peux la quitter et supprimer tes messages à tout moment.</li>
+<li>Journaux gardés par les prestataires : selon leurs propres règles.</li>
+</ul>
+
+<h2>6. Tes droits</h2>
+<p>Tu peux accéder à tes données, les corriger, les effacer, en recevoir une copie, t’opposer à leur traitement et retirer ton consentement.</p>
+<ul>
+<li><b>Dans l’appli</b> : « Exporter mes données » et « Supprimer mon compte » (Paramètres du compte), « Effacer les données de cet appareil ».</li>
+<li><b>Par e-mail</b> : <a href="mailto:contact@rubalise.run">contact@rubalise.run</a>. Nous répondons sous un mois.</li>
+<li><b>Réclamation</b> : tu peux saisir la CNIL (<a href="https://www.cnil.fr" rel="noopener">cnil.fr</a>).</li>
+</ul>
+
+<h2>7. Transferts hors de l’Union européenne</h2>
+<p>Certains prestataires (Google, GitHub, Esri, Amazon) peuvent traiter des données hors de l’Union européenne, notamment aux États-Unis. Ces transferts reposent sur les mécanismes prévus par le RGPD et mis en œuvre par ces prestataires (par exemple une décision d’adéquation ou des clauses contractuelles types).</p>
+
+<h2>8. Cookies et stockage local</h2>
+<p>Rubalise n’utilise ni cookie publicitaire ni outil de mesure d’audience. Elle utilise le stockage local de ton navigateur, et le cache de l’appli, uniquement pour fonctionner : aucune autorisation n’est donc demandée. Les prestataires cités plus haut (Google en particulier, lors de la connexion Google ou du formulaire) peuvent utiliser leurs propres cookies, selon leurs politiques.</p>
+
+<h2>9. Sécurité</h2>
+<p>Les échanges passent par une connexion chiffrée (HTTPS). Ton mot de passe est géré par Firebase Authentication : l’éditeur ne peut pas le lire. L’accès aux données de ton compte est limité à toi par des règles de sécurité. Le code d’une course partagée fonctionne comme un secret : ne le donne qu’aux personnes qui doivent suivre ta course. Aucun système n’est infaillible.</p>
+
+<h2>10. Mineurs</h2>
+<p>Rubalise n’est pas destinée aux personnes de moins de 15 ans.</p>
+
+<h2>11. Modifications</h2>
+<p>Cette politique peut évoluer pendant la bêta. La date de mise à jour est indiquée en haut de la page.</p>
+
+<footer><p><a href="/www/">← Retour à Rubalise</a></p></footer>
+</main>
+</body>
+</html>
