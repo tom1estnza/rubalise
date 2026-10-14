@@ -33,7 +33,7 @@ footer{margin-top:36px;color:var(--ink2);font-size:14px}
 <header class="top"><a class="brand" href="/www/">Rubalise<span>BÊTA</span></a>
 <nav aria-label="Pages légales"><a href="/confidentialite.html">Confidentialité</a><a href="/conditions.html">Conditions</a><a href="/mentions-legales.html">Mentions légales</a></nav></header>
 <h1>Politique de confidentialité</h1>
-<p class="note">Dernière mise à jour : 13 octobre 2026.</p>
+<p class="note">Dernière mise à jour : 14 octobre 2026.</p>
 
 <div class="box"><p><b>En bref.</b> Sans compte, tes plans restent sur ton téléphone. Avec un compte, ton e-mail et ton profil coureur (dont ta photo, si tu en ajoutes une) sont enregistrés dans ton compte. Si tu partages une course, son plan est visible de toute personne qui connaît le code. Rubalise n’utilise pas ta position GPS, n’affiche pas de publicité et ne mesure pas ton audience.</p></div>
 
@@ -43,7 +43,8 @@ footer{margin-top:36px;color:var(--ink2);font-size:14px}
 <h2>2. Quelles données, pourquoi, où ?</h2>
 <table>
 <tr><th>Donnée</th><th>Quand</th><th>Où elle est gardée</th><th>Pourquoi</th></tr>
-<tr><td>Plans de course : tracé GPX, ravitos, heures, nutrition, pointages, carnet</td><td>Toujours</td><td>Sur ton appareil (stockage du navigateur ou de l’appli)</td><td>Faire fonctionner l’appli, même sans réseau</td></tr>
+<tr><td>Plans de course : tracé GPX, ravitos, heures, nutrition, pointages</td><td>Toujours sur ton appareil ; aussi dans ton compte si tu es connecté</td><td>Sur ton appareil (stockage du navigateur ou de l’appli) et, si tu es connecté, dans ton espace personnel Firestore (Google)</td><td>Faire fonctionner l’appli, même sans réseau, et retrouver tes plans sur tes autres appareils (ordinateur, téléphone). Les plans que tu suis avec un code ne sont pas enregistrés dans ton compte.</td></tr>
+<tr><td>Carnet : courses archivées, ressentis</td><td>Toujours</td><td>Sur ton appareil seulement</td><td>Garder le souvenir de tes courses</td></tr>
 <tr><td>E-mail, identifiant technique, mode de connexion (mot de passe ou Google)</td><td>Si tu crées un compte</td><td>Firebase Authentication (Google)</td><td>Te connecter</td></tr>
 <tr><td>Profil coureur facultatif : prénom, date de naissance, fréquences cardiaques, performance de référence, photo de profil</td><td>Si tu le remplis, avec un compte</td><td>Firestore (Google), dans ton espace personnel</td><td>Calculer tes zones d’allure et de fréquence cardiaque, t’afficher dans l’appli, et retrouver ton profil sur un autre téléphone. La photo n’est montrée à personne d’autre que toi.</td></tr>
 <tr><td>Plan partagé en direct : parcours, ravitos, heures, pointages, position saisie à la main</td><td>Si tu partages une course</td><td>Firestore (Google). <b>Visible de toute personne qui connaît le code de 6 caractères.</b></td><td>Suivi en direct par ton assistance et tes supporters</td></tr>
@@ -78,6 +79,7 @@ footer{margin-top:36px;color:var(--ink2);font-size:14px}
 <ul>
 <li>Sur ton appareil : jusqu’à ce que tu les effaces (« Effacer les données de cet appareil »), ou que tu désinstalles l’appli.</li>
 <li>Compte et profil : jusqu’à la suppression de ton compte (« Supprimer mon compte »).</li>
+<li>Plans enregistrés dans ton compte : jusqu’à la suppression du plan ou celle de ton compte.</li>
 <li>Course partagée : jusqu’à l’arrêt du partage, la suppression de la course ou celle de ton compte.</li>
 <li>Messages de la communauté WhatsApp : selon WhatsApp et les règles de la communauté. Tu peux la quitter et supprimer tes messages à tout moment.</li>
 <li>Journaux gardés par les prestataires : selon leurs propres règles.</li>
