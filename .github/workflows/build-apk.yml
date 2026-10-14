@@ -23,6 +23,9 @@ jobs:
       - name: Installer les dépendances
         run: npm install
 
+      - name: Retirer la politique de sécurité du contenu (réservée au site web)
+        run: sed -i '/http-equiv="Content-Security-Policy"/d' www/index.html
+
       - name: Assembler le pont natif (localisation, connexion Google)
         continue-on-error: true
         run: npx esbuild native-src/native.js --bundle --minify --format=iife --outfile=www/native.js
@@ -35,9 +38,7 @@ jobs:
           python3 - <<'PY'
           p = 'android/app/src/main/AndroidManifest.xml'
           s = open(p, encoding='utf-8').read()
-          perms = ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION', 'FOREGROUND_SERVICE',
-                   'FOREGROUND_SERVICE_LOCATION', 'POST_NOTIFICATIONS', 'WAKE_LOCK',
-                   'SCHEDULE_EXACT_ALARM', 'USE_EXACT_ALARM']
+          perms = ['POST_NOTIFICATIONS', 'WAKE_LOCK', 'SCHEDULE_EXACT_ALARM', 'USE_EXACT_ALARM']
           add = ''.join('    <uses-permission android:name="android.permission.%s" />\n' % x
                         for x in perms if 'android.permission.%s"' % x not in s)
           assert '</manifest>' in s
