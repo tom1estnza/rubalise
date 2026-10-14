@@ -2,6 +2,8 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ifxbi806nPAiPv2Mu+hZsfu/AOeQ12Oq7iNndynp0ZE=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
 <meta name="application-name" content="Rubalise">
@@ -129,7 +131,8 @@ input[type=range]{width:100%;accent-color:var(--accent);min-height:32px}
 .beta-tag{margin-left:8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--live);border:1.5px solid var(--live);border-radius:999px;padding:1px 7px;align-self:center}
 a.btn{text-decoration:none}
 .legal-links{text-align:center;margin:14px auto 0}
-.legal-links a,.consent a,.betacard .hint a{color:var(--accent);text-decoration:underline}
+.legal-links a,.consent a,.stack .note a,.betacard .hint a{color:var(--ink);font-weight:600;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+.legal-links a:hover,.consent a:hover,.stack .note a:hover,.betacard .hint a:hover{color:var(--live)}
 .consent{align-items:flex-start;text-align:left}
 .consent span{font-size:14px;line-height:1.35}
 p.offline{border-left:4px solid var(--warn,#B7791F);padding-left:10px}
@@ -794,13 +797,19 @@ function crewNotifPlan(adv,race,now,lead){
 
 // ---------- stockage ----------
 const KEY='rubalise:v1';
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&typeof s==='object')return Object.assign({race:null,journal:[],profile:defaultProfile(),prefs:defaultPrefs(),profileDirty:false,welcomed:false,tourDone:false,plans:[],lastPlanId:null},s);}}catch(e){}return {race:null,journal:[],profile:defaultProfile(),prefs:defaultPrefs(),profileDirty:false,welcomed:false,tourDone:false,plans:[],lastPlanId:null};}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&typeof s==='object')return Object.assign({race:null,journal:[],profile:defaultProfile(),prefs:defaultPrefs(),profileDirty:false,welcomed:false,tourDone:false,plans:[],lastPlanId:null,cloud:{uid:'',synced:{},del:{},at:0}},s);}}catch(e){}return {race:null,journal:[],profile:defaultProfile(),prefs:defaultPrefs(),profileDirty:false,welcomed:false,tourDone:false,plans:[],lastPlanId:null,cloud:{uid:'',synced:{},del:{},at:0}};}
+function save(){
+  try{if(state.race)stampPlan(state.race);}catch(e){}
+  try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+  try{if(planSyncOn&&state.race&&!isMember(state.race)&&state.cloud.synced[state.race.id]!==state.race.updated)planSyncSoon();}catch(e){}
+}
 function defaultPrefs(){return {theme:'auto',defStop:3,defCarbs:60,defWater:500,defGel:25};}
 let state=load();
 state.plans=Array.isArray(state.plans)?state.plans.filter(p=>p&&p.profile&&Array.isArray(p.stations)):[];
+state.cloud=Object.assign({uid:'',synced:{},del:{},at:0},(state.cloud&&typeof state.cloud==='object')?state.cloud:{});
+state.cloud.synced=state.cloud.synced||{};state.cloud.del=state.cloud.del||{};
 state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
-const APP_VERSION='2.9';
+const APP_VERSION='2.10';
 // Réglages de la bêta, à renseigner avant le lancement : lien du formulaire d’avis (Google Forms) et e-mail de contact public.
 const BETA={communityUrl:'https://chat.whatsapp.com/IRDZRjCw5mCBZpoBB4ALiD',feedbackUrl:'',contact:'contact@rubalise.run',site:'https://rubalise.run'};   // communityUrl : lien d’invitation de la communauté WhatsApp ; feedbackUrl : formulaire (facultatif)
 // Journal des erreurs de l’appli, gardé sur l’appareil (12 dernières, sans donnée personnelle) : il s’ajoute aux infos techniques d’un retour.
@@ -1073,6 +1082,7 @@ function crewAutoBlock(r){
 }
 function migrateRace(r){
   if(!r)return;
+  if(r.trackUrl&&!safeHttpUrl(r.trackUrl))r.trackUrl='';   // adresse de suivi falsifiée : retirée
   if(!(+r.minSpeed>0))r.minSpeed=5.5;
   ['sodium','barG','gelShare'].forEach(k=>{if(r[k]===undefined)r[k]=nutr({},k);});
   if(r.startAt===undefined)r.startAt=null;
@@ -1558,10 +1568,11 @@ function pushProfileSoon(){
 }
 async function afterLogin(){
   const uid=authState.uid,cached=(state.profiles||{})[uid];
-  let cloud=null,cloudErr=null;
+  let cloud=null,cloudErr=null,cloudLast='';
   try{
     const doc=await fsReq('GET','users/'+uid),f=doc&&doc.fields;
     if(f&&f.profile&&f.profile.stringValue)cloud=Object.assign(defaultProfile(),JSON.parse(f.profile.stringValue));
+    if(f&&f.lastPlan&&f.lastPlan.stringValue)cloudLast=f.lastPlan.stringValue;
   }catch(e){if(e.status!==404)cloudErr=e;}
   const localHas=!!(cached&&profileHasData(cached.profile));
   state.profileErr='';
@@ -1571,6 +1582,7 @@ async function afterLogin(){
   else{state.profile=profileHasData(state.profile)?state.profile:defaultProfile();state.profileDirty=profileHasData(state.profile);}
   if(cloudErr)state.profileErr=fbErr(cloudErr);
   else if(state.profileDirty){try{await pushProfile();}catch(e){}}
+  try{adoptAccountPlans(uid);if(cloudLast)state.cloud.lastRemote=cloudLast;await syncPlans({flash:true});}catch(e){}
   cacheProfile();save();
 }
 async function doAuth(){
@@ -1588,6 +1600,7 @@ async function doAuth(){
 }
 async function signOutRunner(){
   try{if(state.profileDirty)await pushProfile();}catch(e){}
+  try{await syncPlans();}catch(e){}
   cacheProfile();
   [state.race].concat(state.plans||[]).forEach(r=>{if(r&&r.sync&&r.sync.role==='owner'){delete r.sync;r.pending={};}});
   setAuth(null);loginMode='in';state.profile=defaultProfile();state.profileDirty=false;state.profileErr='';tab='plan';commit();window.scrollTo(0,0);flash('Déconnecté.');
@@ -1618,7 +1631,7 @@ function loginForm(){
   +'<p class="note" style="margin:6px 0 0;text-align:center">ou avec ton e-mail</p>'
   +'<label class="fld"><span>E-mail</span><input class="in" id="authmail" type="email" autocomplete="email" autocapitalize="off" spellcheck="false"></label>'
   +'<label class="fld"><span>Mot de passe'+(up?' (6 caractères minimum)':'')+'</span><input class="in" id="authpass" type="password" autocomplete="'+(up?'new-password':'current-password')+'"></label>'
-  +(up?'<label class="fld chk consent"><input type="checkbox" id="authconsent"><span>J’ai lu la <a href="'+legalUrl('confidentialite')+'" target="_blank" rel="noopener">politique de confidentialité</a> et j’accepte les <a href="'+legalUrl('conditions')+'" target="_blank" rel="noopener">conditions d’utilisation</a>. J’accepte que mon profil (dont mes fréquences cardiaques) soit enregistré dans mon compte.</span></label>':'')
+  +(up?'<label class="fld chk consent"><input type="checkbox" id="authconsent"><span>J’ai lu la <a href="'+legalUrl('confidentialite')+'" target="_blank" rel="noopener">politique de confidentialité</a> et j’accepte les <a href="'+legalUrl('conditions')+'" target="_blank" rel="noopener">conditions d’utilisation</a>. J’accepte que mon profil (dont mes fréquences cardiaques) et mes plans de course soient enregistrés dans mon compte.</span></label>':'')
   +'<button class="btn primary" data-act="auth-submit">'+(up?'Créer mon compte':'Me connecter')+'</button>'
   +'<button class="btn quiet" data-act="auth-mode">'+(up?'J’ai déjà un compte':'Créer un compte')+'</button>'
   +(up?'':'<button class="btn quiet small" data-act="auth-reset">Mot de passe oublié ?</button>')+'</div>';
@@ -1629,7 +1642,7 @@ function renderLogin(){
   +'<p class="lead">Le compte ouvre ton espace coureur (zones d’allure et de fréquence cardiaque) et permet de partager une course en direct. Ton assistance et tes supporters n’ont pas besoin de compte : ils saisissent seulement le code.</p>'
   +loginForm()
   +'<p class="note">Rubalise évite les doublons : une adresse e-mail correspond à un seul compte.</p>'
-  +'<p class="note">Ton profil (date de naissance, fréquences cardiaques, performance de référence) est enregistré dans ton compte, pour le retrouver sur un autre téléphone.</p><p class="note legal-links">'+legalLinks()+'</p></section>';
+  +'<p class="note">Ton profil (date de naissance, fréquences cardiaques, performance de référence) et tes plans de course sont enregistrés dans ton compte, pour les retrouver sur un autre appareil.</p><p class="note legal-links">'+legalLinks()+'</p></section>';
 }
 function heroArt(){
   return '<svg class="hero-art" viewBox="0 0 360 112" role="img" aria-label="Profil de course avec ravitaillements">'
@@ -1643,7 +1656,7 @@ function renderWelcome(){
   return '<section class="welcome-hero">'
   +'<div class="brand-big"><div class="logo-lg"><span>Rubalise</span><span class="tape-lg" aria-hidden="true"></span></div><p class="tagline">Prépare ta course trail, suis-la en direct.</p><p class="note" style="text-align:center;margin:6px auto 0">Version bêta : des erreurs sont possibles, ton avis compte.'+(BETA.communityUrl?' <a href="'+esc(BETA.communityUrl)+'" target="_blank" rel="noopener">Rejoindre la communauté WhatsApp</a>':'')+'</p></div>'
   +heroArt()
-  +'<div class="card" style="margin-top:14px"><h2>'+(up?'Créer mon compte':'Connexion')+'</h2><p class="hint">Un compte te permet de partager ta course avec ton équipe et de retrouver ton profil sur tous tes téléphones.</p>'+loginForm()+'</div>'
+  +'<div class="card" style="margin-top:14px"><h2>'+(up?'Créer mon compte':'Connexion')+'</h2><p class="hint">Un compte te permet de partager ta course avec ton équipe et de retrouver ton profil et tes plans sur tous tes appareils.</p>'+loginForm()+'</div>'
   +'<div class="card"><h2>Tu suis un coureur ?</h2><p class="hint">Pas besoin de compte : saisis le code que le coureur t’a donné.</p>'+joinForm('Code de la course')+'</div>'
   +'<p style="text-align:center;margin:4px 0 0"><button class="linkbtn" data-act="skip-welcome">Continuer sans compte</button></p>'
   +'<p class="note" style="text-align:center;margin:0 auto">Sans compte, tu peux préparer et calculer ta course sur ton téléphone.</p>'
@@ -1780,7 +1793,7 @@ function renderRunner(){
        :'<p class="note">Renseigne ta performance de référence ci-dessus pour estimer ton temps.</p>')+'</section>';
   }
   return '<section class="empty"><h1>Espace coureur</h1><p class="lead">'+(pf.first?'Bonjour '+esc(pf.first)+'. ':'')+'Saisis tes données une fois : elles sont enregistrées dans ton compte.</p></section>'
-  +'<section class="sec"><h2>Mes données</h2><p class="hint">Ces informations (dont ta photo et tes fréquences cardiaques) sont enregistrées dans ton compte, pour les retrouver sur un autre téléphone. Tu peux les effacer à tout moment. <a href="'+legalUrl('confidentialite')+'" target="_blank" rel="noopener">Politique de confidentialité</a>.</p>'+photoBlock()
+  +'<section class="sec"><h2>Mes données</h2><p class="hint">Ces informations (dont ta photo et tes fréquences cardiaques) et tes plans de course sont enregistrés dans ton compte, pour les retrouver sur un autre appareil. Tu peux les effacer à tout moment. <a href="'+legalUrl('confidentialite')+'" target="_blank" rel="noopener">Politique de confidentialité</a>.</p>'+photoBlock()
   +'<div class="grid2"><label class="fld"><span>Prénom</span><input data-p="first" value="'+esc(pf.first)+'" autocomplete="given-name"></label>'
   +'<label class="fld"><span>Date de naissance</span><input type="date" data-p="birth" value="'+esc(pf.birth)+'"></label>'
   +'<label class="fld"><span>FC max (bpm)</span><input type="number" inputmode="numeric" min="100" max="230" data-p="hrMax" value="'+esc(pf.hrMax)+'" placeholder="'+(maxEst||'ex. 185')+'"></label>'
@@ -1902,7 +1915,7 @@ function renderHelp(){
   +'<details><summary>Vue horizontale du profil</summary><p>Sur le Plan ou En course, appuie sur « Vue horizontale », puis sur un point numéroté du profil : tu vois le nom du ravito, l’heure d’arrivée prévue et le matériel à prévoir, avec un lien pour le modifier. Le bouton « 3D » remplace le profil par un tracé en relief : fais-le tourner du doigt, pince pour zoomer.</p></details>'
   +'<details><summary>Zones d’allure et de fréquence cardiaque</summary><p>Elles sont calculées dans l’espace coureur à partir de ta performance de référence (indice de forme de Daniels) et de tes fréquences cardiaques (réserve cardiaque de Karvonen, pourcentage de la FC max ou FC de seuil). Les allures sont données sur terrain plat.</p></details>'
   +'<details><summary>Mises à jour et hors connexion</summary><p>Rubalise installée depuis le navigateur se met à jour toute seule quand tu l’ouvres avec du réseau. Si un bandeau « Une nouvelle version est prête » apparaît, appuie sur « Recharger ». Sans réseau, tes plans et tes heures de passage restent utilisables. Appli Android (APK) : installe le nouveau fichier par-dessus l’ancien, tes données sont conservées.</p></details>'
-  +'<details><summary>Sauvegarder mes données</summary><p>Tes plans sont gardés sur ton téléphone. Si tu effaces les données du navigateur ou si tu désinstalles l’appli, ils sont perdus. Pour en garder une copie : onglet Assistance, « Copier le code du plan » (à coller dans un message), ou « Exporter mes données » dans les paramètres du compte.</p></details>'
+  +'<details><summary>Sauvegarder mes données</summary><p>Connecté à ton compte, tes plans sont enregistrés dans ton compte : tu les retrouves sur ton ordinateur et sur ton téléphone. Sans compte, ils restent sur cet appareil : si tu effaces les données du navigateur ou désinstalles l’appli, ils sont perdus. Pour en garder une copie : onglet Assistance, « Copier le code du plan » (à coller dans un message), ou « Exporter mes données » dans les paramètres du compte.</p></details>'
   +'<details><summary>Mini-lexique</summary><p><b>Ravito</b> : point de ravitaillement sur le parcours.</p><p><b>Barrière horaire</b> : heure limite pour passer à un point. La marge indique l’avance que tu as sur cette limite.</p><p><b>Pointer</b> : noter l’heure à laquelle le coureur passe à un ravito.</p><p><b>D+ / D−</b> : dénivelé positif (montée) et négatif (descente) cumulés.</p><p><b>Zone d’allure</b> : plage de vitesse adaptée à un type d’effort, calculée à partir de ta performance de référence.</p></details>'
   +'<details><summary>À propos</summary><p>Rubalise, version '+APP_VERSION+' (bêta)'+(window.__swVersion?', cache hors connexion '+window.__swVersion:'')+'. Environnement : '+(isNativeApp()?'application Android':'navigateur')+(testMode()?', mode test':'')+'. Les heures de passage sont des estimations : elles ne remplacent ni ton expérience, ni les barrières horaires officielles de l’organisateur, à vérifier avant le départ. Les zones d’allure, les zones de fréquence cardiaque, la nutrition et le départ conseillé sont indicatifs : ils ne remplacent pas l’avis d’un médecin et ne doivent pas servir à ta sécurité en course.</p><p class="note" id="offstat">Hors connexion : vérification…</p></details>'
   +'<p class="note legal-links">'+legalLinks()+'</p></section>';
@@ -1929,6 +1942,132 @@ async function changePassword(pw){
 async function deleteCloudRace(r){
   if(r&&r.sync&&r.sync.role==='owner'){try{await fsReq('DELETE','courses/'+r.sync.code);return true;}catch(e){return false;}}
   return true;
+}
+// ---------- plans enregistrés dans le compte ----------
+// Chaque plan est aussi gardé dans ton compte (users/{uid}/plans/{id}) : tu retrouves les mêmes plans sur ordinateur et sur téléphone.
+// Restent propres à l’appareil : les plans suivis (rôle « suivi ») et le lien de partage en direct (code, file d’attente).
+// Règle en cas de modification des deux côtés : la plus récente gagne.
+var planSyncOn=false,planSyncT=0,planSyncBusy=false,planSyncRetry=0;
+function planHash(r){const t=JSON.stringify(r,(k,v)=>(k==='sync'||k==='pending'||k==='updated'||k==='_sig')?undefined:v);let h=5381;for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return h+':'+t.length;}
+function stampPlan(r){if(!r||typeof r!=='object')return;if(!r.id)r.id=uid();const sg=planHash(r);if(r._sig!==sg){r._sig=sg;r.updated=Date.now();}}
+function planSyncList(){const a=[];if(state.race&&!state.tmpRace&&!isMember(state.race))a.push(state.race);(state.plans||[]).forEach(q=>{if(q&&!isMember(q))a.push(q);});return a;}
+function planCloudJSON(r){return JSON.stringify(r,(k,v)=>(k==='sync'||k==='pending'||k==='_sig')?undefined:v);}
+function planFromCloud(doc){
+  const id=String((doc&&doc.name)||'').split('/').pop(),f=(doc&&doc.fields)||{};
+  const txt=f.data&&f.data.stringValue;if(!txt||!id)return null;
+  let o;try{o=JSON.parse(txt,(k,v)=>(k==='__proto__'||k==='constructor'||k==='prototype')?undefined:v);}catch(e){return null;}
+  if(!o||typeof o!=='object'||!o.profile||!Array.isArray(o.stations)||!Array.isArray(o.profile.d))return null;
+  o.id=id;o.updated=+((f.updatedAt||{}).integerValue||o.updated||0);
+  try{migrateRace(o);ensureItems(o);}catch(e){return null;}
+  o._sig=planHash(o);return o;
+}
+function replacePlanContent(loc,remote){
+  const sy=loc.sync,pe=loc.pending;
+  Object.keys(loc).forEach(k=>{delete loc[k];});
+  Object.assign(loc,remote);
+  if(sy!==undefined)loc.sync=sy;if(pe!==undefined)loc.pending=pe;
+}
+async function pushPlan(r){
+  stampPlan(r);const id=planId(r),data=planCloudJSON(r);
+  if(data.length>900000)throw new Error('Un plan est trop volumineux pour être enregistré dans ton compte.');
+  await fsReq('PATCH','users/'+authState.uid+'/plans/'+id,{fields:{data:{stringValue:data},name:{stringValue:String(r.name||'').slice(0,120)},updatedAt:{integerValue:String(r.updated||Date.now())}}});
+  state.cloud.synced[id]=r.updated||0;
+}
+async function flushPlanDeletes(){
+  const d=state.cloud.del||{};
+  for(const id of Object.keys(d)){
+    try{await fsReq('DELETE','users/'+authState.uid+'/plans/'+id);delete d[id];}
+    catch(e){if(e.network)throw e;if(e.status===404)delete d[id];}
+  }
+}
+function planCloudDelete(id){
+  if(!id)return;
+  const had=state.cloud.synced[id]!==undefined;
+  delete state.cloud.synced[id];
+  if(had||isRunner())state.cloud.del[id]=Date.now();
+  if(isRunner())planSyncSoon(true);
+}
+function adoptAccountPlans(uid){
+  const c=state.cloud;
+  if(c.uid&&c.uid!==uid){   // les plans de cet appareil étaient liés à un autre compte : ils restent dans ce compte-là, pas dans celui-ci
+    const theirs=id=>c.synced[id]!==undefined;
+    if(state.race&&theirs(planId(state.race)))state.race=null;
+    state.plans=(state.plans||[]).filter(q=>!theirs(planId(q)));
+    c.synced={};c.del={};c.lastRemote='';c.lastPushed='';
+  }
+  c.uid=uid;
+}
+function planSyncSoon(fast){if(!planSyncOn||!isRunner())return;clearTimeout(planSyncT);planSyncT=setTimeout(()=>{syncPlans().catch(()=>{});},fast?300:2500);}
+function planPullThrottled(ms){if(isRunner()&&Date.now()-(state.cloud.at||0)>(ms||60000))syncPlans().catch(()=>{});}
+async function syncPlans(opts){
+  opts=opts||{};
+  if(!isRunner()||planSyncBusy)return false;
+  if(navigator.onLine===false)return false;
+  planSyncBusy=true;let changed=false,added=0,updated=0,removed=0,conflicts=0;
+  const c=state.cloud;
+  try{
+    const uid=authState.uid;
+    if(c.uid&&c.uid!==uid){adoptAccountPlans(uid);changed=true;}
+    c.uid=uid;
+    await flushPlanDeletes();
+    const meta={};let tok='';
+    do{
+      const res=await fsReq('GET','users/'+uid+'/plans',null,'?pageSize=100&mask.fieldPaths=updatedAt&mask.fieldPaths=name'+(tok?'&pageToken='+encodeURIComponent(tok):''));
+      ((res&&res.documents)||[]).forEach(d=>{const id=String(d.name||'').split('/').pop(),f=d.fields||{};if(id)meta[id]=+((f.updatedAt||{}).integerValue||0);});
+      tok=(res&&res.nextPageToken)||'';
+    }while(tok);
+    const loc={};planSyncList().forEach(r=>{stampPlan(r);loc[planId(r)]=r;});
+    const typingNow=typing();
+    for(const id of Object.keys(meta)){
+      if(c.del[id])continue;
+      const r=loc[id],cu=meta[id];
+      if(!r){   // plan du compte absent de cet appareil
+        const o=planFromCloud(await fsReq('GET','users/'+uid+'/plans/'+id));if(!o)continue;
+        state.plans=state.plans||[];state.plans.push(o);c.synced[id]=cu;added++;changed=true;continue;
+      }
+      const ls=c.synced[id],lu=r.updated||0,dirty=(ls===undefined)||ls!==lu,cloudChanged=(ls===undefined)||cu!==ls;
+      if(!cloudChanged&&!dirty)continue;
+      if(!cloudChanged){await pushPlan(r);continue;}
+      if(dirty&&lu>cu){await pushPlan(r);conflicts++;continue;}                    // ta modification est plus récente : elle gagne
+      if(r===state.race&&typingNow){planSyncRetry=1;continue;}                        // on ne remplace pas ce que tu es en train de saisir
+      const o=planFromCloud(await fsReq('GET','users/'+uid+'/plans/'+id));if(!o)continue;
+      replacePlanContent(r,o);c.synced[id]=cu;updated++;if(dirty)conflicts++;changed=true;
+    }
+    for(const id of Object.keys(loc)){
+      if(meta[id]!==undefined)continue;
+      const r=loc[id];
+      if(c.synced[id]!==undefined){   // supprimé depuis un autre appareil
+        if(r===state.race)state.race=null;else state.plans=(state.plans||[]).filter(x=>x!==r);
+        delete c.synced[id];removed++;changed=true;continue;
+      }
+      await pushPlan(r);
+    }
+    if(!state.race&&(state.plans||[]).length){if(c.lastRemote)state.lastPlanId=c.lastRemote;openLastPlan();changed=true;}
+    if(state.race&&!isMember(state.race)&&planId(state.race)&&c.lastPushed!==state.race.id&&c.synced[state.race.id]!==undefined){
+      await fsReq('PATCH','users/'+uid,{fields:{lastPlan:{stringValue:state.race.id}}},'?updateMask.fieldPaths=lastPlan');c.lastPushed=state.race.id;
+    }
+    c.at=Date.now();c.err='';save();
+    if(changed){if(!typing())render();else planSyncRetry=1;}
+    if(plansOpen)openPlans();
+    if(conflicts){c.lastConflict=Date.now();flash('Un plan a été modifié sur un autre appareil : la version la plus récente est gardée.');}
+    else if(opts.flash&&(added||updated||removed)){flash(added&&!updated&&!removed?(added===1?'1 plan retrouvé dans ton compte.':added+' plans retrouvés dans ton compte.'):'Plans mis à jour depuis ton compte.');}
+    return true;
+  }catch(e){
+    if(!e.network){c.err=fbErr(e);errLogAdd('plans : '+(e&&e.message),'compte');}
+    save();return false;
+  }finally{
+    planSyncBusy=false;
+    if(planSyncRetry){planSyncRetry=0;clearTimeout(planSyncT);planSyncT=setTimeout(()=>{syncPlans().catch(()=>{});},6000);}
+  }
+}
+function planSyncLine(){
+  if(!isRunner())return '<p class="note">Connecte-toi pour retrouver tes plans sur tous tes appareils (téléphone et ordinateur).</p>';
+  const c=state.cloud||{};let t;
+  if(navigator.onLine===false)t='Hors connexion : tes modifications seront enregistrées dans ton compte au retour du réseau.';
+  else if(c.err)t='Non enregistré dans ton compte : '+c.err;
+  else if(c.at)t='Plans enregistrés dans ton compte (vérifié il y a '+ago(c.at)+').';
+  else t='Tes plans sont enregistrés automatiquement dans ton compte.';
+  return '<p class="note" id="plansync">'+esc(t)+'</p><div class="row"><button class="btn quiet small" data-act="plans-sync">Synchroniser maintenant</button></div>';
 }
 // ---------- plusieurs plans ----------
 // state.race = le plan ouvert. state.plans = les autres plans, du plus récent au plus ancien.
@@ -1973,6 +2112,7 @@ function plansHTML(){
       +(x.open?'<span class="plan-badge">Ouvert</span>':'')
       +'<button class="icon" data-act="plan-del" data-id="'+esc(id)+'" aria-label="Supprimer le plan '+esc(r.name||'sans nom')+'">×</button></li>';}).join('');
   return '<h2 id="plansT">Mes plans</h2>'+(list.length?'<ul class="plan-list">'+rows+'</ul>':'<p class="hint">Aucun plan pour le moment.</p>')
+    +planSyncLine()
     +'<div class="row"><button class="btn primary" data-act="plan-new">Nouveau plan</button><button class="btn quiet" data-act="plans-close">Fermer</button></div>'
     +(list.length>1?'<p class="note">Un seul plan est ouvert à l’écran à la fois. Chacun garde ses ravitos, ses pointages et sa nutrition. Un plan partagé en direct ne se met à jour que lorsqu’il est ouvert.</p>':'');
 }
@@ -1986,7 +2126,7 @@ async function deletePlanNow(id){
   if(state.race&&planId(state.race)===id){await deleteRaceNow();if(plansOpen)openPlans();return;}
   const p=(state.plans||[]).find(x=>x.id===id);if(!p)return;
   const ok=await deleteCloudRace(p);
-  state.plans=state.plans.filter(x=>x.id!==id);if(state.lastPlanId===id)state.lastPlanId=null;
+  state.plans=state.plans.filter(x=>x.id!==id);if(state.lastPlanId===id)state.lastPlanId=null;planCloudDelete(id);
   commit();if(plansOpen)openPlans();
   flash(ok?'Plan supprimé.':'Plan supprimé sur ce téléphone (le suivi en ligne n’a pas pu être supprimé, réessaie avec du réseau).');
 }
@@ -2005,7 +2145,7 @@ async function stopShareNow(){
 async function deleteRaceNow(){
   const r=state.race;if(!r)return;
   const okCloud=await deleteCloudRace(r);
-  state.race=null;openLastPlan();landOpen&&closeLand();commit();
+  const pid=r.id;state.race=null;planCloudDelete(pid);openLastPlan();landOpen&&closeLand();commit();
   flash(okCloud?'Course supprimée.':'Course supprimée sur ce téléphone (le suivi en ligne n’a pas pu être supprimé, réessaie avec du réseau).');
 }
 function resetPlanNow(){
@@ -2020,11 +2160,13 @@ async function deleteAccountNow(){
   const uid=authState.uid,r=state.race,others=(state.plans||[]).slice();
   try{
     await deleteCloudRace(r);for(const q of others)await deleteCloudRace(q);
+    try{const ids=[];let tk='';do{const res=await fsReq('GET','users/'+uid+'/plans',null,'?pageSize=100&mask.fieldPaths=name'+(tk?'&pageToken='+encodeURIComponent(tk):''));((res&&res.documents)||[]).forEach(d=>ids.push(String(d.name).split('/').pop()));tk=(res&&res.nextPageToken)||'';}while(tk);for(const pid of ids)await fsReq('DELETE','users/'+uid+'/plans/'+pid);}catch(e){if(e.status!==404)throw e;}
     try{await fsReq('DELETE','users/'+uid);}catch(e){if(e.status!==404)throw e;}
     await authRequest('delete',{idToken:await getToken()});
   }catch(e){flash(authErr(e));return;}
   [r].concat(others).forEach(q=>{if(q&&q.sync&&q.sync.role==='owner'){delete q.sync;q.pending={};}});
   if(state.profiles)delete state.profiles[uid];
+  state.cloud={uid:'',synced:{},del:{},at:0};
   setAuth(null);state.profile=defaultProfile();state.profileDirty=false;state.profileErr='';exportText='';tab='plan';commit();window.scrollTo(0,0);flash('Compte supprimé.');
 }
 
@@ -2096,6 +2238,8 @@ function itemsBlock(r,st){
 }
 
 // ---------- position du coureur (lien de suivi + saisie du km) ----------
+// Seules les adresses http(s) sont acceptées comme lien : jamais javascript:, data: ni autre schéma (données importées, du compte ou de l’appareil).
+function safeHttpUrl(u){return /^https?:\/\/[^\s<>"']{3,280}$/i.test(u||'')?String(u):'';}
 function cleanUrl(v){
   v=String(v||'').trim();if(!v)return '';
   if(!/^[a-z][a-z0-9+.-]*:/i.test(v)&&/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(v))v='https://'+v;
@@ -2106,7 +2250,7 @@ function setFix(r,km,t){
 }
 function clearFix(r){if(r.fix||(r.pending&&(r.pending.fixkm!=null||r.pending.fixt!=null))){queuePoint(r,'fixkm',null);queuePoint(r,'fixt',null);}r.fix=null;}
 function trackLink(r,cls){
-  return r.trackUrl?'<a class="btn '+(cls||'')+'" href="'+esc(r.trackUrl)+'" target="_blank" rel="noopener noreferrer">Ouvrir le suivi de la montre</a>':'';
+  const u=safeHttpUrl(r.trackUrl);return u?'<a class="btn '+(cls||'')+'" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">Ouvrir le suivi de la montre</a>':'';
 }
 function trackPanel(r){
   const member=!!(r.sync&&r.sync.role==='member');
@@ -2959,6 +3103,7 @@ function act(b){
   if(a==='open-help'){closeMenu();go('help');return;}
   if(a==='tour-start'){startTour();return;}
   if(a==='plans-open'){openPlans();return;}
+  if(a==='plans-sync'){b.disabled=true;syncPlans({flash:true}).then(()=>{if(plansOpen)openPlans();if(Date.now()-(state.cloud.lastConflict||0)<4000)return;flash(navigator.onLine===false?'Hors connexion : réessaie avec du réseau.':(state.cloud.err?'Synchronisation impossible : '+state.cloud.err:'Plans synchronisés.'));}).catch(()=>{}).finally(()=>{b.disabled=false;});return;}
   if(a==='photo-del'){state.profile=state.profile||defaultProfile();state.profile.photo='';save();pushProfileSoon();commit();flash('Photo retirée.');return;}
   if(a==='copy-tech'){copyText(techInfo(),ok=>flash(ok?'Infos copiées. Colle-les dans ton message.':'Copie impossible : ouvre « Donner mon avis » et décris ton appareil.'));return;}
   if(a==='plans-close'){closePlans();return;}
@@ -3002,7 +3147,7 @@ function act(b){
   if(a==='change-pw'){changePassword((document.getElementById('newpw')||{}).value||'');return;}
   if(a==='export-data'){exportText=exportMyData();commit();return;}
   if(a==='copy-export'){const bx=document.getElementById('exportbox');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(exportText).then(()=>flash('Données copiées.'),()=>flash('Sélectionne le texte pour le copier.'));}else if(bx){bx.select();flash('Sélectionne le texte pour le copier.');}return;}
-  if(a==='clear-device'){askConfirm({title:'Effacer les données de cet appareil ?',text:'Tes plans, le carnet et le profil mémorisés sur ce téléphone seront supprimés. Les données de ton compte ne sont pas touchées.',okLabel:'Effacer',danger:true,onOk:()=>{state.race=null;state.plans=[];state.lastPlanId=null;state.journal=[];state.profile=defaultProfile();state.profiles={};state.profileDirty=false;state.profileErr='';exportText='';commit();flash('Données de l’appareil effacées.');}});return;}
+  if(a==='clear-device'){askConfirm({title:'Effacer les données de cet appareil ?',text:'Tes plans, le carnet et le profil mémorisés sur cet appareil seront supprimés. Les données de ton compte (profil et plans) ne sont pas touchées : tu les retrouves en te reconnectant.',okLabel:'Effacer',danger:true,onOk:()=>{state.race=null;state.plans=[];state.lastPlanId=null;state.cloud={uid:'',synced:{},del:{},at:0};state.journal=[];state.profile=defaultProfile();state.profiles={};state.profileDirty=false;state.profileErr='';exportText='';commit();flash('Données de l’appareil effacées.');}});return;}
   if(a==='delete-account'){askConfirm({title:'Supprimer ton compte ?',text:'Ton compte, ton profil enregistré et la course que tu partages en direct seront supprimés définitivement.',okLabel:'Supprimer mon compte',danger:true,onOk:deleteAccountNow});return;}
   if(a==='reset-plan'&&r){askConfirm({title:'Réinitialiser le plan ?',text:'L’objectif, les ravitos, la nutrition et les pointages repartent de zéro. Le tracé GPX est conservé.'+(r.sync?' Les pointages partagés seront aussi effacés pour toute l’équipe.':''),okLabel:'Réinitialiser',danger:true,onOk:resetPlanNow});return;}
   if(a==='delete-race'&&r){askConfirm({title:'Supprimer la course ?',text:'Le tracé GPX et tout le plan seront supprimés.'+(r.sync&&r.sync.role==='owner'?' Le suivi en direct sera arrêté et la course supprimée du serveur.':''),okLabel:'Supprimer',danger:true,onOk:deleteRaceNow});return;}
@@ -3306,15 +3451,16 @@ document.addEventListener('click',e=>{
   if(l&&/^geo:/i.test(l.getAttribute('href')||''))return;
   if(l&&N&&N.Browser){e.preventDefault();N.Browser.open({url:l.href}).catch(()=>flash('Impossible d’ouvrir le navigateur.'));}
 });
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){syncNow();}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){syncNow();planPullThrottled();}});
 // Copilote : la carte se met à jour toute seule, et la notification est reprogrammée si l'heure conseillée change.
 setInterval(()=>{
   const r=state.race,el=document.getElementById('crewadv');
   if(tab==='assist'&&el&&r){try{el.innerHTML=crewAdviceInner(r,model(r));}catch(e){}}
   crewNotifSync();
 },20000);
-window.addEventListener('online',()=>{syncNow();netRefresh();});
+window.addEventListener('online',()=>{syncNow();netRefresh();planSyncSoon(true);});
 window.addEventListener('offline',netRefresh);
+setInterval(()=>{if(!document.hidden)planPullThrottled(240000);},60000);
 
 if(state.tmpRace){state.race=null;state.tmpRace=false;save();}
 if(!state.race&&(state.plans||[]).length){openLastPlan();save();}
@@ -3326,6 +3472,7 @@ render(true);
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});}catch(e){}
 if(state.race&&state.race.sync)syncSoon();
 if(isRunner()&&state.profileDirty)pushProfile().catch(()=>{});
+planSyncOn=true;if(isRunner())planSyncSoon();
 setInterval(()=>{if(isRunner()&&state.profileDirty&&!document.hidden)pushProfile().catch(()=>{});},30000);
 })();
 </script>
