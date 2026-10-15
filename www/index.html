@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ifxbi806nPAiPv2Mu+hZsfu/AOeQ12Oq7iNndynp0ZE=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-6Y+E2vWDsQH826D2SNHMf87RkRzime3WdEG+iyqGRtU=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -45,7 +45,9 @@ html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:10
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45}
 .app{max-width:680px;margin:0 auto;padding:12px 16px 112px}
 button,input,textarea{font:inherit;color:inherit}
-:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+:focus{outline:none}
+/* Focus : même anneau doux que les champs du profil coureur. Il n'apparaît qu'au clavier et ne reste jamais bloqué après un clic ou un toucher. */
+:focus-visible{outline:none;box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 40%,transparent)}
 
 .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .brand{display:flex;align-items:center;gap:10px;font:700 20px var(--f-num);letter-spacing:.01em}
@@ -67,7 +69,7 @@ small{font-size:13px;color:var(--ink2)}
 .note{font-size:14px;color:var(--ink2);max-width:62ch}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:8px;border:1.5px solid var(--ink);background:transparent;font-weight:600;cursor:pointer;touch-action:manipulation;text-align:center}
-.btn:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+.btn:has(:focus-visible){box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 40%,transparent)}
 .sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;opacity:0}
 button{touch-action:manipulation}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
@@ -222,7 +224,7 @@ body input[type=checkbox]{-webkit-appearance:none;appearance:none;width:26px;hei
 body input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:3px solid var(--accent-ink);border-bottom:3px solid var(--accent-ink);transform:translateY(-1px) rotate(-45deg);opacity:0;transition:opacity .12s}
 body input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
 body input[type=checkbox]:checked::after{opacity:1}
-body input[type=checkbox]:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 40%,transparent);outline-offset:2px}
+body input[type=checkbox]:focus-visible{outline:none;box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 40%,transparent)}
 .stepper{display:flex;align-items:center;gap:4px;flex:none}
 .stepper .step{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:transparent;font-size:20px;line-height:1;color:var(--ink);cursor:pointer;touch-action:manipulation;padding:0}
 .stepper .qty{flex:none;width:46px;min-height:34px;height:34px;padding:0 2px;text-align:center;-moz-appearance:textfield;appearance:textfield}
@@ -797,19 +799,21 @@ function crewNotifPlan(adv,race,now,lead){
 
 // ---------- stockage ----------
 const KEY='rubalise:v1';
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&typeof s==='object')return Object.assign({race:null,journal:[],profile:defaultProfile(),prefs:defaultPrefs(),profileDirty:false,welcomed:false,tourDone:false,plans:[],lastPlanId:null,cloud:{uid:'',synced:{},del:{},at:0}},s);}}catch(e){}return {race:null,journal:[],profile:defaultProfile(),prefs:defaultPrefs(),profileDirty:false,welcomed:false,tourDone:false,plans:[],lastPlanId:null,cloud:{uid:'',synced:{},del:{},at:0}};}
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&typeof s==='object')return Object.assign({race:null,journal:[],profile:defaultProfile(),prefs:defaultPrefs(),profileDirty:false,welcomed:false,tourDone:false,plans:[],lastPlanId:null,journalDel:[],prefsAt:0,cloud:{uid:'',synced:{},del:{},at:0,jsig:'',psig:'',jsynced:[]}},s);}}catch(e){}return {race:null,journal:[],profile:defaultProfile(),prefs:defaultPrefs(),profileDirty:false,welcomed:false,tourDone:false,plans:[],lastPlanId:null,cloud:{uid:'',synced:{},del:{},at:0}};}
 function save(){
   try{if(state.race)stampPlan(state.race);}catch(e){}
+  try{stampPrefs();}catch(e){}
   try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
-  try{if(planSyncOn&&state.race&&!isMember(state.race)&&state.cloud.synced[state.race.id]!==state.race.updated)planSyncSoon();}catch(e){}
+  try{const c=state.cloud;if(planSyncOn&&((state.race&&!isMember(state.race)&&c.synced[state.race.id]!==state.race.updated)||prefsSig()!==c.psig||journalSig()!==c.jsig))planSyncSoon();}catch(e){}
 }
 function defaultPrefs(){return {theme:'auto',defStop:3,defCarbs:60,defWater:500,defGel:25};}
 let state=load();
 state.plans=Array.isArray(state.plans)?state.plans.filter(p=>p&&p.profile&&Array.isArray(p.stations)):[];
 state.cloud=Object.assign({uid:'',synced:{},del:{},at:0},(state.cloud&&typeof state.cloud==='object')?state.cloud:{});
 state.cloud.synced=state.cloud.synced||{};state.cloud.del=state.cloud.del||{};
+state.journal=Array.isArray(state.journal)?state.journal:[];state.journalDel=Array.isArray(state.journalDel)?state.journalDel.map(String).slice(-200):[];state.prefsAt=+state.prefsAt||0;state.cloud.jsynced=Array.isArray(state.cloud.jsynced)?state.cloud.jsynced:[];
 state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
-const APP_VERSION='2.10';
+const APP_VERSION='2.11';
 // Réglages de la bêta, à renseigner avant le lancement : lien du formulaire d’avis (Google Forms) et e-mail de contact public.
 const BETA={communityUrl:'https://chat.whatsapp.com/IRDZRjCw5mCBZpoBB4ALiD',feedbackUrl:'',contact:'contact@rubalise.run',site:'https://rubalise.run'};   // communityUrl : lien d’invitation de la communauté WhatsApp ; feedbackUrl : formulaire (facultatif)
 // Journal des erreurs de l’appli, gardé sur l’appareil (12 dernières, sans donnée personnelle) : il s’ajoute aux infos techniques d’un retour.
@@ -1631,7 +1635,7 @@ function loginForm(){
   +'<p class="note" style="margin:6px 0 0;text-align:center">ou avec ton e-mail</p>'
   +'<label class="fld"><span>E-mail</span><input class="in" id="authmail" type="email" autocomplete="email" autocapitalize="off" spellcheck="false"></label>'
   +'<label class="fld"><span>Mot de passe'+(up?' (6 caractères minimum)':'')+'</span><input class="in" id="authpass" type="password" autocomplete="'+(up?'new-password':'current-password')+'"></label>'
-  +(up?'<label class="fld chk consent"><input type="checkbox" id="authconsent"><span>J’ai lu la <a href="'+legalUrl('confidentialite')+'" target="_blank" rel="noopener">politique de confidentialité</a> et j’accepte les <a href="'+legalUrl('conditions')+'" target="_blank" rel="noopener">conditions d’utilisation</a>. J’accepte que mon profil (dont mes fréquences cardiaques) et mes plans de course soient enregistrés dans mon compte.</span></label>':'')
+  +(up?'<label class="fld chk consent"><input type="checkbox" id="authconsent"><span>J’ai lu la <a href="'+legalUrl('confidentialite')+'" target="_blank" rel="noopener">politique de confidentialité</a> et j’accepte les <a href="'+legalUrl('conditions')+'" target="_blank" rel="noopener">conditions d’utilisation</a>. J’accepte que mon profil (dont mes fréquences cardiaques), mes plans de course, mon carnet et mes préférences soient enregistrés dans mon compte.</span></label>':'')
   +'<button class="btn primary" data-act="auth-submit">'+(up?'Créer mon compte':'Me connecter')+'</button>'
   +'<button class="btn quiet" data-act="auth-mode">'+(up?'J’ai déjà un compte':'Créer un compte')+'</button>'
   +(up?'':'<button class="btn quiet small" data-act="auth-reset">Mot de passe oublié ?</button>')+'</div>';
@@ -1642,7 +1646,7 @@ function renderLogin(){
   +'<p class="lead">Le compte ouvre ton espace coureur (zones d’allure et de fréquence cardiaque) et permet de partager une course en direct. Ton assistance et tes supporters n’ont pas besoin de compte : ils saisissent seulement le code.</p>'
   +loginForm()
   +'<p class="note">Rubalise évite les doublons : une adresse e-mail correspond à un seul compte.</p>'
-  +'<p class="note">Ton profil (date de naissance, fréquences cardiaques, performance de référence) et tes plans de course sont enregistrés dans ton compte, pour les retrouver sur un autre appareil.</p><p class="note legal-links">'+legalLinks()+'</p></section>';
+  +'<p class="note">Ton profil (date de naissance, fréquences cardiaques, performance de référence), tes plans de course, ton carnet et tes préférences sont enregistrés dans ton compte, pour les retrouver sur un autre appareil.</p><p class="note legal-links">'+legalLinks()+'</p></section>';
 }
 function heroArt(){
   return '<svg class="hero-art" viewBox="0 0 360 112" role="img" aria-label="Profil de course avec ravitaillements">'
@@ -1793,7 +1797,7 @@ function renderRunner(){
        :'<p class="note">Renseigne ta performance de référence ci-dessus pour estimer ton temps.</p>')+'</section>';
   }
   return '<section class="empty"><h1>Espace coureur</h1><p class="lead">'+(pf.first?'Bonjour '+esc(pf.first)+'. ':'')+'Saisis tes données une fois : elles sont enregistrées dans ton compte.</p></section>'
-  +'<section class="sec"><h2>Mes données</h2><p class="hint">Ces informations (dont ta photo et tes fréquences cardiaques) et tes plans de course sont enregistrés dans ton compte, pour les retrouver sur un autre appareil. Tu peux les effacer à tout moment. <a href="'+legalUrl('confidentialite')+'" target="_blank" rel="noopener">Politique de confidentialité</a>.</p>'+photoBlock()
+  +'<section class="sec"><h2>Mes données</h2><p class="hint">Ces informations (dont ta photo et tes fréquences cardiaques), tes plans de course, ton carnet et tes préférences sont enregistrés dans ton compte, pour les retrouver sur un autre appareil. Tu peux les effacer à tout moment. <a href="'+legalUrl('confidentialite')+'" target="_blank" rel="noopener">Politique de confidentialité</a>.</p>'+photoBlock()
   +'<div class="grid2"><label class="fld"><span>Prénom</span><input data-p="first" value="'+esc(pf.first)+'" autocomplete="given-name"></label>'
   +'<label class="fld"><span>Date de naissance</span><input type="date" data-p="birth" value="'+esc(pf.birth)+'"></label>'
   +'<label class="fld"><span>FC max (bpm)</span><input type="number" inputmode="numeric" min="100" max="230" data-p="hrMax" value="'+esc(pf.hrMax)+'" placeholder="'+(maxEst||'ex. 185')+'"></label>'
@@ -1993,9 +1997,62 @@ function adoptAccountPlans(uid){
     const theirs=id=>c.synced[id]!==undefined;
     if(state.race&&theirs(planId(state.race)))state.race=null;
     state.plans=(state.plans||[]).filter(q=>!theirs(planId(q)));
-    c.synced={};c.del={};c.lastRemote='';c.lastPushed='';
+    const jt=new Set(c.jsynced||[]);state.journal=(state.journal||[]).filter(x=>!jt.has(x.id));state.journalDel=[];state.prefsAt=0;
+    c.synced={};c.del={};c.lastRemote='';c.lastPushed='';c.jsynced=[];c.jsig='';c.psig='';
   }
   c.uid=uid;
+}
+// ---------- carnet et préférences dans le compte ----------
+// Tout ce que tu enregistres se synchronise tout seul : plans, carnet, préférences et profil. Aucun bouton à toucher.
+// Carnet : on réunit les deux côtés, moins les entrées supprimées. Préférences : la modification la plus récente gagne.
+const SYNC_PREFS=['theme','defStop','defCarbs','defWater','defGel'];
+function prefsSyncObj(){const o={};SYNC_PREFS.forEach(k=>{if(state.prefs&&state.prefs[k]!=null)o[k]=state.prefs[k];});return o;}
+function prefsSig(){return JSON.stringify(prefsSyncObj());}
+function journalSig(){return (state.journal||[]).map(x=>x.id).join(',')+'|'+(state.journalDel||[]).join(',');}
+function stampPrefs(){const c=state.cloud,sg=prefsSig();if(c.pseen===undefined){c.pseen=sg;return;}if(sg!==c.pseen){c.pseen=sg;state.prefsAt=Date.now();}}
+function cleanPrefs(o){
+  if(!o||typeof o!=='object')return null;const r={};
+  if(o.theme==='auto'||o.theme==='light'||o.theme==='dark')r.theme=o.theme;
+  const num=(k,lo,hi)=>{const v=Math.round(+o[k]);if(isFinite(v)&&v>=lo&&v<=hi)r[k]=v;};
+  num('defStop',0,60);num('defCarbs',0,200);num('defWater',0,3000);num('defGel',0,60);
+  return Object.keys(r).length?r:null;
+}
+function safeId(v){v=String(v==null?'':v);return (/^[A-Za-z0-9_-]{1,40}$/.test(v)&&!/^(__proto__|constructor|prototype)$/.test(v))?v:'';}
+function cleanJournalItem(x){
+  if(!x||typeof x!=='object')return null;
+  const id=safeId(x.id);if(!id)return null;
+  const n=v=>{v=+v;return isFinite(v)?v:0;},nn=v=>(v==null||v==='')?null:(isFinite(+v)?+v:null);
+  return {id:id,name:String(x.name||'').slice(0,120),date:String(x.date||'').slice(0,20),km:n(x.km),up:n(x.up),planned:nn(x.planned),actual:nn(x.actual),rating:Math.max(0,Math.min(5,Math.round(n(x.rating)))),learn:String(x.learn||'').slice(0,160),ts:n(x.ts)};
+}
+async function syncAccountData(uid){
+  const c=state.cloud;let changed=false,f={};
+  try{const doc=await fsReq('GET','users/'+uid);f=(doc&&doc.fields)||{};}catch(e){if(e.status!==404)throw e;}
+  // --- carnet
+  let ri=[],rd=[];
+  try{
+    const t=f.journal&&f.journal.stringValue;
+    if(t){const o=JSON.parse(t,(k,v)=>(k==='__proto__'||k==='constructor'||k==='prototype')?undefined:v);
+      if(o&&Array.isArray(o.items))ri=o.items.map(cleanJournalItem).filter(Boolean).slice(0,300);
+      if(o&&Array.isArray(o.del))rd=o.del.map(safeId).filter(Boolean).slice(-200);}
+  }catch(e){}
+  const del=new Set((state.journalDel||[]).concat(rd)),byId=new Map();
+  (state.journal||[]).forEach(x=>{const y=cleanJournalItem(x);if(y&&!del.has(y.id))byId.set(y.id,y);});
+  ri.forEach(x=>{if(!del.has(x.id)&&!byId.has(x.id))byId.set(x.id,x);});
+  const merged=[...byId.values()].sort((a,b)=>(b.ts||0)-(a.ts||0)),delArr=[...del].slice(-200);
+  if((state.journal||[]).map(x=>x.id).join(',')!==merged.map(x=>x.id).join(',')||(state.journalDel||[]).join(',')!==delArr.join(',')){state.journal=merged;state.journalDel=delArr;changed=true;}
+  const body={},mask=[];
+  if(ri.map(x=>x.id).sort().join(',')!==merged.map(x=>x.id).sort().join(',')||rd.slice().sort().join(',')!==delArr.slice().sort().join(',')){
+    body.journal={stringValue:JSON.stringify({items:merged.slice(0,300),del:delArr})};body.journalAt={integerValue:String(Date.now())};mask.push('journal','journalAt');
+  }
+  // --- préférences
+  const rpAt=+((f.prefsAt||{}).integerValue||0);let rp=null;
+  try{const t=f.prefs&&f.prefs.stringValue;if(t)rp=cleanPrefs(JSON.parse(t));}catch(e){}
+  const lp=state.prefsAt||0;
+  if(rp&&rpAt>lp){Object.assign(state.prefs,rp);state.prefsAt=rpAt;c.pseen=prefsSig();applyTheme();changed=true;}
+  else if(!rp||lp>rpAt){if(!state.prefsAt)state.prefsAt=Date.now();body.prefs={stringValue:prefsSig()};body.prefsAt={integerValue:String(state.prefsAt)};mask.push('prefs','prefsAt');}
+  if(mask.length)await fsReq('PATCH','users/'+uid,{fields:body},'?'+mask.map(m=>'updateMask.fieldPaths='+m).join('&'));
+  c.jsig=journalSig();c.psig=prefsSig();c.jsynced=merged.map(x=>x.id);
+  return changed;
 }
 function planSyncSoon(fast){if(!planSyncOn||!isRunner())return;clearTimeout(planSyncT);planSyncT=setTimeout(()=>{syncPlans().catch(()=>{});},fast?300:2500);}
 function planPullThrottled(ms){if(isRunner()&&Date.now()-(state.cloud.at||0)>(ms||60000))syncPlans().catch(()=>{});}
@@ -2013,7 +2070,7 @@ async function syncPlans(opts){
     const meta={};let tok='';
     do{
       const res=await fsReq('GET','users/'+uid+'/plans',null,'?pageSize=100&mask.fieldPaths=updatedAt&mask.fieldPaths=name'+(tok?'&pageToken='+encodeURIComponent(tok):''));
-      ((res&&res.documents)||[]).forEach(d=>{const id=String(d.name||'').split('/').pop(),f=d.fields||{};if(id)meta[id]=+((f.updatedAt||{}).integerValue||0);});
+      ((res&&res.documents)||[]).forEach(d=>{const id=safeId(String(d.name||'').split('/').pop()),f=d.fields||{};if(id)meta[id]=+((f.updatedAt||{}).integerValue||0);});
       tok=(res&&res.nextPageToken)||'';
     }while(tok);
     const loc={};planSyncList().forEach(r=>{stampPlan(r);loc[planId(r)]=r;});
@@ -2046,6 +2103,7 @@ async function syncPlans(opts){
     if(state.race&&!isMember(state.race)&&planId(state.race)&&c.lastPushed!==state.race.id&&c.synced[state.race.id]!==undefined){
       await fsReq('PATCH','users/'+uid,{fields:{lastPlan:{stringValue:state.race.id}}},'?updateMask.fieldPaths=lastPlan');c.lastPushed=state.race.id;
     }
+    if(await syncAccountData(uid))changed=true;
     c.at=Date.now();c.err='';save();
     if(changed){if(!typing())render();else planSyncRetry=1;}
     if(plansOpen)openPlans();
@@ -2065,9 +2123,9 @@ function planSyncLine(){
   const c=state.cloud||{};let t;
   if(navigator.onLine===false)t='Hors connexion : tes modifications seront enregistrées dans ton compte au retour du réseau.';
   else if(c.err)t='Non enregistré dans ton compte : '+c.err;
-  else if(c.at)t='Plans enregistrés dans ton compte (vérifié il y a '+ago(c.at)+').';
-  else t='Tes plans sont enregistrés automatiquement dans ton compte.';
-  return '<p class="note" id="plansync">'+esc(t)+'</p><div class="row"><button class="btn quiet small" data-act="plans-sync">Synchroniser maintenant</button></div>';
+  else if(c.at)t='Plans, carnet et préférences enregistrés automatiquement dans ton compte (vérifié il y a '+ago(c.at)+').';
+  else t='Tes plans, ton carnet et tes préférences sont enregistrés automatiquement dans ton compte.';
+  return '<p class="note" id="plansync">'+esc(t)+'</p>';
 }
 // ---------- plusieurs plans ----------
 // state.race = le plan ouvert. state.plans = les autres plans, du plus récent au plus ancien.
@@ -3103,7 +3161,6 @@ function act(b){
   if(a==='open-help'){closeMenu();go('help');return;}
   if(a==='tour-start'){startTour();return;}
   if(a==='plans-open'){openPlans();return;}
-  if(a==='plans-sync'){b.disabled=true;syncPlans({flash:true}).then(()=>{if(plansOpen)openPlans();if(Date.now()-(state.cloud.lastConflict||0)<4000)return;flash(navigator.onLine===false?'Hors connexion : réessaie avec du réseau.':(state.cloud.err?'Synchronisation impossible : '+state.cloud.err:'Plans synchronisés.'));}).catch(()=>{}).finally(()=>{b.disabled=false;});return;}
   if(a==='photo-del'){state.profile=state.profile||defaultProfile();state.profile.photo='';save();pushProfileSoon();commit();flash('Photo retirée.');return;}
   if(a==='copy-tech'){copyText(techInfo(),ok=>flash(ok?'Infos copiées. Colle-les dans ton message.':'Copie impossible : ouvre « Donner mon avis » et décris ton appareil.'));return;}
   if(a==='plans-close'){closePlans();return;}
@@ -3147,8 +3204,8 @@ function act(b){
   if(a==='change-pw'){changePassword((document.getElementById('newpw')||{}).value||'');return;}
   if(a==='export-data'){exportText=exportMyData();commit();return;}
   if(a==='copy-export'){const bx=document.getElementById('exportbox');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(exportText).then(()=>flash('Données copiées.'),()=>flash('Sélectionne le texte pour le copier.'));}else if(bx){bx.select();flash('Sélectionne le texte pour le copier.');}return;}
-  if(a==='clear-device'){askConfirm({title:'Effacer les données de cet appareil ?',text:'Tes plans, le carnet et le profil mémorisés sur cet appareil seront supprimés. Les données de ton compte (profil et plans) ne sont pas touchées : tu les retrouves en te reconnectant.',okLabel:'Effacer',danger:true,onOk:()=>{state.race=null;state.plans=[];state.lastPlanId=null;state.cloud={uid:'',synced:{},del:{},at:0};state.journal=[];state.profile=defaultProfile();state.profiles={};state.profileDirty=false;state.profileErr='';exportText='';commit();flash('Données de l’appareil effacées.');}});return;}
-  if(a==='delete-account'){askConfirm({title:'Supprimer ton compte ?',text:'Ton compte, ton profil enregistré et la course que tu partages en direct seront supprimés définitivement.',okLabel:'Supprimer mon compte',danger:true,onOk:deleteAccountNow});return;}
+  if(a==='clear-device'){askConfirm({title:'Effacer les données de cet appareil ?',text:'Tes plans, le carnet et le profil mémorisés sur cet appareil seront supprimés. Les données de ton compte (profil, plans, carnet et préférences) ne sont pas touchées : tu les retrouves en te reconnectant.',okLabel:'Effacer',danger:true,onOk:()=>{state.race=null;state.plans=[];state.lastPlanId=null;state.cloud={uid:'',synced:{},del:{},at:0,jsig:'',psig:'',jsynced:[]};state.journal=[];state.journalDel=[];state.prefsAt=0;state.profile=defaultProfile();state.profiles={};state.profileDirty=false;state.profileErr='';exportText='';commit();flash('Données de l’appareil effacées.');}});return;}
+  if(a==='delete-account'){askConfirm({title:'Supprimer ton compte ?',text:'Ton compte, ton profil, tes plans, ton carnet, tes préférences et la course que tu partages en direct seront supprimés définitivement.',okLabel:'Supprimer mon compte',danger:true,onOk:deleteAccountNow});return;}
   if(a==='reset-plan'&&r){askConfirm({title:'Réinitialiser le plan ?',text:'L’objectif, les ravitos, la nutrition et les pointages repartent de zéro. Le tracé GPX est conservé.'+(r.sync?' Les pointages partagés seront aussi effacés pour toute l’équipe.':''),okLabel:'Réinitialiser',danger:true,onOk:resetPlanNow});return;}
   if(a==='delete-race'&&r){askConfirm({title:'Supprimer la course ?',text:'Le tracé GPX et tout le plan seront supprimés.'+(r.sync&&r.sync.role==='owner'?' Le suivi en direct sera arrêté et la course supprimée du serveur.':''),okLabel:'Supprimer',danger:true,onOk:deleteRaceNow});return;}
   if(a==='show-gpx-paste'){gpxPasteOpen=!gpxPasteOpen;commit();return;}
@@ -3183,7 +3240,7 @@ function act(b){
     rr.target=fmtHM(est.total);commit();flash('Temps visé mis à jour : '+rr.target+'.');return;
   }
   if(a==='sync-test'){flash('Test de connexion…');getToken().then(()=>flash('Connexion Firebase OK.')).catch(e=>flash(fbErr(e)));return;}
-  if(a==='del-journal'){state.journal=(state.journal||[]).filter(x=>x.id!==b.dataset.id);commit();return;}
+  if(a==='del-journal'){state.journal=(state.journal||[]).filter(x=>x.id!==b.dataset.id);state.journalDel=(state.journalDel||[]).concat(String(b.dataset.id)).slice(-200);commit();return;}
   if(!r)return;
   if(a==='share-live'){
     if(!isRunner()){loginMode='up';tab='login';commit();window.scrollTo(0,0);flash('Crée un compte coureur pour partager une course.');return;}
@@ -3318,7 +3375,7 @@ function act(b){
   if(a==='archive'){
     const m=model(r),tl=timeline(r,m,{}),st=profileStats(m.p),fin=tl.rows[tl.rows.length-1],d=r.diary||{};
     state.journal=state.journal||[];
-    state.journal.unshift({id:uid(),name:r.name,date:r.date,km:st.km,up:st.up,planned:m.target,actual:fin.actual!=null?fin.actual-m.startMin:null,rating:d.rating||0,learn:(d.learn||'').slice(0,160)});
+    state.journal.unshift({id:uid(),ts:Date.now(),name:r.name,date:r.date,km:st.km,up:st.up,planned:m.target,actual:fin.actual!=null?fin.actual-m.startMin:null,rating:d.rating||0,learn:(d.learn||'').slice(0,160)});
     if(r.sync){delete r.sync;r.pending={};}
     r.fix=null;r.startAt=null;r.points={};r.diary={rating:0,nutrition:'',learn:'',gear:''};commit();flash('Course archivée dans le carnet.');return;
   }
@@ -3451,7 +3508,7 @@ document.addEventListener('click',e=>{
   if(l&&/^geo:/i.test(l.getAttribute('href')||''))return;
   if(l&&N&&N.Browser){e.preventDefault();N.Browser.open({url:l.href}).catch(()=>flash('Impossible d’ouvrir le navigateur.'));}
 });
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){syncNow();planPullThrottled();}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){syncNow();planPullThrottled(30000);}});
 // Copilote : la carte se met à jour toute seule, et la notification est reprogrammée si l'heure conseillée change.
 setInterval(()=>{
   const r=state.race,el=document.getElementById('crewadv');
@@ -3460,7 +3517,7 @@ setInterval(()=>{
 },20000);
 window.addEventListener('online',()=>{syncNow();netRefresh();planSyncSoon(true);});
 window.addEventListener('offline',netRefresh);
-setInterval(()=>{if(!document.hidden)planPullThrottled(240000);},60000);
+setInterval(()=>{if(!document.hidden)planPullThrottled(120000);},30000);
 
 if(state.tmpRace){state.race=null;state.tmpRace=false;save();}
 if(!state.race&&(state.plans||[]).length){openLastPlan();save();}
@@ -3472,6 +3529,7 @@ render(true);
 try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});}catch(e){}
 if(state.race&&state.race.sync)syncSoon();
 if(isRunner()&&state.profileDirty)pushProfile().catch(()=>{});
+try{if(state.cloud.pseen===undefined)state.cloud.pseen=prefsSig();}catch(e){}
 planSyncOn=true;if(isRunner())planSyncSoon();
 setInterval(()=>{if(isRunner()&&state.profileDirty&&!document.hidden)pushProfile().catch(()=>{});},30000);
 })();
