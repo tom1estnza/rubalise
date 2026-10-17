@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Z0wQwttHjkSK20D5eufcGqhsGikacfVNrah3wBJaUNU=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-JrrEjRRXFZLMdgpaoY0r9m+AhJYRiqUG8qe5VG/H+2M=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -841,7 +841,7 @@ state.cloud=Object.assign({uid:'',synced:{},del:{},at:0},(state.cloud&&typeof st
 state.cloud.synced=state.cloud.synced||{};state.cloud.del=state.cloud.del||{};
 state.journal=Array.isArray(state.journal)?state.journal:[];state.journalDel=Array.isArray(state.journalDel)?state.journalDel.map(String).slice(-200):[];state.prefsAt=+state.prefsAt||0;state.cloud.jsynced=Array.isArray(state.cloud.jsynced)?state.cloud.jsynced:[];
 state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
-const APP_VERSION='2.13';
+const APP_VERSION='2.14';
 // Réglages de la bêta, à renseigner avant le lancement : lien du formulaire d’avis (Google Forms) et e-mail de contact public.
 const BETA={communityUrl:'https://chat.whatsapp.com/IRDZRjCw5mCBZpoBB4ALiD',feedbackUrl:'',contact:'contact@rubalise.run',site:'https://rubalise.run'};   // communityUrl : lien d’invitation de la communauté WhatsApp ; feedbackUrl : formulaire (facultatif)
 // Journal des erreurs de l’appli, gardé sur l’appareil (12 dernières, sans donnée personnelle) : il s’ajoute aux infos techniques d’un retour.
@@ -1630,12 +1630,33 @@ async function doAuth(){
   }catch(e){flash(authErr(e));}
   finally{authBusy=false;}
 }
+// Déconnexion : l'appareil ne garde rien du compte. Plans, carnet et profil sont retirés ; ils reviennent à la prochaine connexion.
+function unsavedPlans(){
+  const c=state.cloud||{synced:{}};let n=0;
+  planSyncList().forEach(r=>{stampPlan(r);const id=planId(r);if(id&&(c.synced[id]===undefined||c.synced[id]!==(r.updated||0)))n++;});
+  return n;
+}
+function wipeAccountData(){
+  clearTimeout(planSyncT);planSyncRetry=0;
+  state.race=null;state.tmpRace=false;state.plans=[];state.lastPlanId='';
+  state.journal=[];state.journalDel=[];state.prefsAt=0;
+  state.profiles={};state.cloud={uid:'',synced:{},del:{},at:0};
+  setAuth(null);loginMode='in';state.profile=defaultProfile();state.profileDirty=false;state.profileErr='';exportText='';tab='plan';
+  try{closePlans();}catch(e){}
+}
+function finishSignOut(){
+  wipeAccountData();commit();window.scrollTo(0,0);flash('Déconnecté. Tes plans restent dans ton compte.');
+}
 async function signOutRunner(){
   try{if(state.profileDirty)await pushProfile();}catch(e){}
-  try{await syncPlans();}catch(e){}
-  cacheProfile();
-  [state.race].concat(state.plans||[]).forEach(r=>{if(r&&r.sync&&r.sync.role==='owner'){delete r.sync;r.pending={};}});
-  setAuth(null);loginMode='in';state.profile=defaultProfile();state.profileDirty=false;state.profileErr='';tab='plan';commit();window.scrollTo(0,0);flash('Déconnecté.');
+  for(let i=0;i<30&&planSyncBusy;i++)await new Promise(r=>setTimeout(r,300));
+  let ok=false;try{ok=await syncPlans();}catch(e){}
+  const unsaved=!!state.profileDirty||unsavedPlans()>0||(!ok&&((state.journal||[]).length>0||planSyncList().length>0));
+  if(unsaved){
+    askConfirm({title:'Se déconnecter ?',text:'Des modifications ne sont pas encore enregistrées dans ton compte, par exemple faute de réseau. Si tu te déconnectes maintenant, elles seront perdues sur cet appareil.',okLabel:'Se déconnecter quand même',danger:true,onOk:finishSignOut});
+    return;
+  }
+  finishSignOut();
 }
 function zoneEstimate(pf,r){
   const tm=parseTimeMin(pf.refTime),dm=+pf.refDist;
@@ -1947,7 +1968,7 @@ function renderHelp(){
   +'<details><summary>Vue horizontale du profil</summary><p>Sur le Plan ou En course, appuie sur « Vue horizontale », puis sur un point numéroté du profil : tu vois le nom du ravito, l’heure d’arrivée prévue et le matériel à prévoir, avec un lien pour le modifier. Le bouton « 3D » remplace le profil par un tracé en relief : fais-le tourner du doigt, pince pour zoomer.</p></details>'
   +'<details><summary>Zones d’allure et de fréquence cardiaque</summary><p>Elles sont calculées dans l’espace coureur à partir de ta performance de référence (indice de forme de Daniels) et de tes fréquences cardiaques (réserve cardiaque de Karvonen, pourcentage de la FC max ou FC de seuil). Les allures sont données sur terrain plat.</p></details>'
   +'<details><summary>Mises à jour et hors connexion</summary><p>Rubalise installée depuis le navigateur se met à jour toute seule quand tu l’ouvres avec du réseau. Si un bandeau « Une nouvelle version est prête » apparaît, appuie sur « Recharger ». Sans réseau, tes plans et tes heures de passage restent utilisables. Appli Android (APK) : installe le nouveau fichier par-dessus l’ancien, tes données sont conservées.</p></details>'
-  +'<details><summary>Sauvegarder mes données</summary><p>Connecté, tes plans sont enregistrés dans ton compte : tu les retrouves sur ton ordinateur comme sur ton téléphone. Sans compte, ils restent sur cet appareil : si tu effaces les données du navigateur ou désinstalles l’appli, ils sont perdus. Pour en garder une copie : onglet Assistance, « Copier le code du plan » (à coller dans un message), ou « Exporter mes données » dans les paramètres du compte.</p></details>'
+  +'<details><summary>Sauvegarder mes données</summary><p>Connecté, tes plans sont enregistrés dans ton compte : tu les retrouves sur ton ordinateur comme sur ton téléphone. Quand tu te déconnectes, plans, carnet et profil sont retirés de l’appareil et reviennent à ta prochaine connexion. Sans compte, ils restent sur cet appareil : si tu effaces les données du navigateur ou désinstalles l’appli, ils sont perdus. Pour en garder une copie : onglet Assistance, « Copier le code du plan » (à coller dans un message), ou « Exporter mes données » dans les paramètres du compte.</p></details>'
   +'<details><summary>Mini-lexique</summary><p><b>Ravito</b> : point de ravitaillement sur le parcours.</p><p><b>Barrière horaire</b> : heure limite pour passer à un point. La marge indique l’avance que tu as sur cette limite.</p><p><b>Pointer</b> : noter l’heure à laquelle le coureur passe à un ravito.</p><p><b>D+ / D−</b> : dénivelé positif (montée) et négatif (descente) cumulés.</p><p><b>Zone d’allure</b> : plage de vitesse adaptée à un type d’effort, calculée à partir de ta performance de référence.</p></details>'
   +'<details><summary>À propos</summary><p>Rubalise, version '+APP_VERSION+' (bêta)'+(window.__swVersion?', cache hors connexion '+window.__swVersion:'')+'. Environnement : '+(isNativeApp()?'application Android':'navigateur')+(testMode()?', mode test':'')+'. Les heures de passage sont des estimations : elles ne remplacent ni ton expérience, ni les barrières horaires officielles de l’organisateur, à vérifier avant le départ. Les zones d’allure, les zones de fréquence cardiaque, la nutrition et le départ conseillé sont indicatifs : ils ne remplacent pas l’avis d’un médecin et ne doivent pas servir à ta sécurité en course.</p><p class="note" id="offstat">Hors connexion : vérification…</p></details>'
   +'<p class="note legal-links">'+legalLinks()+'</p></section>';
@@ -2250,10 +2271,7 @@ async function deleteAccountNow(){
     try{await fsReq('DELETE','users/'+uid);}catch(e){if(e.status!==404)throw e;}
     await authRequest('delete',{idToken:await getToken()});
   }catch(e){flash(authErr(e));return;}
-  [r].concat(others).forEach(q=>{if(q&&q.sync&&q.sync.role==='owner'){delete q.sync;q.pending={};}});
-  if(state.profiles)delete state.profiles[uid];
-  state.cloud={uid:'',synced:{},del:{},at:0};
-  setAuth(null);state.profile=defaultProfile();state.profileDirty=false;state.profileErr='';exportText='';tab='plan';commit();window.scrollTo(0,0);flash('Compte supprimé.');
+  wipeAccountData();commit();window.scrollTo(0,0);flash('Compte supprimé.');
 }
 
 // ---------- matériel à préparer ----------
