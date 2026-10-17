@@ -1,0 +1,6 @@
+# Rubalise : tous les robots sont les bienvenus, y compris ceux des moteurs de réponse et des agents IA.
+User-agent: *
+Allow: /
+Disallow: /auth-callback.html
+
+Sitemap: https://rubalise.run/sitemap.xml

@@ -1,0 +1,32 @@
+# Rubalise
+
+> Rubalise est une application web gratuite (version bêta) pour préparer et suivre une course de trail : heures de passage à chaque ravitaillement, nutrition, assistance et suivi en direct. Elle s'installe depuis le navigateur sur Android, iPhone et ordinateur, sans magasin d'applications, et fonctionne sans réseau une fois installée.
+
+Public visé : les coureurs de trail, leur assistance (proches, bénévoles) et leurs supporters. Langue : français.
+
+Rubalise ne vend rien, n'affiche pas de publicité, ne dépose aucun cookie, ne mesure pas l'audience et n'utilise pas la géolocalisation du téléphone.
+
+## Ce que fait Rubalise
+
+- Import du fichier GPX d'un parcours, calcul des heures de passage à chaque ravito à partir d'un temps visé, profil d'altitude et vue 3D.
+- Plan de nutrition par ravito (glucides, eau, gels).
+- Copilote de l'assistance : départ conseillé, stationnement et temps de trajet, avec les services OpenStreetMap.
+- Suivi en direct par un code de 6 caractères : les supporters suivent sans créer de compte.
+- Espace coureur facultatif : zones d'allure et de fréquence cardiaque, plans, carnet de courses et préférences retrouvés sur tous les appareils.
+
+## Pages principales
+
+- [Application Rubalise](https://rubalise.run/www/) : l'application elle-même. Elle s'affiche avec JavaScript.
+- [Mentions légales](https://rubalise.run/mentions-legales.html) : hébergeur, prestataires et crédits cartographiques.
+- [Politique de confidentialité](https://rubalise.run/confidentialite.html) : chaque traitement de données, sa base légale, sa durée et les droits des personnes.
+- [Conditions d'utilisation](https://rubalise.run/conditions.html) : règles d'usage de la bêta, limites des estimations.
+- [Signalement de sécurité](https://rubalise.run/.well-known/security.txt) : à qui signaler une faille.
+
+## Contact
+
+contact@rubalise.run
+
+## Limites à connaître
+
+- Les heures de passage, la nutrition, les zones et le départ conseillé sont des estimations, pas un avis médical ni une aide à la sécurité en course.
+- Version bêta : des erreurs sont possibles.

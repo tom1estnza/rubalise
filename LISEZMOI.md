@@ -294,3 +294,13 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - Plus de bouton « Synchroniser maintenant » dans « Mes plans » : plans, carnet, préférences et profil se synchronisent tout seuls (après un changement, à la connexion, au retour sur l'appli, au retour du réseau, et toutes les 2 minutes quand l'appli est ouverte).
 - Carnet : entrées réunies entre appareils, suppressions mémorisées. Préférences (thème, valeurs par défaut) : la modification la plus récente gagne. Le réglage des notifications reste propre à l'appareil.
 - Contours de focus : anneau doux (comme les champs du profil coureur), seulement au clavier ; plus de contour bloqué après un clic.
+
+## Version 2.12 : relecture des textes
+- Retouches de formulation dans l'appli (aide, point sans assistance, conseils), sans changement de fonction.
+- Consigne aux testeurs réécrite, avec la correction des plans enregistrés dans le compte.
+
+## Version 2.13 : mise en conformité légale
+- Pages légales reconstruites : mentions légales (éditeur anonyme), politique de confidentialité (12 traitements), conditions d'utilisation complétées.
+- Racine conservée en redirection, lisible par les robots. Nouveaux : `robots.txt`, `sitemap.xml`, `llms.txt`.
+- Appli : métadonnées et JSON-LD, contenu lisible sans JavaScript, un h1 par vue, liens légaux sur toutes les vues, liens lisibles en thème sombre.
+- Détail et liste « à faire par un humain » : `CONFORMITE-LEGALE-2.13.md` (hors dépôt).
