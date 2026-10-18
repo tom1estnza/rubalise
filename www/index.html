@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-fShI9AYwIXQj1x2IZpN7gwYLW0joqGP0gMl+fSDOfJw=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-jcjWrlW0uNiB2H9LzWOd+7jk0mRxpiTnLFrAUVKA2Kc=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -154,6 +154,37 @@ p.offline{border-left:4px solid var(--warn,#B7791F);padding-left:10px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 a:not([class]){color:var(--accent)}
 h1.logo-lg{margin:0}
+/* écrans larges : tableau de bord en deux colonnes, profil agrandi et lisible */
+.chart{position:relative}
+.pf-curline{stroke:var(--ink);stroke-opacity:.55;stroke-width:1}
+.pf-curdot{fill:var(--ink);stroke:var(--bg);stroke-width:2}
+.pf-tip{position:absolute;top:2px;z-index:2;pointer-events:none;background:var(--ink);color:var(--bg);font:600 14px/1.25 var(--f-num);padding:6px 10px;border-radius:8px;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.pf-tip small{display:block;font-weight:500;opacity:.82;font-size:12px;color:inherit}
+.hero-actions{margin:8px 0 0}
+.card.guide{margin-top:16px}
+@media (min-width:760px) and (max-width:999px){
+  .app{max-width:820px}
+}
+@media (min-width:1000px){
+  .app{max-width:1200px;padding:16px 32px 112px}
+  body:not(.wide-plan) #view{max-width:760px;margin-inline:auto}
+  .tabs{padding-inline:max(0px,calc((100% - 1200px)/2 + 32px))}
+  .plan-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;align-items:center}
+  .plan-hero>.race-name,.plan-hero>.chart,.plan-hero>.stats{grid-column:1/-1}
+  .plan-hero>.chart{margin:18px 0 0}
+  .plan-hero>.legend{grid-column:1;margin-top:6px}
+  .plan-hero>.hero-actions{grid-column:2;margin:6px 0 0}
+  .plan-hero .stats{gap:6px 44px;margin-top:14px}
+  .plan-hero .stats dd{font-size:28px}
+  .plan-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-areas:"st gd" "st ob" "st nu" "st ex" "st rs";column-gap:28px;align-items:start}
+  .plan-grid>#sec-stations{grid-area:st}
+  .plan-grid>.pg-guide{grid-area:gd}
+  .plan-grid>#sec-objectif{grid-area:ob}
+  .plan-grid>#sec-nutrition{grid-area:nu}
+  .plan-grid>.sec-export{grid-area:ex}
+  .plan-grid>.sec-reset{grid-area:rs}
+  .plan-grid .card.guide{margin-top:28px}
+}
 /* plusieurs plans */
 .planbar{display:flex;gap:8px;align-items:center;margin:10px 0 6px}
 .planbtn{flex:1;min-width:0;min-height:44px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;text-align:left}
@@ -895,7 +926,8 @@ function copyText(txt,done){
   if(navigator.clipboard&&navigator.clipboard.writeText){try{navigator.clipboard.writeText(txt).then(()=>done(true),fb);}catch(e){fb();}}else fb();
 }
 function hhmmNow(){const d=new Date();return pad2(d.getHours())+':'+pad2(d.getMinutes());}
-function chartW(){return Math.max(280,Math.min(680,root.clientWidth||340));}
+function chartL(W,hit){return hit?60:(W>=760?54:46);}
+function chartW(){return Math.max(280,Math.min(1136,root.clientWidth||340));}
 
 // ---------- création de course ----------
 function newRace(profile,name,stations){
@@ -2795,13 +2827,14 @@ function syncPanel(r){
 
 // ---------- graphique de profil ----------
 function profileSVG(m,tl,opt){
-  const W=opt.w,H=opt.h||200,L=(opt.hit?60:46),R=10,T=24,B=24,p=m.p,tot=m.tot;
+  const W=opt.w,H=opt.h||(W>=760?Math.round(Math.min(380,Math.max(240,W*0.3))):200),L=chartL(W,opt.hit),R=10,T=24,B=24,p=m.p,tot=m.tot;
   const minE=Math.min(...p.e),maxE=Math.max(...p.e),pad=Math.max(20,(maxE-minE)*0.1),y0=minE-pad,y1=maxE+pad;
   const X=k=>L+(k/tot)*(W-L-R),Y=e=>H-B-((e-y0)/(y1-y0))*(H-T-B);
   let line='';p.d.forEach((k,i)=>{line+=(i?'L':'M')+X(k).toFixed(1)+','+Y(p.e[i]).toFixed(1);});
   const area=line+'L'+X(tot).toFixed(1)+','+(H-B)+'L'+X(0).toFixed(1)+','+(H-B)+'Z';
-  const step=tot>70?10:tot>28?5:2;
+  const step=W>=760?(tot>70?5:tot>28?2:1):(tot>70?10:tot>28?5:2);
   let g='';
+  if(H>=230){const stp=[20,25,50,100,200,250,500,1000].find(x=>x>=(maxE-minE)/4)||1000;for(let v=Math.ceil(minE/stp)*stp;v<maxE;v+=stp){const yy=Y(v);if(Math.abs(yy-Y(maxE))<18||Math.abs(yy-Y(minE))<18)continue;g+='<line class="pf-grid" x1="'+L+'" x2="'+(W-R)+'" y1="'+yy.toFixed(1)+'" y2="'+yy.toFixed(1)+'"/><text class="pf-txt" x="'+(L-6)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end">'+v+' m</text>';}}
   [maxE,minE].forEach(v=>{const rv=Math.round(v/10)*10;g+='<line class="pf-grid" x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v).toFixed(1)+'" y2="'+Y(v).toFixed(1)+'"/><text class="pf-txt" x="'+(L-6)+'" y="'+(Y(v)+4).toFixed(1)+'" text-anchor="end">'+rv+' m</text>';});
   let lastK=0;for(let k=0;k<=tot+0.001;k+=step)lastK=k;
   for(let k=0;k<=tot+0.001;k+=step){g+='<text class="pf-txt" x="'+X(k).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle">'+k+(k===lastK?' km':'')+'</text>';}
@@ -2825,7 +2858,10 @@ function profileSVG(m,tl,opt){
     const x=X(opt.kmNow),y=Y(interp(p.d,p.e,opt.kmNow));
     live='<line class="pf-live" x1="'+x.toFixed(1)+'" x2="'+x.toFixed(1)+'" y1="'+(T-6)+'" y2="'+(H-B)+'"/><circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="7" fill="var(--live)" stroke="var(--bg)" stroke-width="2.5"/>';
   }
-  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Profil d’élévation du parcours"><path class="pf-area" d="'+area+'"/><path class="pf-line'+(opt.anim?' draw':'')+'" pathLength="1000" d="'+line+'"/>'+g+s+live+'</svg>';
+  if(opt.hover)pfData=p;
+  const hv=opt.hover?'<g class="pf-cur" visibility="hidden" pointer-events="none"><line class="pf-curline" y1="'+(T-6)+'" y2="'+(H-B)+'"/><circle class="pf-curdot" r="5.5"/></g>':'';
+  const hd=opt.hover?' data-pf=\''+JSON.stringify({w:W,h:H,l:L,r:R,t:T,b:B,tot:tot,y0:y0,y1:y1})+'\'':'';
+  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Profil d’élévation du parcours"'+hd+'><path class="pf-area" d="'+area+'"/><path class="pf-line'+(opt.anim?' draw':'')+'" pathLength="1000" d="'+line+'"/>'+g+s+live+hv+'</svg>';
 }
 
 // ---------- vues ----------
@@ -2855,7 +2891,7 @@ function planGuide(r,okT){
   const done=items.filter(i=>i.ok).length;
   const rows=items.map(i=>'<li class="'+(i.ok?'ok':'')+'"><span class="chk-dot" aria-hidden="true">'+(i.ok?'✓':'')+'</span><span style="flex:1">'+i.label+'</span>'
     +(i.ok?'':(i.jump?'<button class="btn quiet small" data-act="jump" data-id="'+i.jump+'">Aller</button>':'<button class="btn quiet small" data-tab="'+i.go+'">'+(run?'Ouvrir':'Se connecter')+'</button>'))+'</li>').join('');
-  return '<div class="card" style="margin-top:16px"><h2>Avant le départ</h2><div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="'+items.length+'" aria-valuenow="'+done+'"><i style="width:'+Math.round(done/items.length*100)+'%"></i></div>'
+  return '<div class="card guide"><h2>Avant le départ</h2><div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="'+items.length+'" aria-valuenow="'+done+'"><i style="width:'+Math.round(done/items.length*100)+'%"></i></div>'
     +'<p class="hint" style="margin:0">'+done+' étape'+(done>1?'s':'')+' sur '+items.length+(done===items.length?' : tout est prêt !':'')+'</p><ul class="chk-list">'+rows+'</ul></div>'
     +'<div class="chips-nav" aria-label="Aller à"><button class="chip" data-act="jump" data-id="sec-objectif">Objectif</button><button class="chip" data-act="jump" data-id="sec-stations">Ravitos</button><button class="chip" data-act="jump" data-id="sec-nutrition">Nutrition</button></div>';
 }
@@ -2863,7 +2899,7 @@ function renderPlan(){
   const r=state.race;if(!r)return planBar()+emptyPlan();
   const m=model(r),st=profileStats(m.p),tl=timeline(r,m,{plan:true});
   const okT=m.target>m.stopsTotal+1;
-  const svg=profileSVG(m,tl,{w:chartW(),anim:animateNext});animateNext=false;
+  const svg=profileSVG(m,tl,{w:chartW(),anim:animateNext,hover:true});animateNext=false;
   const byId={};tl.rows.forEach(x=>byId[x.id]=x);
   const fin=tl.rows[tl.rows.length-1];
   const stn=r.stations.map((s,i)=>{
@@ -2887,15 +2923,15 @@ function renderPlan(){
   }).join('');
   const member=!!(r.sync&&r.sync.role==='member');
   return planBar()+(member?'<p class="note" style="margin-top:12px">Plan fourni par le coureur (code '+esc(r.sync.code)+'). Il se met à jour automatiquement.</p>':'')
-  +'<fieldset class="lock"'+(member?' disabled':'')+'><section>'
+  +'<fieldset class="lock"'+(member?' disabled':'')+'><section class="plan-hero">'
   +'<input class="race-name" data-r="name" value="'+esc(r.name)+'" aria-label="Nom de la course" placeholder="Nom de la course">'
   +'<div class="chart">'+svg+'</div>'
   +'<div class="legend"><span>Cercle plein : accès assistance</span><span>Cercle vide : sans accès</span></div>'
-  +'<div class="row" style="margin:8px 0 0"><button class="btn quiet small" data-act="land-open">Vue horizontale</button></div>'
+  +'<div class="row hero-actions"><button class="btn quiet small" data-act="land-open">Vue horizontale</button></div>'
   +'<dl class="stats"><div><dt>Distance</dt><dd>'+km1(st.km)+' km</dd></div><div><dt>Dénivelé positif</dt><dd>+'+nf(st.up)+' m</dd></div><div><dt>Dénivelé négatif</dt><dd>−'+nf(st.down)+' m</dd></div></dl>'
   +'</section>'
 
-  +planGuide(r,okT)
+  +'<div class="plan-grid">'+((g)=>g?'<div class="pg-guide">'+g+'</div>':'')(planGuide(r,okT))
   +'<section class="sec" id="sec-objectif"><h2>Objectif</h2><p class="hint">Ton temps visé détermine ton allure et tes heures de passage à chaque ravito.</p>'
   +'<div class="grid2"><label class="fld"><span>Temps visé, arrêts compris (h:mm)</span><input data-r="target" value="'+esc(r.target)+'" inputmode="numeric" maxlength="5" autocomplete="off" placeholder="7:30"></label>'
   +'<label class="fld"><span>Arrêt moyen par ravito (min)</span><input type="number" inputmode="numeric" min="0" max="60" data-r="stopMin" data-num value="'+r.stopMin+'"></label>'
@@ -2926,12 +2962,12 @@ function renderPlan(){
   +'<div class="tblwrap" style="margin-top:12px"><table><thead><tr><th>Tronçon</th><th>Durée</th><th>Gels et barres</th><th>Eau et sel</th></tr></thead><tbody>'+segRows+'</tbody></table></div></section>'
 
   +'</fieldset>'
-  +'<section class="sec"><p class="note">Les heures viennent d’un modèle simplifié : la pente ralentit à la montée et accélère un peu à la descente, sur un effort régulier. Une fois la course lancée, Rubalise compare ton temps réel au temps prévu à chaque passage pointé et ajuste les heures suivantes : les derniers tronçons comptent le plus.</p>'
+  +'<section class="sec sec-export"><p class="note">Les heures viennent d’un modèle simplifié : la pente ralentit à la montée et accélère un peu à la descente, sur un effort régulier. Une fois la course lancée, Rubalise compare ton temps réel au temps prévu à chaque passage pointé et ajuste les heures suivantes : les derniers tronçons comptent le plus.</p>'
   +'<div class="row">'+(member?'<button class="btn quiet" data-act="stop-sync">Quitter ce suivi</button>':gpxPick('quiet','Remplacer par un autre GPX'))+'</div>'+(member?'':gpxPaste())+'</section>'
-  +'<section class="sec"><h2>Réinitialiser</h2>'
+  +'<section class="sec sec-reset"><h2>Réinitialiser</h2>'
   +(member?'':'<p class="note">« Réinitialiser le plan » remet l’objectif, les ravitos, la nutrition et les pointages à zéro. Le tracé GPX est conservé.</p>')
   +'<p class="note">« Supprimer la course » efface le tracé GPX et tout le plan'+((state.plans||[]).length?' : ton autre plan s’ouvre ensuite.':' : tu reviens à l’écran de départ, sans avoir à en importer un autre.')+'</p>'
-  +'<div class="row">'+(member?'':'<button class="btn danger" data-act="reset-plan">Réinitialiser le plan</button>')+'<button class="btn danger" data-act="delete-race">Supprimer la course</button></div></section>';
+  +'<div class="row">'+(member?'':'<button class="btn danger" data-act="reset-plan">Réinitialiser le plan</button>')+'<button class="btn danger" data-act="delete-race">Supprimer la course</button></div></section></div>';
 }
 const parkOpen={};
 document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.classList&&d.classList.contains('plistd')&&d.dataset.k)parkOpen[d.dataset.k]=d.open;},true);
@@ -3127,7 +3163,7 @@ function renderLive(){
   +'<dl class="sum"><div><dt>Arrivée estimée</dt><dd>'+clk(fin.adjArr)+'</dd></div><div><dt>Prévue</dt><dd>'+clk(finPlan.adjArr)+'</dd></div>'
   +(anyPoint?'<div><dt>Écart</dt><dd class="'+(delta>5?'warn':'ok')+'">'+dsign(delta)+'</dd></div>':'')+'</dl>'
   +(anyPoint?'':'<p class="note" style="margin-top:10px">Aucun passage pointé : l’estimation suit le plan. Sans date de course, on suppose qu’elle a lieu aujourd’hui.</p>')
-  +'<div class="chart" data-fixchart data-w="'+chartW()+'" data-l="46" data-r="10" data-tot="'+m.tot+'">'+svg+'</div>'
+  +'<div class="chart" data-fixchart data-w="'+chartW()+'" data-l="'+chartL(chartW())+'" data-r="10" data-tot="'+m.tot+'">'+svg+'</div>'
   +(kmNow!=null?'<div class="legend"><span style="color:var(--live)">Point rose : position estimée, km '+km1(kmNow)+'</span></div>':'')
   +'<div class="row" style="margin:8px 0 0"><button class="btn quiet small" data-act="land-open">Vue horizontale</button></div></section>'
   +next
@@ -3185,6 +3221,7 @@ async function refreshOfflineStat(){
 }
 function render(top){
   document.body.classList.toggle('welcome',tab==='welcome');
+  document.body.classList.toggle('wide-plan',tab==='plan'&&!!state.race);
   document.querySelectorAll('.tabbtn').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false'));
   const y=window.scrollY;
   let html='';
@@ -3534,6 +3571,37 @@ document.addEventListener('keydown',e=>{
   }
 });
 document.addEventListener('fullscreenchange',()=>{if(landOpen&&landFs&&!document.fullscreenElement)closeLand();else renderLand();});
+// survol du profil à la souris : kilomètre, altitude et pente sous le curseur
+let pfData=null,pfShown=null;
+function pfHide(){
+  if(!pfShown)return;
+  const c=pfShown.querySelector('.pf-cur');if(c)c.setAttribute('visibility','hidden');
+  const t=pfShown.parentNode&&pfShown.parentNode.querySelector('.pf-tip');if(t)t.hidden=true;
+  pfShown=null;
+}
+document.addEventListener('pointermove',e=>{
+  if(e.pointerType!=='mouse')return;
+  const sv=e.target&&e.target.closest?e.target.closest('svg[data-pf]'):null;
+  if(!sv||!pfData){pfHide();return;}
+  let o=sv._pf;if(!o){try{o=sv._pf=JSON.parse(sv.dataset.pf);}catch(x){return;}}
+  const rc=sv.getBoundingClientRect();if(!rc.width)return;
+  const sc=o.w/rc.width,x=(e.clientX-rc.left)*sc;
+  const k=Math.max(0,Math.min(o.tot,(x-o.l)/(o.w-o.l-o.r)*o.tot));
+  const el=interp(pfData.d,pfData.e,k),k1=Math.max(0,k-0.2),k2=Math.min(o.tot,k+0.2);
+  const slope=k2>k1?(interp(pfData.d,pfData.e,k2)-interp(pfData.d,pfData.e,k1))/((k2-k1)*1000)*100:0;
+  const X=o.l+(k/o.tot)*(o.w-o.l-o.r),Y=o.h-o.b-((el-o.y0)/(o.y1-o.y0))*(o.h-o.t-o.b);
+  const cur=sv.querySelector('.pf-cur');if(!cur)return;
+  cur.setAttribute('visibility','visible');
+  const ln=cur.querySelector('line'),dt=cur.querySelector('circle');
+  ln.setAttribute('x1',X.toFixed(1));ln.setAttribute('x2',X.toFixed(1));dt.setAttribute('cx',X.toFixed(1));dt.setAttribute('cy',Y.toFixed(1));
+  const box=sv.parentNode;let tip=box.querySelector('.pf-tip');
+  if(!tip){tip=document.createElement('div');tip.className='pf-tip';tip.setAttribute('aria-hidden','true');box.appendChild(tip);}
+  tip.hidden=false;tip.innerHTML=km1(k)+' km<small>'+nf(Math.round(el))+' m · pente '+(slope>=0?'+':'−')+km1(Math.abs(slope))+' %</small>';
+  const px=X/sc,py=Y*(rc.height/o.h),w=tip.offsetWidth,hh=tip.offsetHeight;
+  tip.style.left=Math.max(0,Math.min(rc.width-w,px+14))+'px';
+  tip.style.top=Math.round(py-hh-14>=28?py-hh-14:py+16)+'px';
+  pfShown=sv;
+},{passive:true});
 window.addEventListener('orientationchange',()=>setTimeout(renderLand,250));
 window.addEventListener('resize',()=>{if(landOpen)renderLand();if(menuOpen)closeMenu();if(tourOn)positionTour();});
 let rz=null,lastW=0;
