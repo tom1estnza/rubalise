@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-JrrEjRRXFZLMdgpaoY0r9m+AhJYRiqUG8qe5VG/H+2M=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-fShI9AYwIXQj1x2IZpN7gwYLW0joqGP0gMl+fSDOfJw=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -841,7 +841,7 @@ state.cloud=Object.assign({uid:'',synced:{},del:{},at:0},(state.cloud&&typeof st
 state.cloud.synced=state.cloud.synced||{};state.cloud.del=state.cloud.del||{};
 state.journal=Array.isArray(state.journal)?state.journal:[];state.journalDel=Array.isArray(state.journalDel)?state.journalDel.map(String).slice(-200):[];state.prefsAt=+state.prefsAt||0;state.cloud.jsynced=Array.isArray(state.cloud.jsynced)?state.cloud.jsynced:[];
 state.prefs=Object.assign(defaultPrefs(),state.prefs||{});
-const APP_VERSION='2.14';
+const APP_VERSION='0.1';
 // Réglages de la bêta, à renseigner avant le lancement : lien du formulaire d’avis (Google Forms) et e-mail de contact public.
 const BETA={communityUrl:'https://chat.whatsapp.com/IRDZRjCw5mCBZpoBB4ALiD',feedbackUrl:'',contact:'contact@rubalise.run',site:'https://rubalise.run'};   // communityUrl : lien d’invitation de la communauté WhatsApp ; feedbackUrl : formulaire (facultatif)
 // Journal des erreurs de l’appli, gardé sur l’appareil (12 dernières, sans donnée personnelle) : il s’ajoute aux infos techniques d’un retour.
