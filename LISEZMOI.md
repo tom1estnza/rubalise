@@ -300,7 +300,17 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - Consigne aux testeurs réécrite, avec la correction des plans enregistrés dans le compte.
 
 ## Version 2.13 : mise en conformité légale
-- Pages légales reconstruites : mentions légales (éditeur anonyme), politique de confidentialité (12 traitements), conditions d'utilisation complétées.
+- Pages légales reconstruites : mentions légales (éditeur identifié), politique de confidentialité (12 traitements), conditions d'utilisation complétées.
 - Racine conservée en redirection, lisible par les robots. Nouveaux : `robots.txt`, `sitemap.xml`, `llms.txt`.
 - Appli : métadonnées et JSON-LD, contenu lisible sans JavaScript, un h1 par vue, liens légaux sur toutes les vues, liens lisibles en thème sombre.
 - Détail et liste « à faire par un humain » : `CONFORMITE-LEGALE-2.13.md` (hors dépôt).
+
+## Version 2.14 : déconnexion
+- Se déconnecter retire de l'appareil les plans, le carnet et le profil. Tout revient à la prochaine connexion.
+- Si des modifications ne sont pas encore enregistrées dans le compte (par exemple hors connexion), une fenêtre prévient avant de les perdre.
+- Supprimer le compte vide aussi l'appareil. Sans compte, les plans locaux restent.
+- Politique de confidentialité, conditions et aide mises à jour en conséquence.
+
+## Version 0.1 : lancement de la bêta
+- La numérotation repart de 0.1 pour le lancement de la bêta. Le contenu est celui de l'ancienne 2.14 : déconnexion qui vide l'appareil, mise en conformité légale, accessibilité.
+- Le nom du cache hors connexion change (`0.1-…`) : les appareils déjà installés se mettent à jour tout seuls et effacent l'ancien cache.
