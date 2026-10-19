@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-jcjWrlW0uNiB2H9LzWOd+7jk0mRxpiTnLFrAUVKA2Kc=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-7GuJle1Xzsodp1V1TqKuekwzT50gNxwg5bdt8ezwZp8=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -454,20 +454,29 @@ function hav(a,b){const r=Math.PI/180,dLat=(b.lat-a.lat)*r,dLon=(b.lon-a.lon)*r;
 function cumDist(pts){const c=[0];for(let i=1;i<pts.length;i++)c.push(c[i-1]+hav(pts[i-1],pts[i]));return c;}
 function interp(xs,ys,x){const n=xs.length;if(x<=xs[0])return ys[0];if(x>=xs[n-1])return ys[n-1];let lo=0,hi=n-1;while(hi-lo>1){const m=(lo+hi)>>1;if(xs[m]<=x)lo=m;else hi=m;}const t=(x-xs[lo])/((xs[hi]-xs[lo])||1);return ys[lo]+(ys[hi]-ys[lo])*t;}
 // Dénivelé cumulé sur la trace complète (et non sur le profil réduit à 220 points, qui aplatit les petites bosses).
-// Seuil de 1 m si les altitudes sont des mètres entiers (déjà arrondies), 2 m sinon (bruit des altitudes décimales).
-function elevCum(pts){
-  let ints=0;pts.forEach(q=>{if(Math.abs(q.ele-Math.round(q.ele))<1e-6)ints++;});
-  const thr=ints>=pts.length*0.9?1:2,cu=[0],cd=[0];
-  let up=0,dn=0,ref=pts[0].ele;
-  for(let i=1;i<pts.length;i++){
-    const v=pts[i].ele;
+// Les altitudes des GPX (montre, modèle de terrain) sont bruitées : additionner chaque petit écart gonfle fortement le D+
+// (THP Winter W70 : 4 544 m au lieu d'environ 3 100 m). On lisse donc les altitudes par une moyenne glissante sur 100 m
+// de distance (±50 m), puis on ne compte une variation qu'à partir de 3 m.
+function elevCum(pts,cum){
+  cum=cum||cumDist(pts);
+  const n=pts.length,W=0.05,sm=new Array(n);   // cum est en km : 0,05 km = 50 m
+  let a=0,b=0,s=0;
+  for(let i=0;i<n;i++){
+    while(b<n&&cum[b]<=cum[i]+W){s+=pts[b].ele;b++;}
+    while(cum[a]<cum[i]-W){s-=pts[a].ele;a++;}
+    sm[i]=s/(b-a);
+  }
+  const thr=3,cu=[0],cd=[0];
+  let up=0,dn=0,ref=sm[0];
+  for(let i=1;i<n;i++){
+    const v=sm[i];
     if(v-ref>=thr){up+=v-ref;ref=v;}else if(ref-v>=thr){dn+=ref-v;ref=v;}
     cu.push(up);cd.push(dn);
   }
   return {cu:cu,cd:cd};
 }
 function buildProfile(pts){
-  const cum=cumDist(pts),total=cum[cum.length-1],ec=elevCum(pts);
+  const cum=cumDist(pts),total=cum[cum.length-1],ec=elevCum(pts,cum);
   const N=Math.min(220,Math.max(2,pts.length));
   const d=[],e=[],la=[],lo=[],ug=[],dg=[];let j=0;
   for(let k=0;k<N;k++){
@@ -748,7 +757,7 @@ function parseOverpass(j,center){
     if(t.parking==='garage_boxes')return;
     const lat=e.lat!=null?+e.lat:(e.center?+e.center.lat:NaN),lon=e.lon!=null?+e.lon:(e.center?+e.center.lon:NaN);
     if(!isFinite(lat)||!isFinite(lon))return;
-    out.push({name:String(t.name||t['name:fr']||'').trim().slice(0,60),lat:Math.round(lat*1e6)/1e6,lon:Math.round(lon*1e6)/1e6,distM:Math.round(distM(center,{lat:lat,lon:lon})),fee:t.fee==='yes',capacity:parseInt(t.capacity,10)||null});
+    out.push({name:String(t.name||t['name:fr']||'').trim().slice(0,60),street:String(t['addr:street']||'').trim().slice(0,60),lat:Math.round(lat*1e6)/1e6,lon:Math.round(lon*1e6)/1e6,distM:Math.round(distM(center,{lat:lat,lon:lon})),fee:t.fee==='yes',capacity:parseInt(t.capacity,10)||null});
   });
   out.sort((x,y)=>x.distM-y.distM);
   const ded=[];out.forEach(c=>{if(!ded.some(d=>distM(d,c)<20))ded.push(c);});
@@ -757,7 +766,7 @@ function parseOverpass(j,center){
 // Repli si Overpass est injoignable : recherche « parking » de Nominatim dans un carré autour du ravito (l'accès privé n'est pas connu).
 function nominatimUrl(lat,lon,R){
   const dLat=R/111320,dLon=R/(111320*Math.max(0.2,Math.cos(lat*Math.PI/180)));
-  return 'https://nominatim.openstreetmap.org/search?format=jsonv2&q=parking&bounded=1&limit=40&accept-language=fr&viewbox='+(lon-dLon).toFixed(6)+','+(lat+dLat).toFixed(6)+','+(lon+dLon).toFixed(6)+','+(lat-dLat).toFixed(6);
+  return 'https://nominatim.openstreetmap.org/search?format=jsonv2&q=parking&bounded=1&limit=40&addressdetails=1&accept-language=fr&viewbox='+(lon-dLon).toFixed(6)+','+(lat+dLat).toFixed(6)+','+(lon+dLon).toFixed(6)+','+(lat-dLat).toFixed(6);
 }
 function parseNominatim(arr,center){
   const out=[];
@@ -765,7 +774,7 @@ function parseNominatim(arr,center){
     if((e.category||e.class)!=='amenity'||e.type!=='parking')return;
     const lat=parseFloat(e.lat),lon=parseFloat(e.lon);
     if(!isFinite(lat)||!isFinite(lon))return;
-    out.push({name:String(e.name||'').trim().slice(0,60),lat:Math.round(lat*1e6)/1e6,lon:Math.round(lon*1e6)/1e6,distM:Math.round(distM(center,{lat:lat,lon:lon})),fee:false,capacity:null,src:'nominatim'});
+    out.push({name:String(e.name||'').trim().slice(0,60),street:streetOf(e.address),lat:Math.round(lat*1e6)/1e6,lon:Math.round(lon*1e6)/1e6,distM:Math.round(distM(center,{lat:lat,lon:lon})),fee:false,capacity:null,src:'nominatim'});
   });
   out.sort((x,y)=>x.distM-y.distM);
   const ded=[];out.forEach(c=>{if(!ded.some(d=>distM(d,c)<20))ded.push(c);});
@@ -775,7 +784,9 @@ function parseNominatim(arr,center){
 // Un temps de marche seulement estimé (service indisponible) compte pour plus long : il ignore les détours réels.
 function walkKey(c){return c.est?c.walkMin*1.5+2:c.walkMin;}
 function pickParking(c){return c.slice().sort((x,y)=>(walkKey(x)-walkKey(y))||(x.distM-y.distM));}
-function parkLabel(c){return ((c.name||'Parking sans nom')+(c.fee?' (payant)':'')).slice(0,80);}
+// Nom affiché : le nom OSM du parking, sinon « Parking » + la rue (ex. « Parking Route de Lure »), sinon « Parking sans nom ».
+function streetOf(a){a=a||{};return String(a.road||a.pedestrian||a.footway||a.path||a.square||a.place||a.hamlet||a.village||a.town||'').trim().slice(0,60);}
+function parkLabel(c){return ((c.name||(c.street?'Parking '+c.street:'Parking sans nom'))+(c.fee?' (payant)':'')).slice(0,80);}
 // ---------- copilote : liste des stationnements à pied et liens de navigation ----------
 // Liens vers Google Maps et Waze (itinéraire en voiture). Coordonnées si on les a, sinon le texte saisi.
 function navUrls(lat,lon,text){
@@ -985,6 +996,13 @@ async function osmFindParking(o){
   }
   const c=parseOverpass(j,{lat:o.lat,lon:o.lon});geoSet(key,c);return c;
 }
+// Rue la plus proche d'un point (Nominatim, géocodage inverse), pour nommer les parkings qui n'ont pas de nom.
+async function osmStreet(o){
+  const key='rv:'+o.lat.toFixed(5)+','+o.lon.toFixed(5),hit=geoGet(key);
+  if(hit!==undefined&&hit!==null)return hit;
+  const j=await osmFetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=17&addressdetails=1&accept-language=fr&lat='+o.lat.toFixed(6)+'&lon='+o.lon.toFixed(6),{},15000);
+  const v=streetOf(j&&j.address);geoSet(key,v);return v;
+}
 async function osmTravelMin(o){
   const a=o.from,b=o.to,key='rt:'+o.mode+':'+a.lat.toFixed(5)+','+a.lon.toFixed(5)+'>'+b.lat.toFixed(5)+','+b.lon.toFixed(5),hit=geoGet(key);
   if(hit!==undefined&&hit!==null)return hit;
@@ -995,9 +1013,10 @@ async function osmTravelMin(o){
 // Interface d'itinéraire : un fournisseur respecte ce contrat, le reste de l'appli n'a pas à changer.
 //   findParking({lat,lon,radiusM}) -> Promise<[{name,lat,lon,distM,fee}]>
 //   travelMin({from:{lat,lon},to:{lat,lon},mode:'drive'|'walk'}) -> Promise<minutes|null>
+//   streetName({lat,lon}) -> Promise<nom de rue|''> (facultatif)
 const ROUTE_PROVIDERS={
   manual:{id:'manual',label:'Saisie manuelle',auto:false},
-  osm:{id:'osm',label:'OpenStreetMap',auto:true,findParking:osmFindParking,travelMin:osmTravelMin}
+  osm:{id:'osm',label:'OpenStreetMap',auto:true,findParking:osmFindParking,travelMin:osmTravelMin,streetName:osmStreet}
 };
 function routeProvider(){return ROUTE_PROVIDERS[(state.prefs&&state.prefs.routeProvider)||'osm']||ROUTE_PROVIDERS.manual;}
 let crewRun={running:false,cancel:false,lines:[],err:'',diag:[]};
@@ -1056,6 +1075,15 @@ async function crewAuto(r,opts){
         if(!alive())break;
         const w=await safe(()=>prov.travelMin({from:c,to:ll,mode:'walk'}));
         if(w!=null){c.walkMin=w;c.est=false;}else{c.walkMin=estWalkMin(c.distM);c.est=true;}
+      }
+      if(!alive())break;
+      // Parkings sans nom : on cherche la rue (« Parking Route de Lure ») pour les 4 plus courts à pied.
+      // Un échec ici n'arrête pas la recherche : le parking reste « Parking sans nom ».
+      if(prov.streetName){
+        for(const c of pickParking(top).filter(c=>!c.name&&!c.street).slice(0,4)){
+          if(!alive())break;
+          try{const st=await prov.streetName({lat:c.lat,lon:c.lon});if(st)c.street=st;}catch(e){}
+        }
       }
       if(!alive())break;
       const list=buildParkList(top,20),best=pickParking(list)[0];
