@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-7GuJle1Xzsodp1V1TqKuekwzT50gNxwg5bdt8ezwZp8=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-PYFSTcrZfgya2kaGrnI8ImKAp5WPzPzcFlsX4Kt9aNU=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -454,29 +454,20 @@ function hav(a,b){const r=Math.PI/180,dLat=(b.lat-a.lat)*r,dLon=(b.lon-a.lon)*r;
 function cumDist(pts){const c=[0];for(let i=1;i<pts.length;i++)c.push(c[i-1]+hav(pts[i-1],pts[i]));return c;}
 function interp(xs,ys,x){const n=xs.length;if(x<=xs[0])return ys[0];if(x>=xs[n-1])return ys[n-1];let lo=0,hi=n-1;while(hi-lo>1){const m=(lo+hi)>>1;if(xs[m]<=x)lo=m;else hi=m;}const t=(x-xs[lo])/((xs[hi]-xs[lo])||1);return ys[lo]+(ys[hi]-ys[lo])*t;}
 // Dénivelé cumulé sur la trace complète (et non sur le profil réduit à 220 points, qui aplatit les petites bosses).
-// Les altitudes des GPX (montre, modèle de terrain) sont bruitées : additionner chaque petit écart gonfle fortement le D+
-// (THP Winter W70 : 4 544 m au lieu d'environ 3 100 m). On lisse donc les altitudes par une moyenne glissante sur 100 m
-// de distance (±50 m), puis on ne compte une variation qu'à partir de 3 m.
-function elevCum(pts,cum){
-  cum=cum||cumDist(pts);
-  const n=pts.length,W=0.05,sm=new Array(n);   // cum est en km : 0,05 km = 50 m
-  let a=0,b=0,s=0;
-  for(let i=0;i<n;i++){
-    while(b<n&&cum[b]<=cum[i]+W){s+=pts[b].ele;b++;}
-    while(cum[a]<cum[i]-W){s-=pts[a].ele;a++;}
-    sm[i]=s/(b-a);
-  }
-  const thr=3,cu=[0],cd=[0];
-  let up=0,dn=0,ref=sm[0];
-  for(let i=1;i<n;i++){
-    const v=sm[i];
+// Seuil de 1 m si les altitudes sont des mètres entiers (déjà arrondies), 2 m sinon (bruit des altitudes décimales).
+function elevCum(pts){
+  let ints=0;pts.forEach(q=>{if(Math.abs(q.ele-Math.round(q.ele))<1e-6)ints++;});
+  const thr=ints>=pts.length*0.9?1:2,cu=[0],cd=[0];
+  let up=0,dn=0,ref=pts[0].ele;
+  for(let i=1;i<pts.length;i++){
+    const v=pts[i].ele;
     if(v-ref>=thr){up+=v-ref;ref=v;}else if(ref-v>=thr){dn+=ref-v;ref=v;}
     cu.push(up);cd.push(dn);
   }
   return {cu:cu,cd:cd};
 }
 function buildProfile(pts){
-  const cum=cumDist(pts),total=cum[cum.length-1],ec=elevCum(pts,cum);
+  const cum=cumDist(pts),total=cum[cum.length-1],ec=elevCum(pts);
   const N=Math.min(220,Math.max(2,pts.length));
   const d=[],e=[],la=[],lo=[],ug=[],dg=[];let j=0;
   for(let k=0;k<N;k++){
@@ -683,7 +674,24 @@ function ageFrom(birth){
   if(n<new Date(n.getFullYear(),d.getMonth(),d.getDate()))a--;
   return a>0&&a<110?a:0;
 }
-function defaultProfile(){return {first:'',birth:'',hrMax:'',hrRest:'',hrLt:'',refDist:'10',refTime:'',method:'auto',applyZone:'Z2',photo:''};}
+// cible de glucides du profil coureur : valeur de départ des nouveaux plans, applicable à un plan existant
+function carbsTarget(){
+  const v=parseFloat(String((state.profile&&state.profile.carbsH)||'').replace(',','.'));
+  return (isRunner()&&isFinite(v)&&v>=20&&v<=120)?Math.round(v):0;
+}
+function carbsApply(r,pf){
+  const t=carbsTarget();
+  if(!t)return pf.carbsH?'<p class="note" style="margin-top:14px">Ta cible de glucides doit être comprise entre 20 et 120 g/h pour être utilisée.</p>':'';
+  const cur=nutr(r,'carbs');
+  return '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"><p>Cible de glucides : <b class="t">'+t+' g/h</b>'+(cur===t?'. Elle est déjà appliquée à ce plan.':' (ce plan : '+cur+' g/h).')+'</p>'
+    +(cur===t?'':'<div class="row"><button class="btn" data-act="apply-carbs">Appliquer à ce plan</button></div>')+'</div>';
+}
+function carbsHint(r){
+  const t=carbsTarget();
+  if(!t||nutr(r,'carbs')===t)return '';
+  return '<p class="hint">Ta cible de coureur : <b class="t">'+t+' g/h</b> (ce plan : '+nutr(r,'carbs')+' g/h). <button class="btn quiet small" data-act="apply-carbs">Appliquer</button></p>';
+}
+function defaultProfile(){return {first:'',birth:'',hrMax:'',hrRest:'',hrLt:'',refDist:'10',refTime:'',method:'auto',applyZone:'Z2',carbsH:'',photo:''};}
 function effMethod(pf,maxEff){
   const lt=+pf.hrLt,rest=+pf.hrRest;
   const avail={lthr:lt>0,karvonen:maxEff>0&&rest>0&&rest<maxEff,pctmax:maxEff>0};
@@ -757,7 +765,7 @@ function parseOverpass(j,center){
     if(t.parking==='garage_boxes')return;
     const lat=e.lat!=null?+e.lat:(e.center?+e.center.lat:NaN),lon=e.lon!=null?+e.lon:(e.center?+e.center.lon:NaN);
     if(!isFinite(lat)||!isFinite(lon))return;
-    out.push({name:String(t.name||t['name:fr']||'').trim().slice(0,60),street:String(t['addr:street']||'').trim().slice(0,60),lat:Math.round(lat*1e6)/1e6,lon:Math.round(lon*1e6)/1e6,distM:Math.round(distM(center,{lat:lat,lon:lon})),fee:t.fee==='yes',capacity:parseInt(t.capacity,10)||null});
+    out.push({name:String(t.name||t['name:fr']||'').trim().slice(0,60),lat:Math.round(lat*1e6)/1e6,lon:Math.round(lon*1e6)/1e6,distM:Math.round(distM(center,{lat:lat,lon:lon})),fee:t.fee==='yes',capacity:parseInt(t.capacity,10)||null});
   });
   out.sort((x,y)=>x.distM-y.distM);
   const ded=[];out.forEach(c=>{if(!ded.some(d=>distM(d,c)<20))ded.push(c);});
@@ -766,7 +774,7 @@ function parseOverpass(j,center){
 // Repli si Overpass est injoignable : recherche « parking » de Nominatim dans un carré autour du ravito (l'accès privé n'est pas connu).
 function nominatimUrl(lat,lon,R){
   const dLat=R/111320,dLon=R/(111320*Math.max(0.2,Math.cos(lat*Math.PI/180)));
-  return 'https://nominatim.openstreetmap.org/search?format=jsonv2&q=parking&bounded=1&limit=40&addressdetails=1&accept-language=fr&viewbox='+(lon-dLon).toFixed(6)+','+(lat+dLat).toFixed(6)+','+(lon+dLon).toFixed(6)+','+(lat-dLat).toFixed(6);
+  return 'https://nominatim.openstreetmap.org/search?format=jsonv2&q=parking&bounded=1&limit=40&accept-language=fr&viewbox='+(lon-dLon).toFixed(6)+','+(lat+dLat).toFixed(6)+','+(lon+dLon).toFixed(6)+','+(lat-dLat).toFixed(6);
 }
 function parseNominatim(arr,center){
   const out=[];
@@ -774,7 +782,7 @@ function parseNominatim(arr,center){
     if((e.category||e.class)!=='amenity'||e.type!=='parking')return;
     const lat=parseFloat(e.lat),lon=parseFloat(e.lon);
     if(!isFinite(lat)||!isFinite(lon))return;
-    out.push({name:String(e.name||'').trim().slice(0,60),street:streetOf(e.address),lat:Math.round(lat*1e6)/1e6,lon:Math.round(lon*1e6)/1e6,distM:Math.round(distM(center,{lat:lat,lon:lon})),fee:false,capacity:null,src:'nominatim'});
+    out.push({name:String(e.name||'').trim().slice(0,60),lat:Math.round(lat*1e6)/1e6,lon:Math.round(lon*1e6)/1e6,distM:Math.round(distM(center,{lat:lat,lon:lon})),fee:false,capacity:null,src:'nominatim'});
   });
   out.sort((x,y)=>x.distM-y.distM);
   const ded=[];out.forEach(c=>{if(!ded.some(d=>distM(d,c)<20))ded.push(c);});
@@ -784,9 +792,7 @@ function parseNominatim(arr,center){
 // Un temps de marche seulement estimé (service indisponible) compte pour plus long : il ignore les détours réels.
 function walkKey(c){return c.est?c.walkMin*1.5+2:c.walkMin;}
 function pickParking(c){return c.slice().sort((x,y)=>(walkKey(x)-walkKey(y))||(x.distM-y.distM));}
-// Nom affiché : le nom OSM du parking, sinon « Parking » + la rue (ex. « Parking Route de Lure »), sinon « Parking sans nom ».
-function streetOf(a){a=a||{};return String(a.road||a.pedestrian||a.footway||a.path||a.square||a.place||a.hamlet||a.village||a.town||'').trim().slice(0,60);}
-function parkLabel(c){return ((c.name||(c.street?'Parking '+c.street:'Parking sans nom'))+(c.fee?' (payant)':'')).slice(0,80);}
+function parkLabel(c){return ((c.name||'Parking sans nom')+(c.fee?' (payant)':'')).slice(0,80);}
 // ---------- copilote : liste des stationnements à pied et liens de navigation ----------
 // Liens vers Google Maps et Waze (itinéraire en voiture). Coordonnées si on les a, sinon le texte saisi.
 function navUrls(lat,lon,text){
@@ -943,7 +949,7 @@ function chartW(){return Math.max(280,Math.min(1136,root.clientWidth||340));}
 // ---------- création de course ----------
 function newRace(profile,name,stations){
   const r={name:name||'Ma course',date:'',start:'06:00',target:'',stopMin:prefv('defStop'),finishBarrier:'',finishBarrierAuto:true,minSpeed:5.5,crewMargin:15,trackUrl:'',
-    carbs:prefv('defCarbs'),water:prefv('defWater'),sodium:400,gelG:prefv('defGel'),barG:30,gelShare:70,startAt:null,extras:{},done:{},
+    carbs:carbsTarget()||prefv('defCarbs'),water:prefv('defWater'),sodium:400,gelG:prefv('defGel'),barG:30,gelShare:70,startAt:null,extras:{},done:{},
     profile:profile,stations:(stations||[]).sort((a,b)=>a.km-b.km),points:{},diary:{rating:0,nutrition:'',learn:'',gear:''}};
   r.stations.forEach(x=>{if(x.barrierAuto===undefined)x.barrierAuto=!x.barrier;});
   autoTarget(r);applyAutoBarriers(r);return r;
@@ -996,13 +1002,6 @@ async function osmFindParking(o){
   }
   const c=parseOverpass(j,{lat:o.lat,lon:o.lon});geoSet(key,c);return c;
 }
-// Rue la plus proche d'un point (Nominatim, géocodage inverse), pour nommer les parkings qui n'ont pas de nom.
-async function osmStreet(o){
-  const key='rv:'+o.lat.toFixed(5)+','+o.lon.toFixed(5),hit=geoGet(key);
-  if(hit!==undefined&&hit!==null)return hit;
-  const j=await osmFetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=17&addressdetails=1&accept-language=fr&lat='+o.lat.toFixed(6)+'&lon='+o.lon.toFixed(6),{},15000);
-  const v=streetOf(j&&j.address);geoSet(key,v);return v;
-}
 async function osmTravelMin(o){
   const a=o.from,b=o.to,key='rt:'+o.mode+':'+a.lat.toFixed(5)+','+a.lon.toFixed(5)+'>'+b.lat.toFixed(5)+','+b.lon.toFixed(5),hit=geoGet(key);
   if(hit!==undefined&&hit!==null)return hit;
@@ -1013,10 +1012,9 @@ async function osmTravelMin(o){
 // Interface d'itinéraire : un fournisseur respecte ce contrat, le reste de l'appli n'a pas à changer.
 //   findParking({lat,lon,radiusM}) -> Promise<[{name,lat,lon,distM,fee}]>
 //   travelMin({from:{lat,lon},to:{lat,lon},mode:'drive'|'walk'}) -> Promise<minutes|null>
-//   streetName({lat,lon}) -> Promise<nom de rue|''> (facultatif)
 const ROUTE_PROVIDERS={
   manual:{id:'manual',label:'Saisie manuelle',auto:false},
-  osm:{id:'osm',label:'OpenStreetMap',auto:true,findParking:osmFindParking,travelMin:osmTravelMin,streetName:osmStreet}
+  osm:{id:'osm',label:'OpenStreetMap',auto:true,findParking:osmFindParking,travelMin:osmTravelMin}
 };
 function routeProvider(){return ROUTE_PROVIDERS[(state.prefs&&state.prefs.routeProvider)||'osm']||ROUTE_PROVIDERS.manual;}
 let crewRun={running:false,cancel:false,lines:[],err:'',diag:[]};
@@ -1075,15 +1073,6 @@ async function crewAuto(r,opts){
         if(!alive())break;
         const w=await safe(()=>prov.travelMin({from:c,to:ll,mode:'walk'}));
         if(w!=null){c.walkMin=w;c.est=false;}else{c.walkMin=estWalkMin(c.distM);c.est=true;}
-      }
-      if(!alive())break;
-      // Parkings sans nom : on cherche la rue (« Parking Route de Lure ») pour les 4 plus courts à pied.
-      // Un échec ici n'arrête pas la recherche : le parking reste « Parking sans nom ».
-      if(prov.streetName){
-        for(const c of pickParking(top).filter(c=>!c.name&&!c.street).slice(0,4)){
-          if(!alive())break;
-          try{const st=await prov.streetName({lat:c.lat,lon:c.lon});if(st)c.street=st;}catch(e){}
-        }
       }
       if(!alive())break;
       const list=buildParkList(top,20),best=pickParking(list)[0];
@@ -1303,7 +1292,15 @@ const FB={apiKey:'AIzaSyCUW5CSnC--LZeZTc7g7kPIYznm8R_PAg4',projectId:'rubalise'}
 const AUTH_KEY='rubalise:auth';
 let authState=null;try{authState=JSON.parse(localStorage.getItem(AUTH_KEY)||'null');}catch(e){}
 let syncing=false,resync=false,pushTimer=null;
-function setAuth(a){authState=a;try{localStorage.setItem(AUTH_KEY,JSON.stringify(a));}catch(e){}}
+function setAuth(a){
+  if(a&&!a.email){
+    try{
+      const st=JSON.parse(localStorage.getItem(AUTH_KEY)||'null');
+      if(st&&st.email){errLogAdd('Session anonyme refusée : un compte est déjà connecté','session');authState=st;return;}
+    }catch(e){}
+  }
+  authState=a;try{localStorage.setItem(AUTH_KEY,JSON.stringify(a));}catch(e){}
+}
 async function fetchJSON(url,opt){
   let res;
   try{res=await fetch(url,opt);}catch(e){const er=new Error('Pas de connexion à Firebase.');er.network=true;throw er;}
@@ -1330,10 +1327,12 @@ async function getToken(){
         const er=new Error('Connexion momentanément indisponible : réessaie dans un instant.');er.network=true;throw er;
       }
       const hadAccount=!!authState.email;
+      if(hadAccount){forceSignOut('refus du serveur : '+String(e.message).slice(0,40));const er=new Error('Ta session a expiré : reconnecte-toi.');er.expired=true;throw er;}
       setAuth(null);
-      if(hadAccount){const er=new Error('Ta session a expiré : reconnecte-toi.');er.expired=true;flash(er.message);throw er;}
     }
   }
+  // un compte connecté ne devient jamais une session anonyme en silence
+  if(authState&&authState.email){forceSignOut('jeton de renouvellement absent');const er=new Error('Ta session a expiré : reconnecte-toi.');er.expired=true;throw er;}
   const r=await fetchJSON('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+FB.apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({returnSecureToken:true})});
   setAuth({idToken:r.idToken,refreshToken:r.refreshToken,expiresAt:now+(+r.expiresIn)*1000,uid:r.localId});
   return authState.idToken;
@@ -1602,7 +1601,7 @@ function authErr(e){
   for(let i=0;i<map.length;i++)if(m.indexOf(map[i][0])>=0)return map[i][1];
   return m||'Erreur de connexion.';
 }
-function profileHasData(pf){return !!(pf&&(pf.first||pf.birth||pf.hrMax||pf.hrRest||pf.hrLt||pf.refTime||pf.photo));}
+function profileHasData(pf){return !!(pf&&(pf.first||pf.birth||pf.hrMax||pf.hrRest||pf.hrLt||pf.refTime||pf.carbsH||pf.photo));}
 function cacheProfile(){
   if(!isRunner())return;
   state.profiles=state.profiles||{};
@@ -1704,6 +1703,12 @@ function wipeAccountData(){
   setAuth(null);loginMode='in';state.profile=defaultProfile();state.profileDirty=false;state.profileErr='';exportText='';tab='plan';
   try{closePlans();}catch(e){}
 }
+function forceSignOut(reason){
+  errLogAdd('Session fermée : '+reason,'session');
+  wipeAccountData();commit();window.scrollTo(0,0);
+  flash('Ta session a expiré. Reconnecte-toi : tes plans reviendront.');
+}
+function deviceLinked(){const c=state.cloud||{};return !!(c.uid||Object.keys(c.synced||{}).length);}
 function finishSignOut(){
   wipeAccountData();commit();window.scrollTo(0,0);flash('Déconnecté. Tes plans restent dans ton compte.');
 }
@@ -1903,7 +1908,7 @@ function renderRunner(){
         +'<p style="margin-top:10px">Temps estimé, arrêts compris : <b class="t">'+fmtHM(est.total)+'</b> (allure plat '+fmtPace(est.basePace)+' /km).</p>'
         +'<div class="row"><button class="btn primary" data-act="apply-zone">Utiliser comme temps visé</button></div>'
         +'<p class="note">Pour une course longue, vise l’endurance (Z2). L’estimation tient compte de la pente du parcours.</p>'
-       :'<p class="note">Renseigne ta performance de référence ci-dessus pour estimer ton temps.</p>')+'</section>';
+       :'<p class="note">Renseigne ta performance de référence ci-dessus pour estimer ton temps.</p>')+carbsApply(r,pf)+'</section>';
   }
   return '<section class="empty"><h1>Espace coureur</h1><p class="lead">'+(pf.first?'Bonjour '+esc(pf.first)+'. ':'')+'Saisis tes données une fois : elles sont enregistrées dans ton compte.</p></section>'
   +'<section class="sec"><h2>Mes données</h2><p class="hint">Ces informations (dont ta photo et tes fréquences cardiaques), tes plans de course, ton carnet et tes préférences sont enregistrés dans ton compte, pour les retrouver sur un autre appareil. Tu peux les effacer à tout moment. <a href="'+legalUrl('confidentialite')+'" target="_blank" rel="noopener">Politique de confidentialité</a>.</p>'+photoBlock()
@@ -1916,6 +1921,9 @@ function renderRunner(){
   +'<div class="grid2"><label class="fld"><span>Distance</span><select class="in" data-p="refDist">'+[['5','5 km'],['10','10 km'],['21.0975','Semi-marathon'],['42.195','Marathon']].map(o=>'<option value="'+o[0]+'"'+(String(pf.refDist)===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>'
   +'<label class="fld"><span>Temps</span><input data-p="refTime" value="'+esc(pf.refTime)+'" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="45:00"></label></div>'
   +'<p class="hint" style="margin:6px 0 0">Format mm:ss ou h:mm:ss, par exemple 45:00 pour un 10 km.</p>'
+  +'<h3 style="margin-top:20px">Nutrition</h3>'
+  +'<div class="grid2"><label class="fld"><span>Cible de glucides (g/h), facultatif</span><input type="number" inputmode="numeric" min="20" max="120" data-p="carbsH" value="'+esc(pf.carbsH)+'" placeholder="ex. 60"></label></div>'
+  +'<p class="hint" style="margin:6px 0 0">Elle sert de valeur de départ à tes nouveaux plans, et tu peux l’appliquer à un plan existant plus bas. Repères courants : 30 à 60 g/h jusqu’à 2 h 30 d’effort, jusqu’à 90 g/h au-delà avec un mélange de glucose et de fructose, si ton ventre y est habitué. À tester à l’entraînement : ce n’est pas un avis médical.</p>'
   +'<div class="row"><button class="btn" data-act="save-profile">Enregistrer dans mon compte</button></div>'
   +'<p class="note" id="profstat">'+esc(profStatText())+'</p></section>'
   +'<section class="sec"><h2>Zones de fréquence cardiaque</h2>'+hr+'</section>'
@@ -1977,7 +1985,7 @@ function renderPrefs(){
   +'<section class="sec"><h2>Apparence</h2><div class="rating" role="group" aria-label="Thème">'
   +[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(o=>'<button data-act="set-theme" data-v="'+o[0]+'" aria-pressed="'+(p.theme===o[0])+'" style="font-size:16px">'+o[1]+'</button>').join('')+'</div>'
   +'<p class="note">« Automatique » suit le réglage clair ou sombre de ton téléphone.</p></section>'
-  +'<section class="sec"><h2>Nouvelle course</h2><p class="note">Valeurs proposées quand tu crées un plan. Tu peux les modifier course par course.</p>'
+  +'<section class="sec"><h2>Nouvelle course</h2><p class="note">Valeurs proposées quand tu crées un plan. Tu peux les modifier course par course. Si tu as une cible de glucides dans ton profil coureur, elle passe avant celle-ci.</p>'
   +'<div class="grid2">'+fld('Arrêt moyen par ravito (min)','defStop')+fld('Glucides (g/h)','defCarbs')+fld('Eau (ml/h)','defWater')+fld('Un gel (g)','defGel')+'</div></section>';
 }
 // ---------- bêta : avis, infos techniques, mentions ----------
@@ -2028,7 +2036,7 @@ function renderHelp(){
   +'<details><summary>Vue horizontale du profil</summary><p>Sur le Plan ou En course, appuie sur « Vue horizontale », puis sur un point numéroté du profil : tu vois le nom du ravito, l’heure d’arrivée prévue et le matériel à prévoir, avec un lien pour le modifier. Le bouton « 3D » remplace le profil par un tracé en relief : fais-le tourner du doigt, pince pour zoomer.</p></details>'
   +'<details><summary>Zones d’allure et de fréquence cardiaque</summary><p>Elles sont calculées dans l’espace coureur à partir de ta performance de référence (indice de forme de Daniels) et de tes fréquences cardiaques (réserve cardiaque de Karvonen, pourcentage de la FC max ou FC de seuil). Les allures sont données sur terrain plat.</p></details>'
   +'<details><summary>Mises à jour et hors connexion</summary><p>Rubalise installée depuis le navigateur se met à jour toute seule quand tu l’ouvres avec du réseau. Si un bandeau « Une nouvelle version est prête » apparaît, appuie sur « Recharger ». Sans réseau, tes plans et tes heures de passage restent utilisables. Appli Android (APK) : installe le nouveau fichier par-dessus l’ancien, tes données sont conservées.</p></details>'
-  +'<details><summary>Sauvegarder mes données</summary><p>Connecté, tes plans sont enregistrés dans ton compte : tu les retrouves sur ton ordinateur comme sur ton téléphone. Quand tu te déconnectes, plans, carnet et profil sont retirés de l’appareil et reviennent à ta prochaine connexion. Sans compte, ils restent sur cet appareil : si tu effaces les données du navigateur ou désinstalles l’appli, ils sont perdus. Pour en garder une copie : onglet Assistance, « Copier le code du plan » (à coller dans un message), ou « Exporter mes données » dans les paramètres du compte.</p></details>'
+  +'<details><summary>Sauvegarder mes données</summary><p>Connecté, tes plans sont enregistrés dans ton compte : tu les retrouves sur ton ordinateur comme sur ton téléphone. Quand tu te déconnectes, ou que ta session se ferme, plans, carnet et profil sont retirés de l’appareil et reviennent à ta prochaine connexion. Sans compte, ils restent sur cet appareil : si tu effaces les données du navigateur ou désinstalles l’appli, ils sont perdus. Pour en garder une copie : onglet Assistance, « Copier le code du plan » (à coller dans un message), ou « Exporter mes données » dans les paramètres du compte.</p></details>'
   +'<details><summary>Mini-lexique</summary><p><b>Ravito</b> : point de ravitaillement sur le parcours.</p><p><b>Barrière horaire</b> : heure limite pour passer à un point. La marge indique l’avance que tu as sur cette limite.</p><p><b>Pointer</b> : noter l’heure à laquelle le coureur passe à un ravito.</p><p><b>D+ / D−</b> : dénivelé positif (montée) et négatif (descente) cumulés.</p><p><b>Zone d’allure</b> : plage de vitesse adaptée à un type d’effort, calculée à partir de ta performance de référence.</p></details>'
   +'<details><summary>À propos</summary><p>Rubalise, version '+APP_VERSION+' (bêta)'+(window.__swVersion?', cache hors connexion '+window.__swVersion:'')+'. Environnement : '+(isNativeApp()?'application Android':'navigateur')+(testMode()?', mode test':'')+'. Les heures de passage sont des estimations : elles ne remplacent ni ton expérience, ni les barrières horaires officielles de l’organisateur, à vérifier avant le départ. Les zones d’allure, les zones de fréquence cardiaque, la nutrition et le départ conseillé sont indicatifs : ils ne remplacent pas l’avis d’un médecin et ne doivent pas servir à ta sécurité en course.</p><p class="note" id="offstat">Hors connexion : vérification…</p></details>'
   +'<p class="note legal-links">'+legalLinks()+'</p></section>';
@@ -2319,7 +2327,7 @@ function resetPlanNow(){
   const r=state.race;if(!r)return;
   if(r.sync){Object.keys(r.points||{}).forEach(id=>queuePoint(r,id,null));}
   clearFix(r);r.trackUrl='';
-  r.date='';r.start='06:00';r.stopMin=prefv('defStop');r.finishBarrier='';r.finishBarrierAuto=true;r.minSpeed=5.5;r.carbs=prefv('defCarbs');r.water=prefv('defWater');r.sodium=400;r.gelG=prefv('defGel');r.barG=30;r.gelShare=70;r.startAt=null;
+  r.date='';r.start='06:00';r.stopMin=prefv('defStop');r.finishBarrier='';r.finishBarrierAuto=true;r.minSpeed=5.5;r.carbs=carbsTarget()||prefv('defCarbs');r.water=prefv('defWater');r.sodium=400;r.gelG=prefv('defGel');r.barG=30;r.gelShare=70;r.startAt=null;
   r.stations=[];r.points={};r.diary={rating:0,nutrition:'',learn:'',gear:''};autoTarget(r);applyAutoBarriers(r);
   commit();syncSoon();flash('Plan réinitialisé. Le tracé GPX est conservé.');
 }
@@ -2980,7 +2988,7 @@ function renderPlan(){
   +'<div class="stn-times"><span>Arrivée '+clk(fin.adjArr)+'</span>'+(fin.margin!=null?'<span class="'+mcls(fin.margin)+'">Marge sur la barrière '+mfmt(fin.margin)+'</span>':'')+'</div></li></ul>'
   +'<button class="btn" data-act="add-station">Ajouter un ravitaillement</button></section>'
 
-  +'<section class="sec" id="sec-nutrition"><h2>Nutrition</h2><p class="hint">Ce que tu dois avoir sur toi ou en main de ton assistance, tronçon par tronçon. Un tronçon va d’un point accessible à l’assistance au suivant : les ravitos sans accès y sont inclus.</p>'
+  +'<section class="sec" id="sec-nutrition"><h2>Nutrition</h2><p class="hint">Ce que tu dois avoir sur toi ou en main de ton assistance, tronçon par tronçon. Un tronçon va d’un point accessible à l’assistance au suivant : les ravitos sans accès y sont inclus.</p>'+carbsHint(r)
   +'<div class="grid3"><label class="fld"><span>Glucides (g/h)</span><input type="number" inputmode="numeric" min="0" data-r="carbs" data-num value="'+r.carbs+'"></label>'
   +'<label class="fld"><span>Eau (ml/h)</span><input type="number" inputmode="numeric" min="0" step="50" data-r="water" data-num value="'+r.water+'"></label>'
   +'<label class="fld"><span>Sodium (mg/h)</span><input type="number" inputmode="numeric" min="0" step="50" data-r="sodium" data-num value="'+nutr(r,'sodium')+'"></label></div>'
@@ -3248,6 +3256,10 @@ async function refreshOfflineStat(){
   const e2=document.getElementById('offstat');if(e2)e2.textContent=t;
 }
 function render(top){
+  if(!isRunner()&&deviceLinked()){
+    errLogAdd('Appareil lié à un compte sans session : données du compte retirées','session');
+    wipeAccountData();save();flash('Tu n’es pas connecté : tes plans sont dans ton compte. Connecte-toi pour les retrouver.');
+  }
   document.body.classList.toggle('welcome',tab==='welcome');
   document.body.classList.toggle('wide-plan',tab==='plan'&&!!state.race);
   document.querySelectorAll('.tabbtn').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false'));
@@ -3352,6 +3364,12 @@ function act(b){
     const rr=state.race,est=zoneEstimate(state.profile,rr);
     if(!rr||!est){flash('Renseigne ta performance de référence.');return;}
     rr.target=fmtHM(est.total);commit();flash('Temps visé mis à jour : '+rr.target+'.');return;
+  }
+  if(a==='apply-carbs'){
+    const rr=state.race,t=carbsTarget();
+    if(!rr||!t){flash('Renseigne ta cible de glucides dans ton profil coureur.');return;}
+    if(rr.sync&&rr.sync.role==='member')return;
+    rr.carbs=t;commit();flash('Cible appliquée : '+t+' g/h.');return;
   }
   if(a==='sync-test'){flash('Test de connexion…');getToken().then(()=>flash('Connexion Firebase OK.')).catch(e=>flash(fbErr(e)));return;}
   if(a==='del-journal'){state.journal=(state.journal||[]).filter(x=>x.id!==b.dataset.id);state.journalDel=(state.journalDel||[]).concat(String(b.dataset.id)).slice(-200);commit();return;}
@@ -3630,6 +3648,15 @@ document.addEventListener('pointermove',e=>{
   tip.style.top=Math.round(py-hh-14>=28?py-hh-14:py+16)+'px';
   pfShown=sv;
 },{passive:true});
+// plusieurs onglets : la connexion ou la déconnexion faite dans l'un s'applique à tous
+window.addEventListener('storage',e=>{
+  if(e.key!==AUTH_KEY)return;
+  let n=null;try{n=e.newValue?JSON.parse(e.newValue):null;}catch(x){}
+  const had=!!(authState&&authState.email),has=!!(n&&n.email);
+  if(had&&!has){authState=n;errLogAdd('Déconnexion faite dans un autre onglet','session');wipeAccountData();commit();flash('Tu as été déconnecté dans un autre onglet.');}
+  else if(has&&(!had||n.uid!==authState.uid)){location.reload();}
+  else if(n)authState=n;
+});
 window.addEventListener('orientationchange',()=>setTimeout(renderLand,250));
 window.addEventListener('resize',()=>{if(landOpen)renderLand();if(menuOpen)closeMenu();if(tourOn)positionTour();});
 let rz=null,lastW=0;
