@@ -32,7 +32,7 @@ Tu n'as pas besoin d'installer Android Studio : GitHub compile l'APK pour toi.
    (les dossiers `www`, `assets`, `.github` et les fichiers `package.json`, `capacitor.config.json`, etc.).
    Valide avec **Commit changes**.
    - Si le dossier caché `.github` n'a pas été envoyé : **Add file, puis Create new file**,
-     tape le nom `.github/workflows/build-apk.yml` et colle le contenu du fichier `build-apk.yml.txt`.
+     tape le nom `.github/workflows/build-apk.yml` et colle le contenu de ce fichier.
 3. Ouvre l'onglet **Actions**. Si GitHub le demande, active les workflows.
    Choisis **Build APK**, puis **Run workflow**.
 4. Attends 5 à 10 minutes. Quand la ligne devient verte, ouvre-la et télécharge
@@ -314,3 +314,8 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 ## Version 0.1 : lancement de la bêta
 - La numérotation repart de 0.1 pour le lancement de la bêta. Le contenu est celui de l'ancienne 2.14 : déconnexion qui vide l'appareil, mise en conformité légale, accessibilité.
 - Le nom du cache hors connexion change (`0.1-…`) : les appareils déjà installés se mettent à jour tout seuls et effacent l'ancien cache.
+
+## Entretien du dépôt
+- `/.well-known/security.txt` publié (il était resté dans un zip).
+- APK : modules de localisation retirés (`package.json`, `native-src/native.js`), qui ne servaient plus depuis la 2.3.
+- Fichiers inutiles supprimés : dossier `docs/`, `www/sw.js.txt`, `build-apk.yml.txt`, `rubalise-ajout-securite.zip`.

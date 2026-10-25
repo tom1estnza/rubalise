@@ -1,0 +1,6 @@
+# Pour signaler une faille de sécurité dans Rubalise, écris à l'adresse ci-dessous.
+# To report a security vulnerability in Rubalise, write to the address below.
+Contact: mailto:contact@rubalise.run
+Expires: 2027-10-15T00:00:00.000Z
+Preferred-Languages: fr, en
+Canonical: https://rubalise.run/.well-known/security.txt

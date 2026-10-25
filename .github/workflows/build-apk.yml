@@ -26,7 +26,7 @@ jobs:
       - name: Retirer la politique de sécurité du contenu (réservée au site web)
         run: sed -i '/http-equiv="Content-Security-Policy"/d' www/index.html
 
-      - name: Assembler le pont natif (localisation, connexion Google)
+      - name: Assembler le pont natif (notifications, connexion Google)
         continue-on-error: true
         run: npx esbuild native-src/native.js --bundle --minify --format=iife --outfile=www/native.js
 
