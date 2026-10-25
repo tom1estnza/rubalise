@@ -61,7 +61,7 @@ Remarques :
 
 1. Sur GitHub, ouvre le dossier **`www`** du dépôt.
 2. **Add file, puis Upload files**, glisse le nouveau `index.html` dans la page, puis **Commit changes**.
-   Il remplace l'ancien. La compilation de l'APK redémarre toute seule (onglet **Actions**).
+   Il remplace l'ancien. Pour obtenir un nouvel APK, lance la compilation à la main : onglet **Actions**, **Build APK**, **Run workflow**.
 3. Télécharge le nouvel APK et installe-le **par-dessus** l'ancien : tes données sont conservées.
 
 ## Suivi en direct (Firebase)
@@ -319,3 +319,4 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - `/.well-known/security.txt` publié (il était resté dans un zip).
 - APK : modules de localisation retirés (`package.json`, `native-src/native.js`), qui ne servaient plus depuis la 2.3.
 - Fichiers inutiles supprimés : dossier `docs/`, `www/sw.js.txt`, `build-apk.yml.txt`, `rubalise-ajout-securite.zip`.
+- L'APK n'est plus compilé à chaque envoi : seulement à la demande (Actions, Build APK, Run workflow).

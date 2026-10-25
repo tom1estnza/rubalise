@@ -1,9 +1,8 @@
 name: Build APK
 
 on:
+  # Compilation à la demande seulement (onglet Actions, « Run workflow »), plus à chaque envoi.
   workflow_dispatch:
-  push:
-    branches: [main, master]
 
 jobs:
   build:
