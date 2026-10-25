@@ -1,11 +1,11 @@
 // Rubalise : hors connexion et mises à jour.
 // VERSION change à chaque livraison (version de l'appli + empreinte de index.html) : c'est ce qui fait arriver
 // les mises à jour chez les testeurs. Ne la modifie pas à la main.
-const VERSION = '0.1-41e7ea9d';
+const VERSION = '0.1-bfea4165';
 const CACHE = 'rubalise-' + VERSION;
 const FONTS = 'rubalise-fonts';   // polices : gardées d'une version à l'autre
 const CORE = ['./', 'index.html', 'manifest.webmanifest'];   // indispensables : sans eux, la nouvelle version n'est pas installée
-const EXTRA = ['icon-192.png', 'icon-512.png', 'icon-maskable-192.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'icon-32.png', 'native.js'];   // si possible
+const EXTRA = ['icon-192.png', 'icon-512.png', 'icon-maskable-192.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'icon-32.png', 'native.js', 'rm-motion.js'];   // si possible
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
