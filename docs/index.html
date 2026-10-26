@@ -2,11 +2,12 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rubalise · la bêta ouvre bientôt</title>
 <meta name="description" content="Rubalise aide à préparer une course de trail et à la suivre en direct. La bêta ouvre bientôt.">
 <link rel="canonical" href="https://rubalise.run/">
-<meta name="theme-color" content="#10312B">
+<meta name="theme-color" content="#EDF2EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D1F1B" media="(prefers-color-scheme: dark)">
 <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:type" content="website">
@@ -16,45 +17,127 @@
 <meta property="og:description" content="Rubalise aide à préparer une course de trail et à la suivre en direct. La bêta ouvre bientôt.">
 <meta property="og:url" content="https://rubalise.run/">
 <meta property="og:image" content="https://rubalise.run/icon-512.png">
+<script>
+// Masque les blocs avant leur apparition animée, seulement si l'animation est permise ; filet de sécurité à 2,5 s.
+if (window.matchMedia && matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+  document.documentElement.classList.add('anim');
+  setTimeout(function () { document.documentElement.classList.remove('anim'); }, 2500);
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600;700&display=swap">
 <style>
-:root{--bg:#EDF2EE;--ink:#10312B;--ink2:#4A625C;--line:#C7D5CE;--accent:#1E6F8E;--accent-ink:#FFFFFF;--live:#C2125F;color-scheme:light dark}
-@media (prefers-color-scheme:dark){:root{--bg:#0D1F1B;--ink:#E5F0EB;--ink2:#9CB5AC;--line:#294640;--accent:#6CC0E0;--accent-ink:#0D1F1B;--live:#FF6BB0}}
+:root{
+  --bg:#EDF2EE;--ink:#10312B;--ink2:#4A625C;--line:#C7D5CE;--surface:rgba(250,251,250,.78);
+  --accent:#1E6F8E;--accent-ink:#FFFFFF;--live:#C2125F;--topo:16,49,43;--topo-a:.17;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-head:"Barlow Semi Condensed","Barlow",system-ui,sans-serif;
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0D1F1B;--ink:#E5F0EB;--ink2:#9CB5AC;--line:#294640;--surface:rgba(19,48,42,.74);
+  --accent:#6CC0E0;--accent-ink:#0D1F1B;--live:#FF6BB0;--topo:156,205,188;--topo-a:.16;
+}}
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
-main{flex:1;display:flex;flex-direction:column;justify-content:center;max-width:640px;width:100%;margin:0 auto;padding:48px 24px 24px}
-.brand{display:flex;align-items:center;gap:12px;margin:0 0 36px;font-weight:700;font-size:22px;letter-spacing:.01em}
-.tape{display:inline-block;width:36px;height:14px;border-radius:2px;border:1px solid var(--live);background:repeating-linear-gradient(135deg,var(--live) 0 7px,var(--bg) 7px 14px)}
-.pill{font-size:13px;font-weight:600;color:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
-h1{margin:0 0 16px;font-size:clamp(34px,8vw,56px);line-height:1.05;letter-spacing:-.01em}
-.lead{margin:0 0 12px;font-size:clamp(18px,3.4vw,21px);max-width:34em}
+body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font:17px/1.55 var(--f-body)}
+
+/* Fond topographique (inspiré du composant « Topography Background » de 21st.dev) */
+#topo{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.veil{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 60% 70% at 50% 45%,var(--bg) 30%,transparent 100%);opacity:.9}
+
+main,footer{position:relative;z-index:1}
+main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:28px;width:100%;max-width:680px;margin:0 auto;padding:56px 20px 32px}
+
+/* Logo : le nom posé sur une rubalise */
+.logo{display:inline-flex;flex-direction:column;align-items:stretch;gap:8px;margin:0;font:700 30px/1 var(--f-head);letter-spacing:.01em}
+.tape{display:block;height:11px;border-radius:3px;border:2px solid var(--live);background:repeating-linear-gradient(135deg,var(--live) 0 9px,var(--bg) 9px 18px);background-size:25.46px 100%}
+.pill{display:inline-flex;align-items:center;gap:8px;font:600 13px/1 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--live);border:1.5px solid currentColor;border-radius:999px;padding:6px 12px}
+.pill .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+
+.hero{display:flex;flex-direction:column;align-items:center;gap:14px}
+h1{margin:0;font:700 clamp(40px,9vw,68px)/1.02 var(--f-head);letter-spacing:-.01em;text-wrap:balance}
+.lead{margin:0;max-width:30em;font-size:clamp(18px,3.2vw,20px);color:var(--ink);text-wrap:pretty}
 .mute{margin:0;color:var(--ink2)}
-a{color:var(--accent)}
-a:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 45%,transparent);border-radius:4px}
-.join{margin:28px 0 0}
-.btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:12px 24px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:18px;text-decoration:none}
-.btn:hover{filter:brightness(1.06)}
+
+/* Ce que fait Rubalise */
+.feats{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%}
+.feat{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;border:1px solid var(--line);border-radius:14px;background:var(--surface);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.feat svg{width:24px;height:24px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.feat b{font:600 17px/1.2 var(--f-head)}
+.feat span{font-size:14px;line-height:1.35;color:var(--ink2)}
+
+/* Appel à l'action */
+.join{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:12px 24px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font:600 18px/1.2 var(--f-body);text-decoration:none;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,filter .18s ease}
+.btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .18s ease}
+.btn:hover{filter:brightness(1.06);box-shadow:0 8px 22px -10px var(--accent)}
+.btn:hover svg{transform:translateX(3px)}
+.btn:active{transform:scale(.98)}
 .btn:focus-visible{outline:none;box-shadow:0 0 0 3px var(--bg),0 0 0 6px var(--accent)}
-.small{margin:10px 0 0;font-size:14px;color:var(--ink2);max-width:34em}
-.rule{height:1px;background:var(--line);border:0;margin:32px 0 20px}
-footer{max-width:640px;width:100%;margin:0 auto;padding:0 24px 28px;color:var(--ink2);font-size:14px}
-@media (prefers-reduced-motion:no-preference){main{animation:in .5s ease-out both}@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}}
+.small{margin:0;max-width:32em;font-size:14px;color:var(--ink2)}
+
+a{color:var(--accent);text-underline-offset:3px}
+a:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 45%,transparent);border-radius:4px}
+footer{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;width:100%;max-width:680px;margin:0 auto;padding:0 20px max(24px,env(safe-area-inset-bottom));font-size:14px;color:var(--ink2)}
+
+@media (max-width:560px){
+  main{gap:24px;padding-top:40px}
+  .feats{grid-template-columns:1fr}
+  .feat{flex-direction:row;text-align:left;gap:14px;padding:14px 16px}
+  .feat div{display:flex;flex-direction:column;gap:2px}
+  .btn{width:100%}
+}
+@media (min-width:561px){.feat div{display:flex;flex-direction:column;gap:4px}}
+
+/* Apparition : masqué seulement si le script d'animation tourne (classe posée par le script) */
+.anim [data-reveal]{opacity:0}
+@media (prefers-reduced-motion:no-preference){
+  .tape{animation:march 1.6s linear infinite}
+  @keyframes march{to{background-position:25.46px 0}}
+}
 </style>
 </head>
 <body>
+<canvas id="topo" aria-hidden="true"></canvas>
+<div class="veil" aria-hidden="true"></div>
+
 <main>
-<p class="brand"><span class="tape" aria-hidden="true"></span><span>Rubalise</span><span class="pill">BÊTA</span></p>
-<h1>La bêta ouvre bientôt.</h1>
-<p class="lead">Rubalise t’aide à préparer ta course de trail, avec les heures de passage à chaque ravito, et à la suivre en direct.</p>
-<p class="lead">Le site n’est pas encore ouvert. Reviens très bientôt.</p>
-<div class="join">
-<p class="lead">Rejoins la communauté des testeurs pour être prévenu de l’ouverture.</p>
-<a class="btn" href="https://chat.whatsapp.com/IRDZRjCw5mCBZpoBB4ALiD" target="_blank" rel="noopener noreferrer">Rejoindre la communauté WhatsApp</a>
-<p class="small">WhatsApp peut montrer ton nom et ton numéro aux autres membres. Ne publie pas de données personnelles ni de santé.</p>
-</div>
-<hr class="rule">
-<p class="mute">Une question ? Écris à <a href="mailto:contact@rubalise.run">contact@rubalise.run</a>.</p>
+  <div class="hero">
+    <p class="logo" data-reveal><span>Rubalise</span><span class="tape" aria-hidden="true"></span></p>
+    <p class="pill" data-reveal><span class="dot" aria-hidden="true"></span>Bêta en préparation</p>
+    <h1 data-reveal>La bêta ouvre bientôt.</h1>
+    <p class="lead" data-reveal>Rubalise t’aide à préparer ta course de trail, avec les heures de passage à chaque ravito, et à la suivre en direct.</p>
+  </div>
+
+  <ul class="feats" aria-label="Ce que fait Rubalise">
+    <li class="feat" data-reveal>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <div><b>Heures de passage</b><span>Calculées pour chaque ravito à partir de ton GPX.</span></div>
+    </li>
+    <li class="feat" data-reveal>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>
+      <div><b>Nutrition</b><span>Glucides, eau et gels, ravito par ravito.</span></div>
+    </li>
+    <li class="feat" data-reveal>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4M7.8 16.2a6 6 0 0 1 0-8.4M19 5a10 10 0 0 1 0 14M5 19A10 10 0 0 1 5 5"/></svg>
+      <div><b>Suivi en direct</b><span>Ton assistance te suit avec un simple code.</span></div>
+    </li>
+  </ul>
+
+  <div class="join" data-reveal>
+    <p class="lead">Rejoins la communauté des testeurs pour être prévenu de l’ouverture.</p>
+    <a class="btn" href="https://chat.whatsapp.com/IRDZRjCw5mCBZpoBB4ALiD" target="_blank" rel="noopener noreferrer">Rejoindre la communauté WhatsApp<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    <p class="small">WhatsApp peut montrer ton nom et ton numéro aux autres membres. Ne publie pas de données personnelles ni de santé.</p>
+  </div>
+
+  <p class="mute" data-reveal>Une question ? Écris à <a href="mailto:contact@rubalise.run">contact@rubalise.run</a>.</p>
 </main>
+
 <footer><a href="/mentions-legales.html">Mentions légales</a></footer>
+
+<script src="rm-motion.js"></script>
+<script src="topo.js"></script>
 </body>
 </html>
