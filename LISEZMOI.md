@@ -327,6 +327,14 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - **Ravitos** : « Accès pour l'assistance » et « Accessible au public » côte à côte.
 - **Retirés** : la course démo, les phrases d'explication sous les titres et dans les formulaires, et les bulles de confirmation. Les bulles restent pour les erreurs et ce qui demande une action (temps visé manquant, lien invalide, autorisations…).
 
+## Recherche des stationnements revue
+- Nominatim en premier (réponse en moins d'une seconde, avec l'accès, le prix, le type et la rue). Overpass en secours : mesuré à 34 s pour overpass-api.de, sans réponse en 40 s pour kumi.systems et private.coffee (26/10/2026).
+- Parkings écartés : privés, clients, riverains, personnel, livraisons, autorisation, services publics (agricole, forestier, militaire, secours, officiel), boxes et carports. Avant, le service de secours ne filtrait rien.
+- Parking sans nom : « Parking, <rue> » (rue de l'adresse OpenStreetMap), sinon « Parking sans nom ».
+- Overpass ne coupe plus la liste à 60 parkings (la coupure se faisait par identifiant, pas par distance).
+- Cache des recherches renouvelé (préfixe `pk2:`) : les anciens résultats ne sont plus réutilisés.
+- Liste : les 5 stationnements les plus proches à pied (à moins de 20 min), du plus proche au plus loin, avec le temps et la distance de marche réels (OSRM à pied). Le premier est celui retenu.
+
 ## Carte Garmin LiveTrack dans l'appli
 - Quand le coureur colle un lien `https://livetrack.garmin.com/session/…`, la carte Garmin s'affiche dans Assistance (« Suivi de la montre ») et dans En course (« Position du coureur »). Elle ne se recharge pas quand l'appli se met à jour ou qu'on change d'onglet.
 - Coros et les liens courts `gar.mn` refusent l'affichage dans une autre appli : ils restent un bouton qui ouvre le navigateur.

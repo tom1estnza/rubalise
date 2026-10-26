@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-gSQQa0p5VIho9OOi1yQCWPlv48xFeF8b678VZRfPiO8=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-RnV/Qj/89XHQwOfMRjqxDq6oiYgoKQqbZDzlyvC2rgs=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -850,6 +850,12 @@ function distM(a,b){
 function pointAtKm(p,km){return {lat:interp(p.d,p.la,km),lon:interp(p.d,p.lo,km)};}
 // Marche : 4,5 km/h (75 m/min) avec un détour de 30 % quand on n'a que la distance à vol d'oiseau.
 function estWalkMin(m){return Math.max(1,Math.round(m*1.3/75));}
+// Distance de l'itinéraire OSRM, en mètres (marche réelle par les chemins et les rues)
+function osrmMeters(j){
+  if(!j||j.code!=='Ok'||!Array.isArray(j.routes)||!j.routes.length)return null;
+  const d=+j.routes[0].distance;
+  return (isFinite(d)&&d>=0)?Math.round(d):null;
+}
 function osrmMinutes(j){
   if(!j||j.code!=='Ok'||!Array.isArray(j.routes)||!j.routes.length)return null;
   const d=+j.routes[0].duration;
@@ -861,35 +867,49 @@ function osrmUrl(mode,a,b){
 }
 function overpassQuery(lat,lon,R){
   const a='(around:'+Math.round(R)+','+lat.toFixed(6)+','+lon.toFixed(6)+')';
-  return '[out:json][timeout:20];(node["amenity"="parking"]'+a+';way["amenity"="parking"]'+a+';relation["amenity"="parking"]'+a+';);out center 60;';
+  return '[out:json][timeout:20];(node["amenity"="parking"]'+a+';way["amenity"="parking"]'+a+';relation["amenity"="parking"]'+a+';);out center tags;';
 }
-// Réponse Overpass -> parkings utilisables, du plus proche au plus loin (sans les parkings privés, doublons fusionnés)
+// Parkings réservés : privés, clients d'un commerce, riverains, personnel, livraisons, services publics… On les écarte.
+const PARK_CLOSED=['private','no','customers','permit','delivery','residents','employees','staff','agricultural','forestry','military','emergency','official'];
+function parkClosed(t){
+  t=t||{};
+  if(['access','vehicle','motor_vehicle','motorcar'].some(k=>PARK_CLOSED.indexOf(String(t[k]||'').toLowerCase())>=0))return true;
+  return t.parking==='garage_boxes'||t.parking==='carports';
+}
+// Nom affiché : le nom du parking, sinon la rue où il se trouve (« Parking, rue … »), sinon « Parking sans nom ».
+function parkName(name,street){
+  name=String(name||'').trim();street=String(street||'').trim();
+  return (name||(street?'Parking, '+street:'')).slice(0,60);
+}
+// Réponse Overpass -> parkings utilisables, du plus proche au plus loin (sans les parkings réservés, doublons fusionnés)
 function parseOverpass(j,center){
   const els=(j&&Array.isArray(j.elements))?j.elements:[],out=[];
   els.forEach(e=>{
-    const t=e.tags||{},acc=String(t.access||'').toLowerCase();
-    if(['private','no','customers','permit','delivery'].indexOf(acc)>=0)return;
-    if(t.parking==='garage_boxes')return;
+    const t=e.tags||{};
+    if(parkClosed(t))return;
     const lat=e.lat!=null?+e.lat:(e.center?+e.center.lat:NaN),lon=e.lon!=null?+e.lon:(e.center?+e.center.lon:NaN);
     if(!isFinite(lat)||!isFinite(lon))return;
-    out.push({name:String(t.name||t['name:fr']||'').trim().slice(0,60),lat:Math.round(lat*1e6)/1e6,lon:Math.round(lon*1e6)/1e6,distM:Math.round(distM(center,{lat:lat,lon:lon})),fee:t.fee==='yes',capacity:parseInt(t.capacity,10)||null});
+    out.push({name:parkName(t.name||t['name:fr'],t['addr:street']),lat:Math.round(lat*1e6)/1e6,lon:Math.round(lon*1e6)/1e6,distM:Math.round(distM(center,{lat:lat,lon:lon})),fee:t.fee==='yes',capacity:parseInt(t.capacity,10)||null});
   });
   out.sort((x,y)=>x.distM-y.distM);
   const ded=[];out.forEach(c=>{if(!ded.some(d=>distM(d,c)<20))ded.push(c);});
   return ded;
 }
-// Repli si Overpass est injoignable : recherche « parking » de Nominatim dans un carré autour du ravito (l'accès privé n'est pas connu).
+// Recherche principale : « parking » dans Nominatim, dans un carré autour du ravito. Rapide (moins d'une seconde), avec les
+// étiquettes OpenStreetMap (accès, payant, type) et l'adresse, qui sert à nommer les parkings sans nom par leur rue.
 function nominatimUrl(lat,lon,R){
   const dLat=R/111320,dLon=R/(111320*Math.max(0.2,Math.cos(lat*Math.PI/180)));
-  return 'https://nominatim.openstreetmap.org/search?format=jsonv2&q=parking&bounded=1&limit=40&accept-language=fr&viewbox='+(lon-dLon).toFixed(6)+','+(lat+dLat).toFixed(6)+','+(lon+dLon).toFixed(6)+','+(lat-dLat).toFixed(6);
+  return 'https://nominatim.openstreetmap.org/search?format=jsonv2&q=parking&bounded=1&limit=40&extratags=1&addressdetails=1&accept-language=fr&viewbox='+(lon-dLon).toFixed(6)+','+(lat+dLat).toFixed(6)+','+(lon+dLon).toFixed(6)+','+(lat-dLat).toFixed(6);
 }
 function parseNominatim(arr,center){
   const out=[];
   (Array.isArray(arr)?arr:[]).forEach(e=>{
     if((e.category||e.class)!=='amenity'||e.type!=='parking')return;
+    const t=e.extratags||{},a=e.address||{};
+    if(parkClosed(t))return;
     const lat=parseFloat(e.lat),lon=parseFloat(e.lon);
     if(!isFinite(lat)||!isFinite(lon))return;
-    out.push({name:String(e.name||'').trim().slice(0,60),lat:Math.round(lat*1e6)/1e6,lon:Math.round(lon*1e6)/1e6,distM:Math.round(distM(center,{lat:lat,lon:lon})),fee:false,capacity:null,src:'nominatim'});
+    out.push({name:parkName(e.name,a.road||a.pedestrian||a.square||t['addr:street']),lat:Math.round(lat*1e6)/1e6,lon:Math.round(lon*1e6)/1e6,distM:Math.round(distM(center,{lat:lat,lon:lon})),fee:t.fee==='yes',capacity:parseInt(t.capacity,10)||null,src:'nominatim'});
   });
   out.sort((x,y)=>x.distM-y.distM);
   const ded=[];out.forEach(c=>{if(!ded.some(d=>distM(d,c)<20))ded.push(c);});
@@ -898,7 +918,14 @@ function parseNominatim(arr,center){
 // Classe des parkings déjà munis d'un temps de marche (walkMin) : le plus court d'abord, puis le plus proche.
 // Un temps de marche seulement estimé (service indisponible) compte pour plus long : il ignore les détours réels.
 function walkKey(c){return c.est?c.walkMin*1.5+2:c.walkMin;}
-function pickParking(c){return c.slice().sort((x,y)=>(walkKey(x)-walkKey(y))||(x.distM-y.distM));}
+// Ordre des stationnements : la marche la plus courte d'abord (temps, puis distance à pied réelle, puis distance à vol d'oiseau).
+function parkCmp(x,y){
+  const a=x.walkM!=null?x.walkM:Infinity,b=y.walkM!=null?y.walkM:Infinity;
+  return (walkKey(x)-walkKey(y))||(a-b)||((x.distM||0)-(y.distM||0));
+}
+function pickParking(c){return c.slice().sort(parkCmp);}
+// Distance à pied lisible : « 350 m », « 1,2 km »
+function walkDist(m){return m==null?'':m<1000?(Math.round(m/10)*10)+' m':(Math.round(m/100)/10).toString().replace('.',',')+' km';}
 function parkLabel(c){return ((c.name||'Parking sans nom')+(c.fee?' (payant)':'')).slice(0,80);}
 // ---------- copilote : liste des stationnements à pied et liens de navigation ----------
 // Liens vers Google Maps et Waze (itinéraire en voiture). Coordonnées si on les a, sinon le texte saisi.
@@ -926,16 +953,19 @@ function cleanParkList(arr){
     if(!e)return;
     const lat=okCoord(e.lat,90),lon=okCoord(e.lon,180),w=okMin(e.walkMin,180);
     if(lat==null||lon==null||w==null)return;
-    out.push({name:String(e.name||'Parking sans nom').slice(0,80),lat:lat,lon:lon,walkMin:w,est:!!e.est});
+    const wm=+e.walkM,o={name:String(e.name||'Parking sans nom').slice(0,80),lat:lat,lon:lon,walkMin:w,est:!!e.est};
+    if(isFinite(wm)&&wm>=0&&wm<=30000)o.walkM=Math.round(wm);
+    out.push(o);
   });
-  out.sort((x,y)=>x.walkMin-y.walkMin);
+  out.sort(parkCmp);
   return out.slice(0,10);
 }
-// Candidats munis d'un temps de marche -> ceux à moins de maxMin minutes ; à défaut, le plus court seulement.
+// Candidats munis d'une marche -> les 5 plus proches à pied, à moins de maxMin minutes ; à défaut, le plus proche seulement.
+const PARK_SHOW=5;
 function buildParkList(c,maxMin){
-  const l=cleanParkList((c||[]).map(x=>({name:parkLabel(x),lat:x.lat,lon:x.lon,walkMin:x.walkMin,est:x.est})));
+  const l=cleanParkList((c||[]).map(x=>({name:parkLabel(x),lat:x.lat,lon:x.lon,walkMin:x.walkMin,walkM:x.walkM,est:x.est})));
   const near=l.filter(x=>x.walkMin<=maxMin);
-  return near.length?near:l.slice(0,1);
+  return (near.length?near:l).slice(0,near.length?PARK_SHOW:1);
 }
 function isMainPark(st,e){return st.parkLat===e.lat&&st.parkLon===e.lon;}
 // ---------- copilote de l'assistance, étape 2 : départ conseillé ----------
@@ -1117,9 +1147,13 @@ let geoMem=null;
 function geoLoad(){if(geoMem)return geoMem;try{geoMem=JSON.parse(localStorage.getItem('rubalise:geo')||'{}')||{};}catch(e){geoMem={};}return geoMem;}
 function geoGet(k){return geoLoad()[k];}
 function geoSet(k,v){const g=geoLoad();g[k]=v;const ks=Object.keys(g);if(ks.length>300)ks.slice(0,ks.length-300).forEach(x=>delete g[x]);try{localStorage.setItem('rubalise:geo',JSON.stringify(g));}catch(e){}}
+// Nominatim d'abord (rapide, avec la rue et l'accès) ; Overpass en secours : il est souvent lent ou saturé (30 s et plus en octobre 2026).
 async function osmFindParking(o){
-  const key='op:'+o.lat.toFixed(4)+','+o.lon.toFixed(4)+','+o.radiusM,hit=geoGet(key);
+  const key='pk2:'+o.lat.toFixed(4)+','+o.lon.toFixed(4)+','+o.radiusM,hit=geoGet(key);
   if(hit)return hit;
+  let nomErr=null;
+  try{const c=parseNominatim(await osmFetch(nominatimUrl(o.lat,o.lon,o.radiusM),{},15000),{lat:o.lat,lon:o.lon});geoSet(key,c);return c;}
+  catch(e){nomErr=e;}
   const body='data='+encodeURIComponent(overpassQuery(o.lat,o.lon,o.radiusM));
   let j=null,last=null;
   for(const ep of OSM.overpass.filter(e=>!(osmDown[e]>Date.now()))){
@@ -1129,14 +1163,16 @@ async function osmFindParking(o){
       j=x;break;
     }catch(e){last=e;osmDown[ep]=Date.now()+600000;}
   }
-  if(!j){
-    // dernier recours : Nominatim (l'accès privé n'y est pas indiqué, à vérifier)
-    try{
-      const c=parseNominatim(await osmFetch(nominatimUrl(o.lat,o.lon,o.radiusM),{},15000),{lat:o.lat,lon:o.lon});
-      geoSet(key,c);return c;
-    }catch(e){throw last||e;}
-  }
+  if(!j)throw last||nomErr;
   const c=parseOverpass(j,{lat:o.lat,lon:o.lon});geoSet(key,c);return c;
+}
+// Marche : temps et distance réels par les chemins (OSRM à pied), mémorisés sur l'appareil.
+async function osmWalk(o){
+  const a=o.from,b=o.to,key='wk:'+a.lat.toFixed(5)+','+a.lon.toFixed(5)+'>'+b.lat.toFixed(5)+','+b.lon.toFixed(5),hit=geoGet(key);
+  if(hit&&hit.min!=null)return hit;
+  const j=await osmFetch(osrmUrl('walk',a,b),{},15000),v={min:osrmMinutes(j),m:osrmMeters(j)};
+  if(v.min!=null)geoSet(key,v);
+  return v.min!=null?v:null;
 }
 async function osmTravelMin(o){
   const a=o.from,b=o.to,key='rt:'+o.mode+':'+a.lat.toFixed(5)+','+a.lon.toFixed(5)+'>'+b.lat.toFixed(5)+','+b.lon.toFixed(5),hit=geoGet(key);
@@ -1148,9 +1184,10 @@ async function osmTravelMin(o){
 // Interface d'itinéraire : un fournisseur respecte ce contrat, le reste de l'appli n'a pas à changer.
 //   findParking({lat,lon,radiusM}) -> Promise<[{name,lat,lon,distM,fee}]>
 //   travelMin({from:{lat,lon},to:{lat,lon},mode:'drive'|'walk'}) -> Promise<minutes|null>
+//   walk({from,to}) -> Promise<{min,m}|null>   (facultatif : temps et distance à pied)
 const ROUTE_PROVIDERS={
   manual:{id:'manual',label:'Saisie manuelle',auto:false},
-  osm:{id:'osm',label:'OpenStreetMap',auto:true,findParking:osmFindParking,travelMin:osmTravelMin}
+  osm:{id:'osm',label:'OpenStreetMap',auto:true,findParking:osmFindParking,travelMin:osmTravelMin,walk:osmWalk}
 };
 function routeProvider(){return ROUTE_PROVIDERS[(state.prefs&&state.prefs.routeProvider)||'osm']||ROUTE_PROVIDERS.manual;}
 let crewRun={running:false,cancel:false,lines:[],err:'',diag:[]};
@@ -1207,15 +1244,20 @@ async function crewAuto(r,opts){
       const near=cands.filter(c=>c.distM<=1500).slice(0,8),top=near.length?near:cands.slice(0,1);
       for(const c of top){
         if(!alive())break;
-        const w=await safe(()=>prov.travelMin({from:c,to:ll,mode:'walk'}));
-        if(w!=null){c.walkMin=w;c.est=false;}else{c.walkMin=estWalkMin(c.distM);c.est=true;}
+        if(prov.walk){
+          const w=await safe(()=>prov.walk({from:c,to:ll}));
+          if(w){c.walkMin=w.min;c.walkM=w.m;c.est=false;}else{c.walkMin=estWalkMin(c.distM);c.walkM=Math.round(c.distM*1.3);c.est=true;}
+        }else{
+          const w=await safe(()=>prov.travelMin({from:c,to:ll,mode:'walk'}));
+          if(w!=null){c.walkMin=w;c.est=false;}else{c.walkMin=estWalkMin(c.distM);c.est=true;}
+        }
       }
       if(!alive())break;
       const list=buildParkList(top,20),best=pickParking(list)[0];
       s.parking=best.name;s.parkLat=best.lat;s.parkLon=best.lon;s.walkMin=best.walkMin;s.walkEst=!!best.est;s.parkAuto=true;
       s.parkList=list;
       touched[s.id]=true;
-      crewLog('« '+s.name+' » : '+(list[0].walkMin<=20?list.length+' stationnement'+(list.length>1?'s':'')+' à moins de 20 min à pied':'aucun stationnement à moins de 20 min à pied')+'. Conseillé : '+best.name+', '+best.walkMin+' min'+(best.est?' (estimé)':'')+(top[0].src==='nominatim'?' · service de secours, accès à vérifier':'')+'.','ok');
+      crewLog('« '+s.name+' » : '+(list[0].walkMin<=20?list.length+' stationnement'+(list.length>1?'s':'')+' à moins de 20 min à pied':'aucun stationnement à moins de 20 min à pied')+'. Conseillé : '+best.name+', '+best.walkMin+' min'+(best.est?' (estimé)':'')+'.','ok');
     }
   }
   // 2. trajets en voiture : de parking en parking, en partant du départ de la course.
@@ -1274,7 +1316,7 @@ function crewFields(r,s){
   const park=s.parking||(s.parkLat!=null&&s.parkLon!=null?s.parkLat+', '+s.parkLon:'');
   const prev=prevAccessName(r,s),canAuto=routeProvider().auto&&hasCoords(r),list=s.parkList||[];
   const plist=list.length?parkDetails('p-'+s.id,list.length,'<div class="chips plistc">'
-    +list.map((e,i)=>{const on=isMainPark(s,e);return '<button class="chip" data-act="park-pick" data-id="'+s.id+'" data-i="'+i+'" aria-pressed="'+on+'">'+esc(e.name)+' · '+e.walkMin+' min'+(e.est?' (estimé)':'')+'</button>';}).join('')+'</div>'):'';
+    +list.map((e,i)=>{const on=isMainPark(s,e);return '<button class="chip" data-act="park-pick" data-id="'+s.id+'" data-i="'+i+'" aria-pressed="'+on+'">'+esc(e.name)+' · '+e.walkMin+' min'+(e.walkM!=null?' · '+walkDist(e.walkM):'')+(e.est?' (estimé)':'')+'</button>';}).join('')+'</div>'):'';
   return '<div class="stn-crew">'
     +'<label class="fld"><span>Stationnement (nom ou coordonnées)</span><input data-s="'+s.id+'" data-f="parking" value="'+esc(park)+'" maxlength="80" placeholder="ex. Parking de la mairie, ou 43.9152, 4.5069" autocomplete="off"></label>'
     +'<div class="stn-grid"><label class="fld"><span>Marche jusqu’au ravito (min)'+(s.walkEst?' · estimée':'')+'</span><input type="number" inputmode="numeric" min="0" max="180" data-s="'+s.id+'" data-f="walkMin" value="'+(s.walkMin==null?'':s.walkMin)+'"></label>'
@@ -3262,7 +3304,7 @@ function setPlanSec(k){
 const parkOpen={};
 document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.classList&&d.classList.contains('plistd')&&d.dataset.k)parkOpen[d.dataset.k]=d.open;},true);
 function parkDetails(key,count,inner){
-  return '<details class="plistd" data-k="'+key+'"'+(parkOpen[key]?' open':'')+'><summary>Stationnements à moins de 20 min à pied ('+count+')</summary>'+inner+'</details>';
+  return '<details class="plistd" data-k="'+key+'"'+(parkOpen[key]?' open':'')+'><summary>'+(count>1?'Les '+count+' stationnements les plus proches à pied':'Stationnement le plus proche à pied')+'</summary>'+inner+'</details>';
 }
 function isAndroid(){return /Android/i.test(navigator.userAgent||'');}
 // Un seul lien par destination. Sur Android, le lien « geo: » ouvre la fenêtre du système qui demande avec quelle appli
@@ -3367,7 +3409,7 @@ function crewLine(r,st){
   if(u)t+='<div class="maplinks">'+navBtns(u,'Aller au stationnement')+'</div>';
   if(list.length>1||(list.length===1&&!isMainPark(st,list[0]))){
     t+=parkDetails('a-'+st.id,list.length,'<ul class="plist">'
-      +list.map(e=>'<li><span>'+esc(e.name)+' · <b>'+e.walkMin+' min</b>'+(e.est?' (estimé)':'')+(isMainPark(st,e)?' · conseillé':'')+'</span><span class="maplinks">'+navBtns(navUrls(e.lat,e.lon,e.name),'Y aller')+'</span></li>').join('')+'</ul>');
+      +list.map(e=>'<li><span>'+esc(e.name)+' · <b>'+e.walkMin+' min</b>'+(e.walkM!=null?' · '+walkDist(e.walkM):'')+(e.est?' (estimé)':'')+(isMainPark(st,e)?' · conseillé':'')+'</span><span class="maplinks">'+navBtns(navUrls(e.lat,e.lon,e.name),'Y aller')+'</span></li>').join('')+'</ul>');
   }
   return t;
 }
