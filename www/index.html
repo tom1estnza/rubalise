@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-RnV/Qj/89XHQwOfMRjqxDq6oiYgoKQqbZDzlyvC2rgs=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-EDCVtSvv8TOpP3U9hStjqxxd1AMEzjBQOJ4rZSwSLns=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -411,6 +411,43 @@ body input[type=checkbox]:focus-visible{outline:none;box-shadow:0 0 0 2px color-
 .chk-list li.ok .chk-dot{background:var(--ok);border-color:var(--ok);color:var(--accent-ink)}
 .welcome .top,.welcome .tabs{display:none}
 .welcome .app{padding-bottom:36px}
+/* Écran de connexion sans défilement : tout tient dans 100dvh, la taille suit la hauteur de l'écran */
+body.welcome .app{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 16px max(12px,env(safe-area-inset-bottom))}
+body.welcome #view{width:100%;max-width:400px}
+.auth{display:flex;flex-direction:column;gap:clamp(10px,2.2vh,18px);width:100%}
+.auth-brand{display:flex;flex-direction:column;align-items:center;gap:clamp(4px,1vh,10px)}
+.auth .logo-lg{font-size:clamp(34px,6vh,48px);gap:6px}
+.auth .tape-lg{height:11px}
+.auth .tagline{font-size:clamp(14px,2vh,17px);max-width:none}
+.auth-card{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:clamp(12px,2vh,18px)}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:0 0 clamp(10px,1.8vh,14px);border-radius:12px;background:var(--fill)}
+.auth-tabs button{min-height:40px;border:0;border-radius:9px;background:transparent;color:var(--ink2);font:600 15px/1 var(--f-body);cursor:pointer;transition:background-color .2s,color .2s}
+.auth-tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.12);cursor:default}
+.auth-tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.auth-form{display:flex;flex-direction:column;gap:clamp(6px,1.2vh,10px)}
+.auth-form .btn{min-height:44px;width:100%}
+.auth-legal{margin:0;font-size:12px;line-height:1.35;color:var(--ink2);text-align:center}
+.auth-legal a{color:var(--ink);font-weight:600}
+.auth-or{display:flex;align-items:center;gap:10px;margin:0;font-size:13px;color:var(--ink2)}
+.auth-or::before,.auth-or::after{content:"";flex:1;height:1px;background:var(--line)}
+.auth .fld{gap:3px;font-size:13px}
+.auth .fld input.in{height:44px;min-height:44px}
+.auth-pw{position:relative}
+.auth-forgot{position:absolute;top:-6px;right:0;min-height:28px;padding:0 2px;font-size:13px}
+.auth .consent{font-size:12px;line-height:1.35;align-items:flex-start;min-height:0}
+.auth-join{display:flex;align-items:flex-end;gap:8px}
+.auth-join .fld{flex:1}
+.auth-join .btn{min-height:44px;height:44px}
+.auth-back{align-self:center;min-height:32px;font-size:14px}
+.auth-foot{margin:0;text-align:center;font-size:12px;color:var(--ink2)}
+.auth-foot a{color:var(--ink2)}
+@media (max-height:720px){
+  .auth .tagline{display:none}
+  .auth .fld input.in,.auth-join .btn{height:40px;min-height:40px}
+  .auth-form .btn{min-height:40px}
+  .auth-tabs button{min-height:36px}
+}
+@media (max-height:600px){.auth-legal{font-size:11px}.auth .logo-lg{font-size:30px}.auth-foot{display:none}}
 .brand-big{display:flex;flex-direction:column;align-items:center;gap:12px;margin:14px 0 2px}
 .logo-lg{display:inline-flex;flex-direction:column;align-items:stretch;gap:9px;font:700 52px/1 var(--f-num);letter-spacing:.01em}
 .tape-lg{display:block;width:100%;height:14px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--live) 0 12px,var(--bg) 12px 24px);border:2px solid var(--live)}
@@ -1942,8 +1979,19 @@ function updateChrome(){
     ab.setAttribute('aria-label',run?'Menu du compte':'Se connecter');
   }
 }
-function loginForm(){
+function loginCompact(up){
+  return '<div class="auth-form"><button class="btn" data-act="google-login">Continuer avec Google</button>'
+  +'<p class="auth-legal">En continuant avec Google, tu acceptes les '+legalInline()+'.</p>'
+  +'<p class="auth-or"><span>ou</span></p>'
+  +'<label class="fld"><span>E-mail</span><input class="in" id="authmail" aria-required="true" type="email" autocomplete="email" autocapitalize="off" spellcheck="false"></label>'
+  +'<div class="auth-pw"><label class="fld"><span>Mot de passe'+(up?' (6 caractères min.)':'')+'</span><input class="in" id="authpass" aria-required="true" type="password" autocomplete="'+(up?'new-password':'current-password')+'"></label>'
+  +(up?'':'<button class="linkbtn auth-forgot" data-act="auth-reset">Mot de passe oublié ?</button>')+'</div>'
+  +(up?'<label class="fld chk consent"><input type="checkbox" id="authconsent"><span>J’accepte les <a href="'+legalUrl('conditions')+'" target="_blank" rel="noopener">conditions d’utilisation</a>, la <a href="'+legalUrl('confidentialite')+'" target="_blank" rel="noopener">politique de confidentialité</a> et l’enregistrement de mes données (dont mes fréquences cardiaques) dans mon compte.</span></label>':'')
+  +'<button class="btn primary" data-act="auth-submit">'+(up?'Créer mon compte':'Me connecter')+'</button></div>';
+}
+function loginForm(compact){
   const up=loginMode==='up';
+  if(compact)return loginCompact(up);
   return '<div class="stack"><button class="btn" data-act="google-login">Continuer avec Google</button>'
   +'<p class="note" style="margin:0;font-size:13px">En continuant avec Google, tu acceptes les '+legalInline()+'.</p>'
   +'<p class="note" style="margin:6px 0 0;text-align:center">ou avec ton e-mail</p>'
@@ -1971,12 +2019,15 @@ function heroArt(){
 }
 function renderWelcome(){
   const up=loginMode==='up';
-  return '<section class="welcome-hero welcome-login">'
-  +'<div class="brand-big"><h1 class="logo-lg"><span>Rubalise</span><span class="tape-lg" aria-hidden="true"></span></h1><p class="tagline">Prépare ta course trail, suis-la en direct.</p></div>'
-  +'<div class="card"><h2>'+(up?'Créer mon compte':'Connexion')+'</h2>'+loginForm()+'</div>'
-  +'<div class="card"><h2>Code d’assistance</h2><p class="hint">Tu assistes ou tu suis un coureur ? Saisis son code, sans compte à créer.</p>'+joinForm('Code du coureur','joincode','assist','Rejoindre')+'</div>'
-  +(state.race?'<p class="role-login"><button class="linkbtn" data-tab="plan">Retour à mon suivi</button></p>':'')
-  +'<p class="note" style="text-align:center;margin:0 auto">Version bêta : des erreurs sont possibles, ton avis compte.'+(BETA.communityUrl?' <a href="'+esc(BETA.communityUrl)+'" target="_blank" rel="noopener">Rejoindre la communauté WhatsApp</a>':'')+'</p>'
+  // Écran de connexion compact : tout tient dans la hauteur de l'écran, sur téléphone comme sur ordinateur (aucun défilement).
+  return '<section class="auth">'
+  +'<header class="auth-brand"><h1 class="logo-lg"><span>Rubalise</span><span class="tape-lg" aria-hidden="true"></span></h1><p class="tagline">Prépare ta course trail, suis-la en direct.</p></header>'
+  +'<div class="auth-card">'
+  +'<div class="auth-tabs" role="tablist" aria-label="Compte"><button role="tab" aria-selected="'+!up+'"'+(up?' data-act="auth-mode"':' tabindex="-1"')+'>Connexion</button><button role="tab" aria-selected="'+up+'"'+(up?' tabindex="-1"':' data-act="auth-mode"')+'>Créer un compte</button></div>'
+  +loginForm(true)+'</div>'
+  +(up?'':'<div class="auth-join"><label class="fld"><span>Tu assistes un coureur ? Saisis son code</span><input class="in" id="joincode" maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="K7Q2MX"></label><button class="btn" data-act="join" data-input="joincode" data-land="assist">Rejoindre</button></div>')
+  +(state.race?'<button class="linkbtn auth-back" data-tab="plan">Retour à mon suivi</button>':'')
+  +'<p class="auth-foot">Version bêta'+(BETA.communityUrl?' · <a href="'+esc(BETA.communityUrl)+'" target="_blank" rel="noopener">Communauté WhatsApp</a>':'')+'</p>'
   +'</section>';
 }
 

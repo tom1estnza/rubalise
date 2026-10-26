@@ -327,6 +327,12 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - **Ravitos** : « Accès pour l'assistance » et « Accessible au public » côte à côte.
 - **Retirés** : la course démo, les phrases d'explication sous les titres et dans les formulaires, et les bulles de confirmation. Les bulles restent pour les erreurs et ce qui demande une action (temps visé manquant, lien invalide, autorisations…).
 
+## Écran de connexion sans défilement
+- Tout tient dans la hauteur de l'écran, centré : logo, onglets « Connexion / Créer un compte », Google, e-mail, mot de passe (« Mot de passe oublié ? » sur la ligne du libellé), code d'assistance.
+- Les tailles suivent la hauteur de l'écran ; sous 720 px de haut, la phrase d'accroche disparaît et les champs passent à 40 px.
+- « Créer un compte » masque le code d'assistance. La case de consentement est raccourcie (conditions, politique de confidentialité, enregistrement des données dont les fréquences cardiaques).
+- Vérifié sans défilement en 320×568, 360×640, 390×760, 662×638 et 1366×768, dans les deux modes.
+
 ## Recherche des stationnements revue
 - Nominatim en premier (réponse en moins d'une seconde, avec l'accès, le prix, le type et la rue). Overpass en secours : mesuré à 34 s pour overpass-api.de, sans réponse en 40 s pour kumi.systems et private.coffee (26/10/2026).
 - Parkings écartés : privés, clients, riverains, personnel, livraisons, autorisation, services publics (agricole, forestier, militaire, secours, officiel), boxes et carports. Avant, le service de secours ne filtrait rien.
