@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Z8c6cA8Ob3kM+iTDd8XSrOrZqR3F7WACwSxw1SMqQMU=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-o6nLqjm2+pj+L2RdjDXysIF0mYljeQtfJNCV45GhCtI=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -176,15 +176,9 @@ h1.logo-lg{margin:0}
   .plan-hero>.hero-actions{grid-column:2;margin:6px 0 0}
   .plan-hero .stats{gap:6px 44px;margin-top:14px}
   .plan-hero .stats dd{font-size:28px}
-  .plan-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-areas:"st pt" "st gd" "st ob" "st nu" "st ex" "st rs";column-gap:28px;align-items:start}
-  .plan-grid>#sec-stations{grid-area:st}
-  .plan-grid>.pt-card{grid-area:pt}
-  .plan-grid>.pg-guide{grid-area:gd}
-  .plan-grid>#sec-objectif{grid-area:ob}
-  .plan-grid>#sec-nutrition{grid-area:nu}
-  .plan-grid>.sec-export{grid-area:ex}
-  .plan-grid>.sec-reset{grid-area:rs}
-  .plan-grid .card.guide,.plan-grid .pt-card{margin-top:28px}
+  .plan-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);column-gap:32px;align-items:start}
+  .plan-side{position:sticky;top:16px;margin-top:28px}
+  .sheet{inset:0;margin:auto;width:min(720px,calc(100% - 64px));height:fit-content;border-radius:22px;max-height:min(86vh,860px)}
 }
 /* entrée par rôle et heures de passage en tête du plan */
 .role-q{margin:22px 0 0;font-size:22px;text-align:center}
@@ -226,22 +220,54 @@ h1.logo-lg{margin:0}
 .wiz-title{margin:0 0 6px;font-size:clamp(24px,6.4vw,32px);line-height:1.15}
 .wiz-desc{margin:0;color:var(--ink2);max-width:52ch}
 .wiz-sum{margin:14px 0 0;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:15px}
-.wiz-nav{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:4;display:flex;gap:10px;margin-top:20px;padding:12px 0;background:linear-gradient(to top,var(--bg) 72%,transparent)}
-.wiz-nav .btn{flex:1}
-.wiz-nav .btn.primary{flex:2}
-.wiz-skip{margin:0;text-align:center}
-.wiz-on .plan-grid{display:block}
-.wiz-on .sec{border-top:0;margin-top:6px;padding-top:0}
-.wiz-on .sec>h2:first-child,.wiz-on .sec>h2:first-child+.hint{display:none}
-.wiz-on .wiz-assist .card>h2{display:block}
-.wiz-assist{border-top:0;margin-top:0;padding-top:0}
-.wiz-assist .card{margin:0}
+/* Fenêtre « création du plan » : panneau qui monte du bas (mobile) ou boîte centrée (grand écran) */
+.wiz-on{overflow:hidden}
+.wiz-on .tabs{visibility:hidden}
+.sheet-back{position:fixed;inset:0;z-index:30;background:color-mix(in srgb,var(--bg) 55%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;display:flex;flex-direction:column;max-height:92vh;max-height:92dvh;background:var(--surface);border:1px solid var(--line);border-radius:22px 22px 0 0;box-shadow:0 -18px 48px -24px rgba(0,0,0,.45)}
+.sheet-head{padding:18px 20px 12px;border-bottom:1px solid var(--line)}
+.sheet-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px}
+.sheet-top .wiz-count{margin:0}
+.sheet-x{width:40px;height:40px;border-radius:50%;font-size:22px}
+.sheet .wiz-bar{margin:0 0 14px}
+.sheet .wiz-title{margin:0 0 10px;font-size:clamp(22px,5.6vw,28px)}
+.wiz-sum{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;border:0;background:none}
+.wiz-sum>span{font:600 13px/1 var(--f-num);letter-spacing:.02em;padding:6px 10px;border-radius:999px;background:var(--fill);color:var(--ink)}
+.sheet-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:16px 20px 20px}
+.sheet-foot{display:flex;gap:10px;padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+.sheet-foot .btn{flex:1}
+.sheet-foot .btn.primary{flex:2}
+.wiz-assist p{margin:0 0 12px}
+/* Onglets du plan (contrôle segmenté, indicateur animé avec Motion) */
+.seg{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;margin:24px 0 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.seg-ind{position:absolute;top:4px;bottom:4px;left:0;border-radius:10px;background:var(--accent);box-shadow:0 6px 16px -10px var(--accent);pointer-events:none}
+.seg-btn{position:relative;z-index:1;min-height:44px;border:0;border-radius:10px;background:transparent;color:var(--ink2);font:600 16px/1 var(--f-body);cursor:pointer;transition:color .2s}
+.seg-btn[aria-selected="true"]{color:var(--accent-ink)}
+.seg-btn:not([aria-selected="true"]):hover{color:var(--ink)}
+.seg-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.plan-body{min-width:0}
+.plan-panel{min-height:120px}
+.sec-panel .grid2{row-gap:14px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 0}
+.kpis div{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.kpis dt{font-size:13px;color:var(--ink2)}
+.kpis dd{margin:2px 0 0;font:700 24px/1.1 var(--f-num)}
+.kpis dd small{font-size:14px;font-weight:500;color:var(--ink2)}
+.chk-row{display:flex;flex-wrap:wrap;gap:0 24px;margin-top:4px}
+.chk-row .chk{min-height:44px}
+.card.more{padding:0}
+.card.more>summary{padding:14px 16px;font-weight:600;cursor:pointer;list-style-position:inside}
+.card.more>.row,.card.more>div{padding:0 16px}
+.card.more>.row:last-child{padding-bottom:16px}
+.import-card .row,.resume .row{margin-top:10px}
+.resume-name{margin:0;font:600 18px/1.3 var(--f-num)}
 .tabind{position:absolute;top:0;left:0;height:3px;border-radius:0 0 3px 3px;background:var(--live);pointer-events:none;opacity:0}
 .has-ind .tabbtn[aria-current="page"]{box-shadow:none}
 .btn{transition:transform .12s ease,background-color .2s,border-color .2s}
 .btn:active:not(:disabled){transform:scale(.97)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
-@media (prefers-reduced-motion:reduce){.btn,.wiz-bar li>span,.wiz-bar li>button{transition:none}}
+@media (prefers-reduced-motion:reduce){.btn,.wiz-bar li>span,.wiz-bar li>button,.seg-btn{transition:none}}
+.card>h2+p.hint,.sec>h2+p.hint{display:none}
 /* connexion unique et accueil connecté */
 .welcome-login .card{text-align:left;margin-top:14px}
 .welcome-login .card>h2{margin:0 0 10px}
@@ -983,7 +1009,9 @@ function clk(min){const c=fmtClock(min);return '<span class="t">'+c.s+'</span>'+
 function mcls(mn){return mn>=45?'ok':mn>=15?'warn':'bad';}
 function mfmt(mn){return (mn>=0?'+':'−')+Math.abs(Math.round(mn))+' min';}
 function dsign(mn){const r=Math.round(mn);return (r>0?'+':r<0?'−':'')+Math.abs(r)+' min';}
-function flash(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');mo(t,{opacity:[0,1],transform:['translateY(14px)','translateY(0px)']},{duration:.25,ease:[.22,1,.36,1]});clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),String(msg).length>70?7000:3200);}
+// Bulles : seulement les erreurs et ce qui demande une action. Les confirmations d'actions déjà visibles à l'écran ne s'affichent plus.
+const QUIET_FLASH=/^(Plan |Parcours importé|GPX importé|\d+ point|Code : |Course |Compte supprimé|Connexion |Création du suivi|Déconnecté|Départ |Données de l|Enregistrement|Google est maintenant|Heure de départ|Km |Passage pointé|Photo |Pointages|Position |Profil enregistré|Cible appliquée|Suivi |Synchronisation|Temps visé mis|Test de connexion|Un plan a été|Mode test)/;
+function flash(msg){if(QUIET_FLASH.test(String(msg)))return;const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');mo(t,{opacity:[0,1],transform:['translateY(14px)','translateY(0px)']},{duration:.25,ease:[.22,1,.36,1]});clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),String(msg).length>70?7000:3200);}
 function commit(){save();clearTimeout(renderTimer);render();maybePush();}
 function schedule(){save();clearTimeout(renderTimer);renderTimer=setTimeout(render,220);maybePush();}
 function nowClock(){const d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60;}
@@ -1202,33 +1230,30 @@ async function runCrewAuto(opts){
 function prevAccessName(r,st){const a=r.stations.filter(z=>z.access&&z.km<st.km).sort((x,y)=>x.km-y.km);return a.length?a[a.length-1].name:'le départ';}
 function watchBox(s){
   if(s.access)return '';
-  return '<label class="fld chk" style="margin-top:6px"><input type="checkbox" data-s="'+s.id+'" data-f="watch"'+(s.watch?' checked':'')+'><span>Accessible au public (voir passer les coureurs)</span></label>'
-    +(s.watch?'':'<p class="hint" style="margin:2px 0 0">Pas d’assistance ici. Tu peux t’y rendre pour encourager, le stationnement et le trajet seront calculés.</p>');
+  return '<label class="fld chk"><input type="checkbox" data-s="'+s.id+'" data-f="watch"'+(s.watch?' checked':'')+'><span>Accessible au public</span></label>';
 }
 function crewFields(r,s){
   if(!s.access&&!s.watch)return '';
   const park=s.parking||(s.parkLat!=null&&s.parkLon!=null?s.parkLat+', '+s.parkLon:'');
   const prev=prevAccessName(r,s),canAuto=routeProvider().auto&&hasCoords(r),list=s.parkList||[];
-  const plist=list.length?parkDetails('p-'+s.id,list.length,'<p class="note" style="margin:6px 0 4px">Du plus proche au plus loin. Touche pour choisir celui qui sert au trajet :</p><div class="chips plistc">'
+  const plist=list.length?parkDetails('p-'+s.id,list.length,'<div class="chips plistc">'
     +list.map((e,i)=>{const on=isMainPark(s,e);return '<button class="chip" data-act="park-pick" data-id="'+s.id+'" data-i="'+i+'" aria-pressed="'+on+'">'+esc(e.name)+' · '+e.walkMin+' min'+(e.est?' (estimé)':'')+'</button>';}).join('')+'</div>'):'';
-  return '<div class="stn-crew">'+(s.access?'':'<p class="hint" style="margin:0 0 6px">Point sans assistance, accessible pour voir passer les coureurs.</p>')
+  return '<div class="stn-crew">'
     +'<label class="fld"><span>Stationnement (nom ou coordonnées)</span><input data-s="'+s.id+'" data-f="parking" value="'+esc(park)+'" maxlength="80" placeholder="ex. Parking de la mairie, ou 43.9152, 4.5069" autocomplete="off"></label>'
     +'<div class="stn-grid"><label class="fld"><span>Marche jusqu’au ravito (min)'+(s.walkEst?' · estimée':'')+'</span><input type="number" inputmode="numeric" min="0" max="180" data-s="'+s.id+'" data-f="walkMin" value="'+(s.walkMin==null?'':s.walkMin)+'"></label>'
     +'<label class="fld"><span>Trajet depuis '+(prev==='le départ'?'le départ':'« '+esc(prev)+' »')+' (min)</span><input type="number" inputmode="numeric" min="0" max="600" data-s="'+s.id+'" data-f="driveMin" value="'+(s.driveMin==null?'':s.driveMin)+'"></label></div>'
     +(canAuto?'<div class="row" style="margin:4px 0 0"><button class="btn quiet small" data-act="crew-auto-one" data-id="'+s.id+'"'+(crewRun.running||navigator.onLine===false?' disabled':'')+'>'+((crewRun.running&&crewRun.onlyId===s.id&&!testMode())?'<span class="spinner" aria-hidden="true"></span>Recherche…':(s.parkAuto===true?'Recalculer ce ravito':'Trouver le stationnement'))+'</button></div>':'')
     +plist
-    +((s.parkAuto===true&&testMode())?'<p class="hint">Trouvé avec OpenStreetMap. Modifie un champ pour le garder tel quel.</p>':'')
     +'</div>';
 }
 function crewAutoBlock(r){
   const p=routeProvider();
   if(!p.auto||!r.stations.some(s=>s.access||s.watch))return '';
-  if(!hasCoords(r))return '<p class="hint">La recherche automatique du stationnement demande les coordonnées du tracé : réimporte le fichier GPX.</p>';
+  if(!hasCoords(r))return '<p class="warn">Réimporte le fichier GPX pour chercher les stationnements.</p>';
   const tm=testMode(),busy=crewRun.running,off=navigator.onLine===false;
   return '<div class="crewauto"><button class="btn" data-act="crew-auto"'+(busy||off?' disabled':'')+'>'+(busy&&!tm?'<span class="spinner" aria-hidden="true"></span>Recherche en cours…':'Trouver les stationnements et les trajets')+'</button>'
-    +(tm?'<p class="hint">Recherche gratuite avec OpenStreetMap, sans compte. À lancer chez toi avec du réseau : les résultats restent dans le plan. Les temps de voiture sont hors circulation, la marge de sécurité couvre le reste. Tes saisies manuelles ne sont jamais écrasées.</p>'
-        +'<div class="row" style="margin:4px 0"><button class="btn quiet small" data-act="crew-test"'+(busy||off?' disabled':'')+'>Tester la connexion aux services</button></div>'
-       :(off?'<p class="hint offline">Hors connexion, la recherche de parkings et d’itinéraires reprendra quand le réseau reviendra.</p>':'<p class="hint">À lancer avec du réseau. Tes saisies manuelles ne sont jamais écrasées.</p>'))
+    +(tm?'<div class="row" style="margin:4px 0"><button class="btn quiet small" data-act="crew-test"'+(busy||off?' disabled':'')+'>Tester la connexion aux services</button></div>'
+       :(off?'<p class="warn offline">Hors connexion.</p>':''))
     +'<div id="crewauto" aria-live="polite">'+crewStatusHTML()+'</div>'
     +'<p class="hint">'+(tm?'Données © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">contributeurs OpenStreetMap</a>. Itinéraires : OSRM (routing.openstreetmap.de).':'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">contributeurs OpenStreetMap</a>')+'</p></div>';
 }
@@ -1860,7 +1885,7 @@ function tourSteps(){
   const run=isRunner(),nat=isNativeApp();
   const L=[
     {tab:'plan',target:null,title:'Bienvenue dans Rubalise',text:'En une minute, découvre comment préparer ta course, la partager avec ton équipe et la suivre en direct.'},
-    {tab:'plan',target:'.tabs [data-tab="plan"]',title:'1. Prépare ta course',text:'Dans Plan, importe le fichier GPX de ton parcours (ou lance la course démo) et fixe ton temps visé. Rubalise calcule tes heures de passage à chaque ravito et ta nutrition.'},
+    {tab:'plan',target:'.tabs [data-tab="plan"]',title:'1. Prépare ta course',text:'Importe le fichier GPX de ton parcours et fixe ton temps visé. Rubalise calcule tes heures de passage à chaque ravito et ta nutrition.'},
     {tab:'assist',target:'.tabs [data-tab="assist"]',title:'2. Invite ton équipe',text:'Dans Assistance, crée un code de course : ton assistance et tes supporters le saisissent, sans compte, pour voir tes heures de passage et préparer ce qu’il faut à chaque ravito.'},
     {tab:'live',target:'.tabs [data-tab="live"]',title:'3. Suis la course',text:'Le jour J, « pointer » un ravito, c’est noter l’heure de passage : les heures suivantes se recalculent chez tout le monde.'+(nat?' Sur Android, autorise les notifications pour être prévenu au bon moment.':'')},
     {tab:'diary',target:'.tabs [data-tab="diary"]',title:'4. Garde une trace',text:'Après la course, compare le prévu et le réel, note ton ressenti, puis archive la course dans ton carnet.'}
@@ -1868,7 +1893,7 @@ function tourSteps(){
   if(run)L.push({tab:'home',target:'.tabs [data-tab="home"]',title:'Ton accueil et ta fiche coureur',text:'Importe ton GPX depuis l’accueil. Dans ta fiche coureur, renseigne ta fréquence cardiaque et une performance de référence : tu obtiens tes zones et un temps estimé pour ta course.'});
   else L.push({tab:'plan',target:'#acct',title:'Crée ton compte',text:'Un compte gratuit est nécessaire pour préparer une course, la partager et enregistrer ton profil (zones d’allure et de fréquence cardiaque).'});
   L.push({tab:'plan',target:'#helpbtn',title:'Besoin d’aide ?',text:'Le bouton « ? » rouvre ce guide, la FAQ et le mini-lexique à tout moment.'});
-  L.push({tab:'plan',target:null,final:true,title:'À toi de jouer !',text:'Importe ton fichier GPX, ou essaie la course démo pour tout voir en action.'});
+  L.push({tab:'plan',target:null,final:true,title:'À toi de jouer !',text:'Importe ton fichier GPX pour créer ton plan.'});
   return L;
 }
 function startTour(){
@@ -1886,7 +1911,7 @@ function showTourStep(){
   document.getElementById('tourdots').innerHTML=tourList.map((x,i)=>'<i class="'+(i===tourI?'on':'')+'"></i>').join('');
   document.getElementById('tourprev').hidden=tourI===0;
   const nx=document.getElementById('tournext');nx.textContent=s0.final?'Terminer':(tourI===0?'C’est parti':'Suivant');
-  document.getElementById('tourextra').innerHTML=s0.final?'<div class="row" style="margin:10px 0 4px"><button class="btn" data-tour="demo">Lancer la course démo</button>'+gpxPick('','Importer mon GPX')+'</div>':'';
+  document.getElementById('tourextra').innerHTML=s0.final?'<div class="row" style="margin:10px 0 4px">'+gpxPick('primary','Importer mon GPX')+'</div>':'';
   positionTour();
   try{const tc=document.getElementById('tourcard');tc.setAttribute('tabindex','-1');tc.focus({preventScroll:true});}catch(e){}
 }
@@ -1937,7 +1962,6 @@ function tourAct(k){
   if(k==='next'){if(tourList[tourI].final){endTour();}else{tourI++;showTourStep();}return;}
   if(k==='prev'){if(tourI>0){tourI--;showTourStep();}return;}
   if(k==='skip'){endTour();return;}
-  if(k==='demo'){if(!isRunner()){endTour();needAccount();return;}const had=!!(state.race&&!state.tmpRace&&!tourTemp);tourTemp=false;state.tmpRace=false;endTour();if(had)stashPlan();state.race=demoRace();animateNext=true;tab='plan';commit();window.scrollTo(0,0);return;}
 }
 // isNew : le compte vient d'être créé (inscription). Le guide ne se lance que dans ce cas ; une simple connexion ne le relance jamais.
 function enterApp(dest,isNew){
@@ -2995,19 +3019,17 @@ function profileStatic(pf){
 function renderHome(){
   const pf=state.profile||defaultProfile(),r=state.race,has=profileHasData(pf),tot=r?planTotals(r):null;
   return '<section class="home"><h1>'+(pf.first?'Bonjour '+esc(pf.first):'Bienvenue')+'</h1>'
-  +'<p class="lead">Importe le tracé GPX de ta course : Rubalise calcule tes heures de passage et ton plan de nutrition.</p>'
-  +(r?'<div class="card"><h2>Reprendre mon plan</h2><p class="hint">'+esc(r.name||'Ma course')+(tot&&tot.km?' · '+km1(tot.km)+' km':'')+'</p><div class="row"><button class="btn primary" data-tab="plan">Ouvrir mon plan</button></div></div>':'')
-  +'<div class="card"><p class="wiz-count">Étape 1 sur '+WIZ.length+' · Parcours</p>'+wizBar(1,false)+'<h2>Importer mon parcours</h2><p class="hint">Fichier GPX fourni par l’organisateur ou exporté depuis ta montre.</p><div class="row">'+gpxPick('primary','Importer un fichier GPX')+'<button class="btn" data-act="demo">Course démo</button></div>'+gpxPaste()+'</div>'
-  +'<div class="card pf-card"><h2>Ma fiche coureur</h2>'+(has?'':'<p class="hint">Ta fiche est vide. Elle sert à calculer tes zones d’allure et de fréquence cardiaque, et un temps estimé pour ta course.</p>')+profileStatic(pf)+'<div class="row"><button class="btn'+(has?'':' primary')+'" data-tab="runner">'+(has?'Modifier ma fiche':'Créer ma fiche coureur')+'</button></div></div>'
-  +(state.tourDone?'':'<div class="card"><h2>Guide de démarrage</h2><p class="hint">Un parcours en quelques étapes pour découvrir Rubalise.</p><div class="row"><button class="btn" data-act="tour-start">Lancer le guide</button></div></div>')
+  +(r?'<div class="card resume"><h2>Reprendre mon plan</h2><p class="resume-name">'+esc(r.name||'Ma course')+(tot&&tot.km?' · '+km1(tot.km)+' km':'')+'</p><div class="row"><button class="btn primary" data-tab="plan">Ouvrir mon plan</button></div></div>':'')
+  +'<div class="card import-card"><h2>Importer mon parcours</h2><div class="row">'+gpxPick('primary','Importer un fichier GPX')+'</div>'+gpxPaste()+'</div>'
+  +'<div class="card pf-card"><h2>Ma fiche coureur</h2>'+profileStatic(pf)+'<div class="row"><button class="btn'+(has?'':' primary')+'" data-tab="runner">'+(has?'Modifier ma fiche':'Créer ma fiche coureur')+'</button></div></div>'
+  +(state.tourDone?'':'<div class="card"><h2>Guide de démarrage</h2><div class="row"><button class="btn" data-act="tour-start">Lancer le guide</button></div></div>')
   +'</section>';
 }
 function needAccount(){if(isRunner())return true;flash('Connecte-toi pour créer un plan.');go('welcome');return false;}
 function emptyPlan(){
   return '<section class="empty"><h1>Aucun plan ouvert</h1>'
-  +'<p class="lead">Importe un parcours GPX depuis l’accueil pour préparer ta course.</p>'
-  +'<div class="row"><button class="btn primary" data-tab="home">Aller à l’accueil</button></div>'
-  +'<div class="card"><h2>Rejoindre une course</h2><p class="hint">Saisis le code donné par le coureur, sans compte à créer.</p>'+joinForm('Code de la course')+'</div></section>';
+  +'<div class="row"><button class="btn primary" data-tab="home">Importer un parcours</button></div>'
+  +'<div class="card"><h2>Rejoindre une course</h2>'+joinForm('Code de la course')+'</div></section>';
 }
 function planGuide(r,okT){
   if(r.sync&&r.sync.role==='member')return '';
@@ -3020,19 +3042,19 @@ function planGuide(r,okT){
     {ok:run&&profileHasData(state.profile),label:'Profil coureur rempli',go:run?'runner':'login'}
   ];
   const done=items.filter(i=>i.ok).length;
+  if(done===items.length)return '';
   const rows=items.map(i=>'<li class="'+(i.ok?'ok':'')+'"><span class="chk-dot" aria-hidden="true">'+(i.ok?'✓':'')+'</span><span style="flex:1">'+i.label+'</span>'
     +(i.ok?'':(i.jump?'<button class="btn quiet small" data-act="jump" data-id="'+i.jump+'">Aller</button>':'<button class="btn quiet small" data-tab="'+i.go+'">'+(run?'Ouvrir':'Se connecter')+'</button>'))+'</li>').join('');
   return '<div class="card guide"><h2>Avant le départ</h2><div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="'+items.length+'" aria-valuenow="'+done+'"><i style="width:'+Math.round(done/items.length*100)+'%"></i></div>'
-    +'<p class="hint" style="margin:0">'+done+' étape'+(done>1?'s':'')+' sur '+items.length+(done===items.length?' : tout est prêt !':'')+'</p><ul class="chk-list">'+rows+'</ul></div>'
-    +'<div class="chips-nav" aria-label="Aller à"><button class="chip" data-act="jump" data-id="sec-objectif">Objectif</button><button class="chip" data-act="jump" data-id="sec-stations">Ravitos</button><button class="chip" data-act="jump" data-id="sec-nutrition">Nutrition</button></div>';
+    +'<ul class="chk-list">'+rows+'</ul></div>';
 }
 // résultat d'abord : arrivée et heures de passage en haut du plan
 function planTimes(r,m,tl){
   const rows=tl.rows,fin=rows[rows.length-1],stn=rows.filter(x=>!x.isFinish);
-  if(!stn.length)return '<div class="card pt-card" data-step="6"><h2>Heures de passage</h2><p class="hint">Ajoute tes ravitos pour voir à quelle heure tu y passes.</p><button class="btn quiet small" data-act="jump" data-id="sec-stations">Ajouter des ravitos</button></div>';
+  if(!stn.length)return '<div class="card pt-card"><h2>Heures de passage</h2><button class="btn quiet small" data-act="jump" data-id="sec-stations">Ajouter des ravitos</button></div>';
   const marg=x=>x.margin!=null?'<span class="'+mcls(x.margin)+'">'+mfmt(x.margin)+'</span>':'<span class="pt-none">–</span>';
   const li=stn.map((x,i)=>'<tr><td><div class="pt-cell"><span class="pt-n">'+(i+1)+'</span><span class="pt-txt">'+esc(x.name||'Ravito')+'<small>km '+km1(x.km)+'</small></span></div></td><td>'+clk(x.adjArr)+'</td><td>'+marg(x)+'</td></tr>').join('');
-  return '<div class="card pt-card" data-step="6"><h2>Heures de passage</h2>'
+  return '<div class="card pt-card"><h2>Heures de passage</h2>'
     +'<table class="pt-table"><thead><tr><th scope="col">Ravito</th><th scope="col">Passage</th><th scope="col">Marge sur la barrière</th></tr></thead><tbody>'
     +'<tr><td><div class="pt-cell"><span class="pt-n pt-flag" aria-hidden="true"></span><span class="pt-txt">Départ<small>km 0</small></span></div></td><td>'+clk(m.startMin)+'</td><td><span class="pt-none">–</span></td></tr>'
     +li
@@ -3040,81 +3062,110 @@ function planTimes(r,m,tl){
     +'</tbody></table>'
     +'<button class="linkbtn" data-act="jump" data-id="sec-stations">Modifier les ravitos</button></div>';
 }
-function renderPlan(){
-  const r=state.race;if(!r)return planBar()+emptyPlan();
-  const m=model(r),st=profileStats(m.p),tl=timeline(r,m,{plan:true});
-  const okT=m.target>m.stopsTotal+1;
-  const svg=profileSVG(m,tl,{w:chartW(),anim:animateNext,hover:true});animateNext=false;
+// ---------- plan : onglets Objectif / Ravitos / Nutrition ----------
+let planSec='objectif',segX=null,segDir=0;
+const PSECS=[['objectif','Objectif'],['stations','Ravitos'],['nutrition','Nutrition']];
+function secObjectif(r,m,okT){
+  return '<section class="sec-panel" id="sec-objectif">'
+  +'<div class="grid2"><label class="fld"><span>Temps visé, arrêts compris (h:mm)</span><input data-r="target" value="'+esc(r.target)+'" inputmode="numeric" maxlength="5" autocomplete="off" placeholder="7:30"></label>'
+  +'<label class="fld"><span>Arrêt moyen par ravito (min)</span><input type="number" inputmode="numeric" min="0" max="60" data-r="stopMin" data-num value="'+r.stopMin+'"></label>'
+  +'<label class="fld"><span>Date de la course</span><input type="date" data-r="date" value="'+esc(r.date)+'"></label>'
+  +'<label class="fld"><span>Heure de départ</span><input type="time" data-r="start" value="'+esc(r.start)+'"></label>'
+  +'<label class="fld"><span>Vitesse minimale aux barrières (km/h)</span><input type="number" inputmode="decimal" step="0.1" min="3" max="12" data-r="minSpeed" data-num value="'+r.minSpeed+'"></label></div>'
+  +(okT?'<dl class="kpis"><div><dt>Allure sur le plat</dt><dd>'+fmtPace(m.basePace)+' <small>/km</small></dd></div><div><dt>En mouvement</dt><dd>'+fmtDur(m.moving)+'</dd></div></dl>'
+       :'<p class="warn" style="margin-top:12px">Saisis un temps visé au format h:mm, par exemple 7:30.</p>')
+  +'</section>';
+}
+function secStations(r,m,tl){
   const byId={};tl.rows.forEach(x=>byId[x.id]=x);
   const fin=tl.rows[tl.rows.length-1];
   const stn=r.stations.map((s,i)=>{
     const row=byId[s.id];
     const times=row
-      ?'<span>Arrivée '+clk(row.adjArr)+'</span><span>Repart '+clk(row.dep)+'</span>'+(row.margin!=null?'<span class="'+mcls(row.margin)+'">Marge sur la barrière '+mfmt(row.margin)+'</span>':'')
+      ?'<span>Arrivée '+clk(row.adjArr)+'</span><span>Repart '+clk(row.dep)+'</span>'+(row.margin!=null?'<span class="'+mcls(row.margin)+'">Marge '+mfmt(row.margin)+'</span>':'')
       :'<span class="warn">Hors du parcours : choisis un km entre 0 et '+km1(m.tot)+'</span>';
     return '<li class="stn" id="stn-'+s.id+'"><div class="stn-head"><span class="stn-n">'+(i+1)+'</span>'
       +'<input class="stn-name" data-s="'+s.id+'" data-f="name" value="'+esc(s.name)+'" placeholder="Nom du ravito" aria-label="Nom du ravito '+(i+1)+'">'
       +'<button class="icon" data-act="del-station" data-id="'+s.id+'" aria-label="Supprimer le ravito '+esc(s.name)+'">×</button></div>'
       +'<div class="stn-grid"><label class="fld"><span>Kilomètre</span><input type="number" inputmode="decimal" step="0.1" min="0" data-s="'+s.id+'" data-f="km" value="'+s.km+'"></label>'
-      +'<label class="fld"><span>Barrière horaire'+(s.barrierAuto!==false?' (calculée)':'')+'</span><input type="time" data-s="'+s.id+'" data-f="barrier" value="'+esc(s.barrier)+'"></label>'
-      +'<label class="fld chk"><input type="checkbox" data-s="'+s.id+'" data-f="access"'+(s.access?' checked':'')+'><span>Accès pour l’assistance</span></label></div>'
-       +watchBox(s)+crewFields(r,s)
-       +'<div class="stn-times">'+times+'</div></li>';
+      +'<label class="fld"><span>Barrière horaire'+(s.barrierAuto!==false?' (calculée)':'')+'</span><input type="time" data-s="'+s.id+'" data-f="barrier" value="'+esc(s.barrier)+'"></label></div>'
+      +'<div class="chk-row"><label class="fld chk"><input type="checkbox" data-s="'+s.id+'" data-f="access"'+(s.access?' checked':'')+'><span>Accès pour l’assistance</span></label>'+watchBox(s)+'</div>'
+      +crewFields(r,s)
+      +'<div class="stn-times">'+times+'</div></li>';
   }).join('');
+  return '<section class="sec-panel" id="sec-stations">'
+  +'<label class="fld" style="max-width:280px"><span>Marge de sécurité de l’assistance (min)</span><input type="number" inputmode="numeric" min="0" max="60" data-r="crewMargin" data-num value="'+crewMarginOf(r)+'"></label>'
+  +crewAutoBlock(r)
+  +'<ul class="plain">'+stn
+  +'<li class="stn finish"><div class="stn-head"><span class="stn-n" aria-hidden="true">&nbsp;</span><span class="stn-name" style="border:0;display:flex;align-items:center">Arrivée</span></div>'
+  +'<div class="stn-grid"><label class="fld"><span>Kilomètre</span><input value="'+km1(m.tot)+'" disabled></label><label class="fld"><span>Barrière horaire'+(r.finishBarrierAuto!==false?' (calculée)':'')+'</span><input type="time" data-r="finishBarrier" value="'+esc(r.finishBarrier)+'"></label></div>'
+  +'<div class="stn-times"><span>Arrivée '+clk(fin.adjArr)+'</span>'+(fin.margin!=null?'<span class="'+mcls(fin.margin)+'">Marge '+mfmt(fin.margin)+'</span>':'')+'</div></li></ul>'
+  +'<button class="btn" data-act="add-station">Ajouter un ravitaillement</button></section>';
+}
+function secNutrition(r,m,tl){
   const segs=assistSegments(r,m,tl);
   const segRows=segs.map(sg=>{
     const n=sg.needs,carbTxt=n.gels+' gel'+(n.gels>1?'s':'')+' + '+n.bars+' barre'+(n.bars>1?'s':'');
     return '<tr><td>'+esc(sg.from)+' – '+esc(sg.to)+'<small>'+km1(sg.km)+' km, +'+sg.up+' m'+(sg.via.length?'. Sans assistance : '+sg.via.map(esc).join(', '):'')+'</small></td><td>'+fmtDur(sg.dur)+'</td><td>'+carbTxt+'<small>'+n.carbs+' g de glucides</small></td><td>'+nf(n.water)+' ml<small>'+n.sodium+' mg de sodium</small></td></tr>';
   }).join('');
-  const member=!!(r.sync&&r.sync.role==='member');
-  const W=!member&&wizOn(r),wsum=W?km1(st.km)+' km · +'+nf(st.up)+' m · arrivée estimée '+(isFinite(fin.adjArr)?clk(fin.adjArr):'–'):'';
-  return planBar()+(member?'<p class="note" style="margin-top:12px">Plan fourni par le coureur (code '+esc(r.sync.code)+'). Il se met à jour automatiquement.</p>':'')
-  +(W?wizHead(state.wiz.step,wsum):'')
-  +'<fieldset class="lock"'+(member?' disabled':'')+'><section class="plan-hero" data-step="1 6">'
-  +'<input class="race-name" data-r="name" value="'+esc(r.name)+'" aria-label="Nom de la course" placeholder="Nom de la course">'
-  +'<div class="chart">'+svg+'</div>'
-  +'<div class="legend"><span>Cercle plein : accès assistance</span><span>Cercle vide : sans accès</span></div>'
-  +'<div class="row hero-actions"><button class="btn quiet small" data-act="land-open">Vue horizontale</button>'+(!member&&!W?'<button class="btn quiet small" data-act="wiz-start">Revoir pas à pas</button>':'')+'</div>'
-  +'<dl class="stats"><div><dt>Arrivée estimée</dt><dd>'+(isFinite(fin.adjArr)?clk(fin.adjArr):'–')+'</dd></div><div><dt>Temps visé</dt><dd>'+(m.target>0?fmtDur(m.target):'à définir')+'</dd></div><div><dt>Distance</dt><dd>'+km1(st.km)+' km</dd></div><div><dt>Dénivelé positif</dt><dd>+'+nf(st.up)+' m</dd></div><div><dt>Dénivelé négatif</dt><dd>−'+nf(st.down)+' m</dd></div></dl>'
-  +'</section>'
-
-  +'<div class="plan-grid">'+planTimes(r,m,tl)+(W?wizAssist(r):'')+((g)=>g?'<div class="pg-guide" data-step="6">'+g+'</div>':'')(planGuide(r,okT))
-  +'<section class="sec" id="sec-objectif" data-step="2"><h2>Objectif</h2><p class="hint">Ton temps visé détermine ton allure et tes heures de passage à chaque ravito.</p>'
-  +'<div class="grid2"><label class="fld"><span>Temps visé, arrêts compris (h:mm)</span><input data-r="target" value="'+esc(r.target)+'" inputmode="numeric" maxlength="5" autocomplete="off" placeholder="7:30"></label>'
-  +'<label class="fld"><span>Arrêt moyen par ravito (min)</span><input type="number" inputmode="numeric" min="0" max="60" data-r="stopMin" data-num value="'+r.stopMin+'"></label>'
-  +'<label class="fld"><span>Date de la course</span><input type="date" data-r="date" value="'+esc(r.date)+'"></label>'
-  +'<label class="fld"><span>Heure de départ</span><input type="time" data-r="start" value="'+esc(r.start)+'"></label></div>'
-  +'<label class="fld" style="margin-top:12px"><span>Vitesse minimale pour les barrières (km/h)</span><input type="number" inputmode="decimal" step="0.1" min="3" max="12" data-r="minSpeed" data-num value="'+r.minSpeed+'"></label>'
-  +'<p class="hint" style="margin-top:6px">Les barrières horaires sont pré-remplies avec cette vitesse (5,5 km/h sur la plupart des trails). Tu peux les modifier ravito par ravito.</p>'
-  +(okT?'<p style="margin-top:12px">Ton allure équivalente sur le plat est de <b class="t">'+fmtPace(m.basePace)+' /km</b>, pour '+fmtDur(m.moving)+' en mouvement.</p>'
-       :'<p class="warn" style="margin-top:12px">Saisis un temps visé réaliste au format h:mm, par exemple 7:30.</p>')
-  +'</section>'
-
-  +'<section class="sec" id="sec-stations" data-step="3"><h2>Ravitaillements</h2><p class="hint">Ajoute chaque ravito (kilomètre, barrière horaire). Coche « Accès pour l’assistance » si ton équipe peut y venir : les ravitos sans accès sont pris en compte dans ta nutrition.</p>'
-  +'<label class="fld" style="max-width:280px"><span>Marge de sécurité de l’assistance (min)</span><input type="number" inputmode="numeric" min="0" max="60" data-r="crewMargin" data-num value="'+crewMarginOf(r)+'"></label><p class="hint">Temps de sécurité ajouté au trajet et à la marche : départ conseillé = arrivée estimée du coureur − trajet − marche − marge.</p>'
-  +crewAutoBlock(r)
-  +'<ul class="plain">'+stn
-  +'<li class="stn finish"><div class="stn-head"><span class="stn-n" aria-hidden="true">&nbsp;</span><span class="stn-name" style="border:0;display:flex;align-items:center">Arrivée</span></div>'
-  +'<div class="stn-grid"><label class="fld"><span>Kilomètre</span><input value="'+km1(m.tot)+'" disabled></label><label class="fld"><span>Barrière horaire'+(r.finishBarrierAuto!==false?' (calculée)':'')+'</span><input type="time" data-r="finishBarrier" value="'+esc(r.finishBarrier)+'"></label></div>'
-  +'<div class="stn-times"><span>Arrivée '+clk(fin.adjArr)+'</span>'+(fin.margin!=null?'<span class="'+mcls(fin.margin)+'">Marge sur la barrière '+mfmt(fin.margin)+'</span>':'')+'</div></li></ul>'
-  +'<button class="btn" data-act="add-station">Ajouter un ravitaillement</button></section>'
-
-  +'<section class="sec" id="sec-nutrition" data-step="4"><h2>Nutrition</h2><p class="hint">Ce que tu dois avoir sur toi ou en main de ton assistance, tronçon par tronçon. Un tronçon va d’un point accessible à l’assistance au suivant : les ravitos sans accès y sont inclus.</p>'+carbsHint(r)
+  return '<section class="sec-panel" id="sec-nutrition">'+carbsHint(r)
   +'<div class="grid3"><label class="fld"><span>Glucides (g/h)</span><input type="number" inputmode="numeric" min="0" data-r="carbs" data-num value="'+r.carbs+'"></label>'
   +'<label class="fld"><span>Eau (ml/h)</span><input type="number" inputmode="numeric" min="0" step="50" data-r="water" data-num value="'+r.water+'"></label>'
-  +'<label class="fld"><span>Sodium (mg/h)</span><input type="number" inputmode="numeric" min="0" step="50" data-r="sodium" data-num value="'+nutr(r,'sodium')+'"></label></div>'
-  +'<div class="grid3" style="margin-top:12px"><label class="fld"><span>Un gel (g)</span><input type="number" inputmode="numeric" min="0" data-r="gelG" data-num value="'+r.gelG+'"></label>'
+  +'<label class="fld"><span>Sodium (mg/h)</span><input type="number" inputmode="numeric" min="0" step="50" data-r="sodium" data-num value="'+nutr(r,'sodium')+'"></label>'
+  +'<label class="fld"><span>Un gel (g)</span><input type="number" inputmode="numeric" min="0" data-r="gelG" data-num value="'+r.gelG+'"></label>'
   +'<label class="fld"><span>Une barre (g)</span><input type="number" inputmode="numeric" min="0" data-r="barG" data-num value="'+nutr(r,'barG')+'"></label>'
   +'<label class="fld"><span>Part en gels (%)</span><input type="number" inputmode="numeric" min="0" max="100" data-r="gelShare" data-num value="'+nutr(r,'gelShare')+'"></label></div>'
-  +'<div class="tblwrap" style="margin-top:12px"><table><thead><tr><th>Tronçon</th><th>Durée</th><th>Gels et barres</th><th>Eau et sel</th></tr></thead><tbody>'+segRows+'</tbody></table></div></section>'
-
-  +'</fieldset>'
-  +'<section class="sec sec-export" data-step="6"><p class="note">Les heures viennent d’un modèle simplifié : la pente ralentit à la montée et accélère un peu à la descente, sur un effort régulier. Une fois la course lancée, Rubalise compare ton temps réel au temps prévu à chaque passage pointé et ajuste les heures suivantes : les derniers tronçons comptent le plus.</p>'
-  +'<div class="row">'+(member?'<button class="btn quiet" data-act="stop-sync">Quitter ce suivi</button>':gpxPick('quiet','Remplacer par un autre GPX'))+'</div>'+(member?'':gpxPaste())+'</section>'
-  +'<section class="sec sec-reset" data-step="0"><h2>Réinitialiser</h2>'
-  +(member?'':'<p class="note">« Réinitialiser le plan » remet l’objectif, les ravitos, la nutrition et les pointages à zéro. Le tracé GPX est conservé.</p>')
-  +'<p class="note">« Supprimer la course » efface le tracé GPX et tout le plan'+((state.plans||[]).length?' : ton autre plan s’ouvre ensuite.':' : tu reviens à l’écran de départ, sans avoir à en importer un autre.')+'</p>'
-  +'<div class="row">'+(member?'':'<button class="btn danger" data-act="reset-plan">Réinitialiser le plan</button>')+'<button class="btn danger" data-act="delete-race">Supprimer la course</button></div></section></div>'+(W?wizNav(state.wiz.step):'');
+  +'<div class="tblwrap" style="margin-top:16px"><table><thead><tr><th>Tronçon</th><th>Durée</th><th>Gels et barres</th><th>Eau et sel</th></tr></thead><tbody>'+segRows+'</tbody></table></div></section>';
+}
+function planSeg(sec){
+  return '<div class="seg" role="tablist" aria-label="Sections du plan"><span class="seg-ind" id="segind" aria-hidden="true"></span>'
+    +PSECS.map(x=>'<button class="seg-btn" role="tab" id="ps-'+x[0]+'" data-act="psec" data-sec="'+x[0]+'" aria-controls="plan-panel" aria-selected="'+(x[0]===sec)+'"'+(x[0]===sec?'':' tabindex="-1"')+'>'+x[1]+'</button>').join('')+'</div>';
+}
+function planMore(member){
+  return '<details class="card more"><summary>Options du plan</summary>'
+  +'<div class="row">'+(member?'<button class="btn quiet" data-act="stop-sync">Quitter ce suivi</button>':gpxPick('quiet','Remplacer le GPX'))+'</div>'+(member?'':gpxPaste())
+  +'<div class="row">'+(member?'':'<button class="btn danger" data-act="reset-plan">Réinitialiser le plan</button>')+'<button class="btn danger" data-act="delete-race">Supprimer la course</button></div></details>';
+}
+function planHero(r,m,st,fin,svg,member,W){
+  return '<section class="plan-hero">'
+  +'<input class="race-name" data-r="name" value="'+esc(r.name)+'" aria-label="Nom de la course" placeholder="Nom de la course"'+(member?' disabled':'')+'>'
+  +'<div class="chart">'+svg+'</div>'
+  +(W?'':'<div class="row hero-actions"><button class="btn quiet small" data-act="land-open">Vue horizontale</button>'+(member?'':'<button class="btn quiet small" data-act="wiz-start">Assistant pas à pas</button>')+'</div>')
+  +'<dl class="stats"><div><dt>Arrivée estimée</dt><dd>'+(isFinite(fin.adjArr)?clk(fin.adjArr):'–')+'</dd></div><div><dt>Temps visé</dt><dd>'+(m.target>0?fmtDur(m.target):'à définir')+'</dd></div><div><dt>Distance</dt><dd>'+km1(st.km)+' km</dd></div><div><dt>Dénivelé positif</dt><dd>+'+nf(st.up)+' m</dd></div><div><dt>Dénivelé négatif</dt><dd>−'+nf(st.down)+' m</dd></div></dl>'
+  +'</section>';
+}
+function renderPlan(){
+  const r=state.race;if(!r)return planBar()+emptyPlan();
+  const m=model(r),st=profileStats(m.p),tl=timeline(r,m,{plan:true});
+  const okT=m.target>m.stopsTotal+1;
+  const svg=profileSVG(m,tl,{w:chartW(),anim:animateNext,hover:true});animateNext=false;
+  const fin=tl.rows[tl.rows.length-1];
+  const member=!!(r.sync&&r.sync.role==='member');
+  const W=!member&&wizOn(r);
+  const hero=planHero(r,m,st,fin,svg,member,W);
+  if(W)return planBar()+hero+wizSheet(r,m,tl,okT,st,fin);
+  const sec=PSECS.some(x=>x[0]===planSec)?planSec:'objectif';
+  const panel=sec==='objectif'?secObjectif(r,m,okT):sec==='stations'?secStations(r,m,tl):secNutrition(r,m,tl);
+  return planBar()+(member?'<p class="note" style="margin-top:12px">Plan du coureur (code '+esc(r.sync.code)+').</p>':'')
+  +hero
+  +'<div class="plan-grid"><div class="plan-body">'+planSeg(sec)
+  +'<fieldset class="lock"'+(member?' disabled':'')+'><div class="plan-panel" id="plan-panel" role="tabpanel" aria-labelledby="ps-'+sec+'">'+panel+'</div></fieldset></div>'
+  +'<div class="plan-side">'+planTimes(r,m,tl)+planGuide(r,okT)+planMore(member)+'</div></div>';
+}
+// Indicateur des onglets du plan : glisse d'un onglet à l'autre (Motion)
+function moveSeg(){
+  const ind=document.getElementById('segind');if(!ind){segX=null;return;}
+  const b=document.querySelector('.seg-btn[aria-selected="true"]');if(!b)return;
+  const x=b.offsetLeft,w=b.offsetWidth;
+  ind.style.width=w+'px';
+  if(segX!==null&&segX!==x)mo(ind,{transform:['translateX('+segX+'px)','translateX('+x+'px)']},{duration:.32,ease:[.22,1,.36,1]});
+  ind.style.transform='translateX('+x+'px)';segX=x;
+  if(segDir){const p=document.getElementById('plan-panel');mo(p,{opacity:[0,1],transform:['translateX('+(segDir*24)+'px)','translateX(0px)']},{duration:.3,ease:[.22,1,.36,1]});segDir=0;}
+}
+function setPlanSec(k){
+  const a=PSECS.findIndex(x=>x[0]===planSec),b=PSECS.findIndex(x=>x[0]===k);
+  if(b<0)return;
+  segDir=b===a?0:(b>a?1:-1);planSec=k;render();
 }
 const parkOpen={};
 document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.classList&&d.classList.contains('plistd')&&d.dataset.k)parkOpen[d.dataset.k]=d.open;},true);
@@ -3198,8 +3249,8 @@ function crewCard(r,m){
   const on=crewNotifOn(r),nat=hasNotif();
   return '<section class="sec crewcard"><h2>Copilote : prochain départ</h2><div id="crewadv" aria-live="polite">'+crewAdviceInner(r,m)+'</div>'
     +(nat?'<label class="fld chk" style="margin-top:6px"><input type="checkbox" data-crewnotif'+(on?' checked':'')+'><span>Me prévenir 5 min avant le départ</span></label>'
-        +(on&&permState.notif!=='granted'?'<div class="row" style="margin:4px 0"><button class="btn small" data-act="crew-notif-perm">Autoriser les notifications</button></div><p class="hint">Android demande ton accord une fois.</p>':'')
-        :'<p class="hint">Les notifications fonctionnent dans l’appli Android. Ici, cette carte se met à jour toute seule.</p>')
+        +(on&&permState.notif!=='granted'?'<div class="row" style="margin:4px 0"><button class="btn small" data-act="crew-notif-perm">Autoriser les notifications</button></div>':'')
+        :'')
     +'</section>';
 }
 function crewLine(r,st){
@@ -3242,8 +3293,7 @@ function renderAssist(){
   }).join('');
   const startNote=(segs.length&&segs[0].fromId==='start')?'<section class="sec"><h2>Au départ</h2><p>Le coureur doit partir avec de quoi aller jusqu’à <b>'+esc(segs[0].to)+'</b> ('+km1(segs[0].km)+' km'+(segs[0].via.length?', en passant par '+segs[0].via.map(esc).join(' et ')+', sans accès assistance':'')+') : <b>'+needsText(segs[0].needs)+'</b>.</p></section>':'';
   const fin=rows[rows.length-1],finE=tlO.rows[rows.length-1].adjArr,finL=tlP.rows[rows.length-1].adjArr;
-  return '<section class="empty"><h1>Équipe d’assistance</h1>'
-  +'<p class="lead">Fenêtres de passage (course 8 % plus rapide ou 12 % plus lente que prévu), ce qu’il faut préparer et ce qu’il faut remplir à chaque ravito.</p></section>'
+  return '<section class="empty"><h1>Équipe d’assistance</h1></section>'
   +crewCard(r,m)
   +syncPanel(r)
   +trackPanel(r)
@@ -3251,8 +3301,7 @@ function renderAssist(){
   +(cards||'<p class="note">Aucun ravito avec accès assistance. Coche « Accès pour l’assistance » dans l’onglet Plan.</p>')
   +(without.length?'<p class="note">Sans accès assistance : '+without.map(x=>esc(x.name)).join(', ')+'.</p>':'')
   +'<section class="sec"><h2>Pour les supporters à l’arrivée</h2><p>'+(fin.actual!=null?'Arrivée pointée à '+clk(fin.actual)+'.':'Arrivée estimée entre '+clk(finE)+' et '+clk(finL)+'.')+'</p></section>'
-  +'<section class="sec"><h2>Sans connexion : partager le plan par code</h2>'
-  +'<p class="note">Copie le code et envoie-le par message. Ton équipe le colle ici pour retrouver ton plan. Ce prototype ne synchronise pas les pointages en direct entre appareils.</p>'
+  +'<section class="sec"><h2>Partager le plan par code</h2>'
   +'<div class="row"><button class="btn" data-act="copy-code">Copier le code du plan</button><button class="btn quiet" data-act="show-import">Coller un code reçu</button></div>'
   +(shareCode?'<textarea class="in code" readonly aria-label="Code du plan" id="codebox">'+esc(shareCode)+'</textarea>':'')
   +(importOpen?'<textarea class="in code" id="importbox" placeholder="Colle le code ici" aria-label="Code à importer"></textarea><div class="row"><button class="btn primary" data-act="do-import">Importer ce plan</button></div><p class="note">Le plan importé s’ouvre, et ton plan actuel reste dans « Mes plans ».</p>':'')
@@ -3301,7 +3350,7 @@ function renderLive(){
   let next='';
   if(!finished){
     const x=rows[nextIdx];
-    next='<section class="sec"><h2>Prochain point : '+esc(x.name)+'</h2><p class="hint">Pointer, c’est noter l’heure à laquelle le coureur arrive à ce ravito.</p><p>Estimé à '+clk(x.adjArr)+', au km '+km1(x.km)+'.</p>'
+    next='<section class="sec"><h2>Prochain point : '+esc(x.name)+'</h2><p>Estimé à '+clk(x.adjArr)+', au km '+km1(x.km)+'.</p>'
       +'<div class="row"><label class="fld" style="flex:1;min-width:140px"><span>Heure de passage</span><input type="time" id="pt-time" value="'+hhmmNow()+'"></label>'
       +'<button class="btn primary" data-act="point">Pointer le passage</button></div></section>';
   }
@@ -3309,7 +3358,6 @@ function renderLive(){
   +(finished?'':startCard(r,m))
   +'<dl class="sum"><div><dt>Arrivée estimée</dt><dd>'+clk(fin.adjArr)+'</dd></div><div><dt>Prévue</dt><dd>'+clk(finPlan.adjArr)+'</dd></div>'
   +(anyPoint?'<div><dt>Écart</dt><dd class="'+(delta>5?'warn':'ok')+'">'+dsign(delta)+'</dd></div>':'')+'</dl>'
-  +(anyPoint?'':'<p class="note" style="margin-top:10px">Aucun passage pointé : l’estimation suit le plan. Sans date de course, on suppose qu’elle a lieu aujourd’hui.</p>')
   +'<div class="chart" data-fixchart data-w="'+chartW()+'" data-l="'+chartL(chartW())+'" data-r="10" data-tot="'+m.tot+'">'+svg+'</div>'
   +(kmNow!=null?'<div class="legend"><span style="color:var(--live)">Point rose : position estimée, km '+km1(kmNow)+'</span></div>':'')
   +'<div class="row" style="margin:8px 0 0"><button class="btn quiet small" data-act="land-open">Vue horizontale</button></div></section>'
@@ -3318,7 +3366,7 @@ function renderLive(){
   +'<section class="sec"><h2>Passages</h2><ol class="pts">'+list+'</ol>'
   +'<div class="row">'
   +(anyPoint?'<button class="btn quiet" data-act="undo">Annuler le dernier pointage</button>'+((!r.sync||r.sync.role==='owner')?'<button class="btn quiet" data-act="clear-points">Effacer les pointages</button>':''):(r.sync?'':'<button class="btn quiet" data-act="simulate">Simuler un coureur 10 % plus lent</button>'))
-  +'</div><p class="note">À chaque pointage, les heures suivantes sont recalculées : le retard ou l’avance pris jusque-là se répercute en partie sur la suite.</p></section>';
+  +'</div></section>';
 }
 function renderDiary(){
   const r=state.race;if(!r)return needRace()+renderJournal();
@@ -3340,7 +3388,7 @@ function renderDiary(){
   +'<label class="fld" style="margin-top:12px"><span>Matériel utilisé</span><textarea class="in" data-diary="gear">'+esc(d.gear)+'</textarea></label>'
   +'<label class="fld" style="margin-top:12px"><span>Ce que tu referas ou changeras</span><textarea class="in" data-diary="learn">'+esc(d.learn)+'</textarea></label>'
   +'<div class="row"><button class="btn primary" data-act="archive">Archiver dans le carnet</button></div>'
-  +'<p class="note">L’archivage garde un résumé de la course dans la liste ci-dessous et remet à zéro les pointages et le ressenti.</p></section>'
+  +'</section>'
   +renderJournal();
 }
 function renderJournal(){
@@ -3370,13 +3418,22 @@ async function refreshOfflineStat(){
 const REDUCE=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
 function mo(el,kf,opt){try{if(REDUCE||!window.RM||!el||!el.isConnected)return null;return RM.animate(el,kf,opt);}catch(e){return null;}}
 let animKey='',wizDir=0,indX=null;
-function viewKey(){const r=state.race;return tab+':'+(r?planId(r):'')+':'+(r&&wizOn(r)?state.wiz.step:'');}
+function viewKey(){const r=state.race;return tab+':'+(r?planId(r):'')+':'+(r&&wizOn(r)?wizStep():'');}
 function enterView(key){
-  if(key===animKey)return;animKey=key;
+  if(key===animKey)return;
+  const was=animKey;animKey=key;
   const dir=wizDir;wizDir=0;
-  const inWiz=document.body.classList.contains('wiz-on');
-  const kids=(inWiz?[].slice.call(root.querySelectorAll('.wiz-head,[data-step]:not([hidden]),.wiz-nav')):[].slice.call(root.children).filter(e=>!e.hidden)).slice(0,9);
-  kids.forEach((el,i)=>mo(el,dir?{opacity:[0,1],transform:['translateX('+(dir>0?28:-28)+'px)','translateX(0px)']}:{opacity:[0,1],transform:['translateY(12px)','translateY(0px)']},{duration:.34,delay:i*.04,ease:[.22,1,.36,1]}));
+  if(document.body.classList.contains('wiz-on')){
+    // Fenêtre pas à pas : elle monte à l'ouverture, puis seul son contenu glisse d'une étape à l'autre
+    const sh=root.querySelector('.sheet'),bd=root.querySelector('.sheet-back'),body=document.getElementById('sheet-body');
+    if(!/:\d+$/.test(was)||was.split(':').slice(0,2).join(':')!==key.split(':').slice(0,2).join(':')){
+      mo(bd,{opacity:[0,1]},{duration:.25});
+      mo(sh,{opacity:[0,1],transform:['translateY(48px) scale(.98)','translateY(0px) scale(1)']},{duration:.42,ease:[.22,1,.36,1]});
+    }else mo(body,{opacity:[0,1],transform:['translateX('+(dir<0?-32:32)+'px)','translateX(0px)']},{duration:.32,ease:[.22,1,.36,1]});
+    return;
+  }
+  const kids=[].slice.call(root.children).filter(e=>!e.hidden).slice(0,9);
+  kids.forEach((el,i)=>mo(el,{opacity:[0,1],transform:['translateY(12px)','translateY(0px)']},{duration:.34,delay:i*.04,ease:[.22,1,.36,1]}));
 }
 function moveInd(){
   const ind=document.getElementById('tabind');if(!ind)return;
@@ -3387,49 +3444,53 @@ function moveInd(){
   if(indX!==null&&indX!==x)mo(ind,{transform:['translateX('+indX+'px)','translateX('+x+'px)']},{duration:.3,ease:[.22,1,.36,1]});
   ind.style.transform='translateX('+x+'px)';indX=x;
 }
-// ---------- création du plan pas à pas ----------
+// ---------- création du plan : fenêtre pas à pas après l'import du GPX ----------
 const WIZ=[
-  {k:1,t:'Parcours',h:'Vérifie ton parcours',d:'Voici le tracé importé. Retrouve-le plus tard dans Mes plans.'},
-  {k:2,t:'Objectif',h:'Quel temps vises-tu ?',d:'Le temps visé fixe ton allure et tes heures de passage. Exemple : 5:55 pour 5 h 55.'},
-  {k:3,t:'Ravitos',h:'Où t’arrêtes-tu ?',d:'Ajoute chaque ravito avec son kilomètre et sa barrière horaire. Coche l’accès pour l’assistance si ton équipe peut y venir.'},
-  {k:4,t:'Nutrition',h:'Que prévois-tu de manger et de boire ?',d:'Choisis tes glucides, ton eau et ton sodium par heure : Rubalise compte les gels et les barres tronçon par tronçon.'},
-  {k:5,t:'Assistance',h:'Qui t’accompagne ?',d:'Partage ta course en direct : ton assistance reçoit l’heure de départ conseillée, le stationnement et le trajet.'},
-  {k:6,t:'Récap',h:'Ton plan est prêt',d:'Relis tes heures de passage, puis ouvre ton plan complet.'}
+  {k:1,t:'Objectif',h:'Quel temps vises-tu ?'},
+  {k:2,t:'Ravitos',h:'Où t’arrêtes-tu ?'},
+  {k:3,t:'Nutrition',h:'Que prévois-tu de manger et de boire ?'},
+  {k:4,t:'Assistance',h:'Qui t’accompagne ?'}
 ];
 function wizOn(r){const w=state.wiz;return !!(w&&r&&w.pid===planId(r)&&!(r.sync&&r.sync.role==='member'));}
-function wizOpen(r,fromTour){state.wiz=fromTour?null:{pid:planId(r),step:2};}
-function wizBar(step,live){
+function wizStep(){return Math.max(1,Math.min(WIZ.length,(state.wiz&&state.wiz.step)|0||1));}
+function wizOpen(r,fromTour){state.wiz=fromTour?null:{pid:planId(r),step:1};}
+function wizBar(step){
   return '<ol class="wiz-bar" aria-label="Progression de la création du plan">'+WIZ.map(s=>{
     const c=s.k<step?'done':s.k===step?'cur':'';
-    return '<li class="'+c+'">'+(live?'<button data-act="wiz-goto" data-goto="'+s.k+'" aria-label="Étape '+s.k+' : '+s.t+(s.k===step?' (en cours)':'')+'"'+(s.k===step?' aria-current="step"':'')+'></button>':'<span></span>')+'</li>';
+    return '<li class="'+c+'"><button data-act="wiz-goto" data-goto="'+s.k+'" aria-label="Étape '+s.k+' : '+s.t+(s.k===step?' (en cours)':'')+'"'+(s.k===step?' aria-current="step"':'')+'></button></li>';
   }).join('')+'</ol>';
 }
-function wizHead(step,sum){
-  const s=WIZ[step-1];
-  return '<div class="wiz-head"><p class="wiz-count">Étape '+step+' sur '+WIZ.length+' · '+s.t+'</p>'+wizBar(step,true)+'<h2 class="wiz-title">'+s.h+'</h2><p class="wiz-desc">'+s.d+'</p>'+(sum&&step>1&&step<WIZ.length?'<p class="wiz-sum" aria-live="polite">'+sum+'</p>':'')+'</div>';
-}
-function wizNav(step){
-  const last=step===WIZ.length;
-  return '<div class="wiz-nav"><button class="btn quiet" data-act="wiz-back"'+(step===1?' disabled':'')+'>Retour</button><button class="btn primary" data-act="'+(last?'wiz-finish':'wiz-next')+'">'+(last?'Ouvrir mon plan':'Continuer')+'</button></div><p class="wiz-skip"><button class="linkbtn" data-act="wiz-exit">Passer au plan complet</button></p>';
+function wizSheet(r,m,tl,okT,st,fin){
+  const step=wizStep(),s=WIZ[step-1],last=step===WIZ.length;
+  const body=step===1?secObjectif(r,m,okT):step===2?secStations(r,m,tl):step===3?secNutrition(r,m,tl):wizAssist(r);
+  const sum='<p class="wiz-sum" aria-live="polite"><span>'+km1(st.km)+' km</span><span>+'+nf(st.up)+' m</span><span>Arrivée '+(isFinite(fin.adjArr)?clk(fin.adjArr):'–')+'</span></p>';
+  return '<div class="sheet-back" aria-hidden="true"></div>'
+  +'<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wiz-title">'
+  +'<div class="sheet-head"><div class="sheet-top"><p class="wiz-count">Étape '+step+' sur '+WIZ.length+' · '+s.t+'</p><button class="icon sheet-x" data-act="wiz-exit" aria-label="Fermer et ouvrir le plan">×</button></div>'
+  +wizBar(step)+'<h2 class="wiz-title" id="wiz-title">'+s.h+'</h2>'+sum+'</div>'
+  +'<div class="sheet-body" id="sheet-body">'+body+'</div>'
+  +'<div class="sheet-foot"><button class="btn quiet" data-act="wiz-back"'+(step===1?' disabled':'')+'>Retour</button><button class="btn primary" data-act="'+(last?'wiz-finish':'wiz-next')+'">'+(last?'Voir mon plan':'Continuer')+'</button></div></div>';
 }
 function wizAssist(r){
   let body;
-  if(r.sync&&r.sync.role==='owner')body='<p>Ta course est partagée avec le code <b class="t">'+esc(r.sync.code)+'</b>. Ton assistance le saisit sur l’accueil de Rubalise, sans compte.</p>';
-  else if(isRunner())body='<p>Tu partages ta course depuis l’onglet Assistance. Ton assistance et tes supporters suivent avec un simple code, sans compte.</p><div class="row"><button class="btn primary" data-tab="assist">Ouvrir l’onglet Assistance</button></div>';
-  else body='<p>Le partage en direct demande un compte gratuit. Ton assistance suit avec un simple code, sans compte.</p><div class="row"><button class="btn" data-act="to-login">Me connecter ou créer un compte</button></div>';
-  return '<section class="sec wiz-assist" data-step="5"><div class="card"><h2>Ton assistance</h2>'+body+'<p class="hint" style="margin:10px 0 0">Tu peux passer cette étape et partager plus tard.</p></div></section>';
+  if(r.sync&&r.sync.role==='owner')body='<p>Ta course est partagée avec le code <b class="t">'+esc(r.sync.code)+'</b>.</p>';
+  else if(isRunner())body='<p>Partage ta course depuis l’onglet Assistance : ton équipe te suit avec un code, sans compte.</p><div class="row"><button class="btn" data-act="wiz-assist">Ouvrir l’onglet Assistance</button></div>';
+  else body='<p>Le partage en direct demande un compte.</p><div class="row"><button class="btn" data-act="to-login">Me connecter</button></div>';
+  return '<section class="sec-panel wiz-assist">'+body+'</section>';
 }
 function wizGo(n,dir){
   const r=state.race;if(!r||!state.wiz)return;
   n=Math.max(1,Math.min(WIZ.length,n));
-  if(n>state.wiz.step&&state.wiz.step===2){const m=model(r);if(!(m.target>m.stopsTotal+1)){flash('Saisis ton temps visé pour continuer.');return;}}
-  wizDir=dir||(n>state.wiz.step?1:-1);state.wiz.step=n;save();commit();window.scrollTo(0,0);
+  const cur=wizStep();
+  if(n>cur&&cur===1){const m=model(r);if(!(m.target>m.stopsTotal+1)){flash('Saisis ton temps visé pour continuer.');return;}}
+  wizDir=dir||(n>cur?1:-1);state.wiz.step=n;save();commit();
 }
-function applyWizard(){
-  const r=state.race;
-  if(!(tab==='plan'&&r&&wizOn(r)))return;
-  const stp=String(state.wiz.step);
-  root.querySelectorAll('[data-step]').forEach(e=>{e.hidden=e.dataset.step.split(' ').indexOf(stp)<0;});
+// Fermeture : la fenêtre redescend (sortie plus rapide que l'entrée), puis le plan s'affiche
+function closeWiz(done){
+  const sh=root.querySelector('.sheet'),bd=root.querySelector('.sheet-back');
+  const a=mo(sh,{opacity:[1,0],transform:['translateY(0px)','translateY(40px)']},{duration:.22,ease:'easeIn'});
+  mo(bd,{opacity:[1,0]},{duration:.22});
+  if(a&&a.finished)a.finished.then(done,done);else done();
 }
 function render(top){
   if(!isRunner()){
@@ -3450,12 +3511,14 @@ function render(top){
   try{
     updateChrome();
     html=tab==='welcome'?renderWelcome():tab==='home'?renderHome():tab==='plan'?renderPlan():tab==='assist'?renderAssist():tab==='live'?renderLive():tab==='login'?renderLogin():tab==='runner'?(isRunner()?renderRunner():renderLogin()):tab==='settings'?renderSettings():tab==='prefs'?renderPrefs():tab==='help'?renderHelp():renderDiary();
-  }catch(err){errLogAdd(err.message,'affichage');html='<section class="empty"><h1>Oups</h1><p class="lead">Un calcul a échoué : '+esc(err.message)+'.</p><button class="btn" data-act="demo">Recharger la course démo</button></section>';}
+  }catch(err){errLogAdd(err.message,'affichage');html='<section class="empty"><h1>Oups</h1><p class="lead">Un calcul a échoué : '+esc(err.message)+'.</p><button class="btn" data-tab="'+(isRunner()?'home':'welcome')+'">Revenir à l’accueil</button></section>';}
   const H1T={plan:'Plan de course',live:'En course'};
   if(!/<h1[\s>]/.test(html)&&H1T[tab])html='<h1 class="sr-only">'+H1T[tab]+'</h1>'+html;
   if(html.indexOf('legal-links')<0)html+='<p class="note legal-links">'+legalLinks()+'</p>';
-  root.innerHTML=html;applyWizard();
-  window.scrollTo(0,top?0:y);enterView(viewKey());moveInd();
+  const sb0=document.getElementById('sheet-body'),sbKey=sb0?sb0.dataset.k:'',sbY=sb0?sb0.scrollTop:0;
+  root.innerHTML=html;
+  const sb1=document.getElementById('sheet-body');if(sb1){sb1.dataset.k=viewKey();if(sbKey===sb1.dataset.k)sb1.scrollTop=sbY;}
+  window.scrollTo(0,top?0:y);enterView(viewKey());moveInd();moveSeg();
   if(tab==='assist')checkPerms();
   clearTimeout(crewT);crewT=setTimeout(()=>{crewNotifSync();},800);
   setTimeout(refreshOfflineStat,60);
@@ -3477,7 +3540,10 @@ function act(b){
   if(a==='plan-del'){deletePlanAsk(b.dataset.id);return;}
   if(a==='to-login'){state.welcomed=true;save();loginMode='in';go('login');window.scrollTo(0,0);return;}
   if(a==='skip-welcome'){state.welcomed=true;save();tab='plan';commit();window.scrollTo(0,0);if(!state.tourDone)startTour();return;}
-  if(a==='jump'){const el=document.getElementById(b.dataset.id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});return;}
+  if(a==='jump'){
+    const SEC={'sec-objectif':'objectif','sec-stations':'stations','sec-nutrition':'nutrition'},k=SEC[b.dataset.id];
+    if(k){if(tab!=='plan'){planSec=k;go('plan');}else setPlanSec(k);const sg=document.querySelector('.seg');if(sg)sg.scrollIntoView({behavior:REDUCE?'auto':'smooth',block:'start'});return;}
+    const el=document.getElementById(b.dataset.id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});return;}
   if(a==='save-profile'){
     if(!isRunner())return;
     flash('Enregistrement…');
@@ -3519,13 +3585,13 @@ function act(b){
   if(a==='delete-race'&&r){askConfirm({title:'Supprimer la course ?',text:'Le tracé GPX et tout le plan seront supprimés.'+(r.sync&&r.sync.role==='owner'?' Le suivi en direct sera arrêté et la course supprimée du serveur.':''),okLabel:'Supprimer',danger:true,onOk:deleteRaceNow});return;}
   if(a==='show-gpx-paste'){gpxPasteOpen=!gpxPasteOpen;commit();return;}
   if(a==='do-gpx-paste'){const bx=document.getElementById('gpxbox');if(!bx||!bx.value.trim()){flash('Colle d’abord le contenu du GPX.');return;}loadGPXText(bx.value,'Ma course');return;}
-  if(a==='wiz-next'){wizGo((state.wiz?state.wiz.step:1)+1,1);return;}
-  if(a==='wiz-back'){wizGo((state.wiz?state.wiz.step:2)-1,-1);return;}
+  if(a==='wiz-next'){wizGo(wizStep()+1,1);return;}
+  if(a==='wiz-back'){wizGo(wizStep()-1,-1);return;}
   if(a==='wiz-goto'){wizGo(+b.dataset.goto);return;}
-  if(a==='wiz-exit'){state.wiz=null;commit();window.scrollTo(0,0);flash('Plan complet ouvert. « Revoir pas à pas » rouvre l’assistant.');return;}
-  if(a==='wiz-finish'){state.wiz=null;commit();window.scrollTo(0,0);flash('Plan prêt. Tu le retrouves à tout moment dans Plan.');return;}
-  if(a==='wiz-start'){if(!r)return;state.wiz={pid:planId(r),step:1};wizDir=1;save();commit();window.scrollTo(0,0);return;}
-  if(a==='demo'){if(!needAccount())return;if(state.race)stashPlan();state.race=demoRace();wizOpen(state.race,tourOn);animateNext=true;tab='plan';commit();window.scrollTo(0,0);return;}
+  if(a==='wiz-exit'||a==='wiz-finish'){closeWiz(()=>{state.wiz=null;commit();window.scrollTo(0,0);});return;}
+  if(a==='wiz-assist'){closeWiz(()=>{state.wiz=null;save();go('assist');});return;}
+  if(a==='wiz-start'){if(!r)return;state.wiz={pid:planId(r),step:1};save();commit();return;}
+  if(a==='psec'){setPlanSec(b.dataset.sec);return;}
   if(a==='show-import'){importOpen=!importOpen;shareCode='';commit();return;}
   if(a==='do-import'){
     if(!needAccount())return;
@@ -3795,6 +3861,10 @@ document.addEventListener('input',e=>{
   if(t.dataset&&t.dataset.p==='refTime'){t.value=fmtTypedTime(t.value,false);return;}
 });
 document.addEventListener('keydown',e=>{
+  if((e.key==='ArrowRight'||e.key==='ArrowLeft')&&e.target.classList&&e.target.classList.contains('seg-btn')){
+    const i=PSECS.findIndex(x=>x[0]===e.target.dataset.sec),n=PSECS[(i+(e.key==='ArrowRight'?1:PSECS.length-1))%PSECS.length][0];
+    e.preventDefault();setPlanSec(n);const nb=document.getElementById('ps-'+n);if(nb)nb.focus();return;
+  }
   if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.itadd){e.preventDefault();const bt=document.querySelector('[data-act="item-add"][data-id="'+e.target.dataset.itadd+'"]');if(bt)bt.click();}
   if(e.key==='Enter'&&e.target.id==='authpass'){doAuth();}
   if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.hit&&landOpen){e.preventDefault();landSel=(landSel===e.target.dataset.hit)?null:e.target.dataset.hit;renderLand();}
@@ -3804,6 +3874,7 @@ document.addEventListener('keydown',e=>{
     else if(plansOpen)closePlans();
     else if(landOpen)closeLand();
     else if(menuOpen){closeMenu();const ab=document.getElementById('acct');if(ab)ab.focus();}
+    else if(document.querySelector('.sheet')){const x=document.querySelector('.sheet-x');if(x)x.click();}
   }
 });
 document.addEventListener('fullscreenchange',()=>{if(landOpen&&landFs&&!document.fullscreenElement)closeLand();else renderLand();});

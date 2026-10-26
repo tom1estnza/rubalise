@@ -321,6 +321,12 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - Nouvel onglet **Accueil** (connecté) : reprendre son plan, importer un parcours, fiche coureur. L'espace coureur devient « Ma fiche coureur ».
 - Conditions, politique de confidentialité et `llms.txt` mises à jour en conséquence (25 octobre 2026).
 
+## Plan en onglets, création pas à pas en fenêtre
+- **Plan** : onglets Objectif, Ravitos et Nutrition (indicateur animé avec Motion). Heures de passage et liste « Avant le départ » à côté sur grand écran ; options du plan (remplacer le GPX, réinitialiser, supprimer) regroupées dans « Options du plan ».
+- **Création du plan** : on importe d'abord le GPX, puis une fenêtre s'ouvre en 4 étapes (Objectif, Ravitos, Nutrition, Assistance). Panneau qui monte du bas sur téléphone, boîte centrée sur grand écran. « Assistant pas à pas » la rouvre.
+- **Ravitos** : « Accès pour l'assistance » et « Accessible au public » côte à côte.
+- **Retirés** : la course démo, les phrases d'explication sous les titres et dans les formulaires, et les bulles de confirmation. Les bulles restent pour les erreurs et ce qui demande une action (temps visé manquant, lien invalide, autorisations…).
+
 ## Entretien du dépôt
 - `/.well-known/security.txt` publié (il était resté dans un zip).
 - APK : modules de localisation retirés (`package.json`, `native-src/native.js`), qui ne servaient plus depuis la 2.3.
