@@ -315,6 +315,12 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - La numérotation repart de 0.1 pour le lancement de la bêta. Le contenu est celui de l'ancienne 2.14 : déconnexion qui vide l'appareil, mise en conformité légale, accessibilité.
 - Le nom du cache hors connexion change (`0.1-…`) : les appareils déjà installés se mettent à jour tout seuls et effacent l'ancien cache.
 
+## Compte obligatoire pour créer un plan
+- Première ouverture : écran de connexion (Google ou e-mail) et champ « Code d'assistance » pour suivre un coureur sans compte.
+- Importer un GPX, lancer la course démo, créer un plan ou importer un code de plan demandent d'être connecté.
+- Nouvel onglet **Accueil** (connecté) : reprendre son plan, importer un parcours, fiche coureur. L'espace coureur devient « Ma fiche coureur ».
+- Conditions, politique de confidentialité et `llms.txt` mises à jour en conséquence (25 octobre 2026).
+
 ## Entretien du dépôt
 - `/.well-known/security.txt` publié (il était resté dans un zip).
 - APK : modules de localisation retirés (`package.json`, `native-src/native.js`), qui ne servaient plus depuis la 2.3.

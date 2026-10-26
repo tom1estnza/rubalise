@@ -12,7 +12,7 @@ Rubalise ne vend rien, n'affiche pas de publicité, ne dépose aucun cookie, ne 
 - Plan de nutrition par ravito (glucides, eau, gels).
 - Copilote de l'assistance : départ conseillé, stationnement et temps de trajet, avec les services OpenStreetMap.
 - Suivi en direct par un code de 6 caractères : les supporters suivent sans créer de compte.
-- Espace coureur facultatif : zones d'allure et de fréquence cardiaque, plans, carnet de courses et préférences retrouvés sur tous les appareils.
+- Compte coureur (nécessaire pour créer un plan) : zones d'allure et de fréquence cardiaque, plans, carnet de courses et préférences retrouvés sur tous les appareils.
 
 ## Pages principales
 

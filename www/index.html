@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-W2myfg+S9aELCobyGhsKrrSEc/uGYvVIqrSfzeFuvBk=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Z8c6cA8Ob3kM+iTDd8XSrOrZqR3F7WACwSxw1SMqQMU=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -242,6 +242,17 @@ h1.logo-lg{margin:0}
 .btn:active:not(:disabled){transform:scale(.97)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 @media (prefers-reduced-motion:reduce){.btn,.wiz-bar li>span,.wiz-bar li>button{transition:none}}
+/* connexion unique et accueil connecté */
+.welcome-login .card{text-align:left;margin-top:14px}
+.welcome-login .card>h2{margin:0 0 10px}
+.welcome-login .fld,.welcome-login .fld span{text-align:left}
+.home h1{margin:0 0 6px}
+.home .lead{margin:0 0 16px}
+.pf-static{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin:0 0 14px;text-align:left}
+.pf-static dt{font-size:13px;color:var(--ink2)}
+.pf-static dd{margin:2px 0 0;font-size:18px;font-weight:600}
+.pf-static .pf-na{font-weight:400;font-size:15px;color:var(--ink2)}
+.pf-static small{font-weight:400;font-size:13px;color:var(--ink2)}
 /* plusieurs plans */
 .planbar{display:flex;gap:8px;align-items:center;margin:10px 0 6px}
 .planbtn{flex:1;min-width:0;min-height:44px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;text-align:left}
@@ -470,6 +481,7 @@ fieldset.lock:disabled{opacity:.9}
 </div>
 <nav class="tabs" aria-label="Sections">
   <span class="tabind" id="tabind" aria-hidden="true"></span>
+  <button class="tabbtn" data-tab="home" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/></svg><span>Accueil</span></button>
   <button class="tabbtn" data-tab="plan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19 9.5 8l4 6.5 2.5-4L21 19z"/></svg><span>Plan</span></button>
   <button class="tabbtn" data-tab="assist"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 .2 5 2.2 5 5.3"/></svg><span>Assistance</span></button>
   <button class="tabbtn" data-tab="live"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V9.5M9.5 3h5M12 3v3"/></svg><span>En course</span></button>
@@ -1282,6 +1294,7 @@ function parseGPX(text){
   return {profile,waypoints:ded.slice(0,12),name:tn?tn.textContent.trim().slice(0,80):''};
 }
 function loadGPXText(text,fname){
+  if(!needAccount())return;
   try{
     const res=parseGPX(String(text));
     const name=res.name||String(fname||'Ma course').replace(/\.gpx$/i,'');
@@ -1793,7 +1806,8 @@ function zoneEstimate(pf,r){
 function updateChrome(){
   const run=isRunner();
   const nav=document.querySelector('.tabs');if(nav)nav.classList.toggle('five',run);
-  const rb=document.querySelector('.tabbtn[data-tab="runner"]');if(rb)rb.hidden=!run;
+  const rb=document.querySelector('.tabbtn[data-tab="runner"]');if(rb)rb.hidden=true;
+  const hb=document.querySelector('.tabbtn[data-tab="home"]');if(hb)hb.hidden=!run;
   const ab=document.getElementById('acct');
   if(ab){
     if(run){ab.removeAttribute('data-tab');ab.dataset.act='menu';ab.setAttribute('aria-haspopup','menu');ab.setAttribute('aria-expanded',String(menuOpen));}
@@ -1830,17 +1844,13 @@ function heroArt(){
   +'<circle cx="214" cy="22" r="8" fill="var(--live)" stroke="var(--bg)" stroke-width="3"/></svg>';
 }
 function renderWelcome(){
-  return '<section class="welcome-hero">'
-  +'<div class="brand-big"><h1 class="logo-lg"><span>Rubalise</span><span class="tape-lg" aria-hidden="true"></span></h1><p class="tagline">Prépare ta course trail, suis-la en direct.</p><p class="note" style="text-align:center;margin:6px auto 0">Version bêta : des erreurs sont possibles, ton avis compte.'+(BETA.communityUrl?' <a href="'+esc(BETA.communityUrl)+'" target="_blank" rel="noopener">Rejoindre la communauté WhatsApp</a>':'')+'</p></div>'
-  +heroArt()
-  +'<h2 class="role-q">Tu viens pour quoi ?</h2>'
-  +'<div class="roles">'
-  +'<div class="card role"><h2>Je cours</h2><p class="hint">Importe ton parcours GPX : heures de passage, nutrition et plan à partager avec ton assistance.</p><button class="btn primary" data-act="skip-welcome">Préparer ma course</button></div>'
-  +'<div class="card role"><h2>Je suis l’assistance</h2><p class="hint">Heure de départ conseillée, stationnement et trajet pour chaque ravito.</p>'+joinForm('Code du coureur','joincode','assist','Rejoindre')+'</div>'
-  +'<div class="card role"><h2>Je suis un supporter</h2><p class="hint">Suis la progression du coureur en direct avec son code.</p>'+joinForm('Code du coureur','joincode-s','live','Suivre')+'</div>'
-  +'</div>'
-  +'<p class="role-login">Tu as un compte ? <button class="linkbtn" data-act="to-login">Me connecter</button></p>'
-  +'<p class="note" style="text-align:center;margin:0 auto">Le compte est facultatif : il retrouve tes plans sur tous tes appareils et permet de partager ta course.</p>'
+  const up=loginMode==='up';
+  return '<section class="welcome-hero welcome-login">'
+  +'<div class="brand-big"><h1 class="logo-lg"><span>Rubalise</span><span class="tape-lg" aria-hidden="true"></span></h1><p class="tagline">Prépare ta course trail, suis-la en direct.</p></div>'
+  +'<div class="card"><h2>'+(up?'Créer mon compte':'Connexion')+'</h2>'+loginForm()+'</div>'
+  +'<div class="card"><h2>Code d’assistance</h2><p class="hint">Tu assistes ou tu suis un coureur ? Saisis son code, sans compte à créer.</p>'+joinForm('Code du coureur','joincode','assist','Rejoindre')+'</div>'
+  +(state.race?'<p class="role-login"><button class="linkbtn" data-tab="plan">Retour à mon suivi</button></p>':'')
+  +'<p class="note" style="text-align:center;margin:0 auto">Version bêta : des erreurs sont possibles, ton avis compte.'+(BETA.communityUrl?' <a href="'+esc(BETA.communityUrl)+'" target="_blank" rel="noopener">Rejoindre la communauté WhatsApp</a>':'')+'</p>'
   +'<p class="note legal-links">'+legalLinks()+'</p></section>';
 }
 
@@ -1855,8 +1865,8 @@ function tourSteps(){
     {tab:'live',target:'.tabs [data-tab="live"]',title:'3. Suis la course',text:'Le jour J, « pointer » un ravito, c’est noter l’heure de passage : les heures suivantes se recalculent chez tout le monde.'+(nat?' Sur Android, autorise les notifications pour être prévenu au bon moment.':'')},
     {tab:'diary',target:'.tabs [data-tab="diary"]',title:'4. Garde une trace',text:'Après la course, compare le prévu et le réel, note ton ressenti, puis archive la course dans ton carnet.'}
   ];
-  if(run)L.push({tab:'runner',target:'.tabs [data-tab="runner"]',title:'Ton espace coureur',text:'Renseigne ta fréquence cardiaque et une performance de référence : tu obtiens tes zones d’allure et de fréquence cardiaque, et un temps estimé pour ta course.'});
-  else L.push({tab:'plan',target:'#acct',title:'Crée ton compte',text:'Un compte gratuit permet de partager ta course et d’enregistrer ton profil (zones d’allure et de fréquence cardiaque). Tu peux aussi t’en passer pour préparer une course.'});
+  if(run)L.push({tab:'home',target:'.tabs [data-tab="home"]',title:'Ton accueil et ta fiche coureur',text:'Importe ton GPX depuis l’accueil. Dans ta fiche coureur, renseigne ta fréquence cardiaque et une performance de référence : tu obtiens tes zones et un temps estimé pour ta course.'});
+  else L.push({tab:'plan',target:'#acct',title:'Crée ton compte',text:'Un compte gratuit est nécessaire pour préparer une course, la partager et enregistrer ton profil (zones d’allure et de fréquence cardiaque).'});
   L.push({tab:'plan',target:'#helpbtn',title:'Besoin d’aide ?',text:'Le bouton « ? » rouvre ce guide, la FAQ et le mini-lexique à tout moment.'});
   L.push({tab:'plan',target:null,final:true,title:'À toi de jouer !',text:'Importe ton fichier GPX, ou essaie la course démo pour tout voir en action.'});
   return L;
@@ -1920,21 +1930,21 @@ function endTour(){
   if(!tourOn)return;
   tourOn=false;document.getElementById('tour').hidden=true;document.body.classList.remove('touring');
   if(!landOpen)document.body.classList.remove('noscroll');
-  if(tourTemp){state.race=null;state.tmpRace=false;tourTemp=false;tab='plan';}
+  if(tourTemp){state.race=null;state.tmpRace=false;tourTemp=false;tab=isRunner()?'home':'plan';}
   state.tourDone=true;save();render(true);
 }
 function tourAct(k){
   if(k==='next'){if(tourList[tourI].final){endTour();}else{tourI++;showTourStep();}return;}
   if(k==='prev'){if(tourI>0){tourI--;showTourStep();}return;}
   if(k==='skip'){endTour();return;}
-  if(k==='demo'){const had=!!(state.race&&!state.tmpRace&&!tourTemp);tourTemp=false;state.tmpRace=false;endTour();if(had)stashPlan();state.race=demoRace();animateNext=true;tab='plan';commit();window.scrollTo(0,0);return;}
+  if(k==='demo'){if(!isRunner()){endTour();needAccount();return;}const had=!!(state.race&&!state.tmpRace&&!tourTemp);tourTemp=false;state.tmpRace=false;endTour();if(had)stashPlan();state.race=demoRace();animateNext=true;tab='plan';commit();window.scrollTo(0,0);return;}
 }
 // isNew : le compte vient d'être créé (inscription). Le guide ne se lance que dans ce cas ; une simple connexion ne le relance jamais.
 function enterApp(dest,isNew){
   state.welcomed=true;
   openLastPlan();   // le dernier plan ouvert reste ouvert, même si un nouveau plan était en cours de création
   if(isNew){state.tourDone=false;save();tab='plan';commit();window.scrollTo(0,0);startTour();}
-  else{state.tourDone=true;save();tab=(dest==='runner'&&state.race)?'plan':(dest||'plan');commit();window.scrollTo(0,0);}
+  else{state.tourDone=true;save();tab=(!dest||dest==='runner')?'home':dest;commit();window.scrollTo(0,0);}
 }
 
 function kmh(pace){return (60/pace).toFixed(1).replace('.',',');}
@@ -1973,7 +1983,7 @@ function renderRunner(){
         +'<p class="note">Pour une course longue, vise l’endurance (Z2). L’estimation tient compte de la pente du parcours.</p>'
        :'<p class="note">Renseigne ta performance de référence ci-dessus pour estimer ton temps.</p>')+carbsApply(r,pf)+'</section>';
   }
-  return '<section class="empty"><h1>Espace coureur</h1><p class="lead">'+(pf.first?'Bonjour '+esc(pf.first)+'. ':'')+'Saisis tes données une fois : elles sont enregistrées dans ton compte.</p></section>'
+  return '<section class="empty"><p style="margin:0 0 8px"><button class="linkbtn" data-act="back" style="padding-left:0">‹ Retour</button></p><h1>Ma fiche coureur</h1><p class="lead">'+(pf.first?'Bonjour '+esc(pf.first)+'. ':'')+'Saisis tes données une fois : elles sont enregistrées dans ton compte.</p></section>'
   +'<section class="sec"><h2>Mes données</h2><p class="hint">Ces informations (dont ta photo et tes fréquences cardiaques), tes plans de course, ton carnet et tes préférences sont enregistrés dans ton compte, pour les retrouver sur un autre appareil. Tu peux les effacer à tout moment. <a href="'+legalUrl('confidentialite')+'" target="_blank" rel="noopener">Politique de confidentialité</a>.</p>'+photoBlock()
   +'<div class="grid2"><label class="fld"><span>Prénom</span><input data-p="first" value="'+esc(pf.first)+'" autocomplete="given-name"></label>'
   +'<label class="fld"><span>Date de naissance</span><input type="date" data-p="birth" value="'+esc(pf.birth)+'"></label>'
@@ -1997,7 +2007,7 @@ function renderRunner(){
 
 // ---------- menu du profil, fenêtre de confirmation, pages ----------
 let menuOpen=false,prevTab='plan',exportText='',modalOk=null,landOpen=false,landSel=null,landFrom='plan',landFs=false;
-const MAIN_TABS=['plan','assist','live','diary','runner'];
+const MAIN_TABS=['home','plan','assist','live','diary','runner'];
 function go(page){if(MAIN_TABS.indexOf(tab)>=0)prevTab=tab;tab=page;shareCode='';importOpen=false;gpxPasteOpen=false;clearTimeout(renderTimer);render(true);}
 function toggleMenu(){if(menuOpen)closeMenu();else openMenu();}
 function openMenu(){
@@ -2005,7 +2015,7 @@ function openMenu(){
   const m=document.getElementById('menu'),ab=document.getElementById('acct'),pf=state.profile||{},em=authState.email||'';
   const it=(k,l,c)=>'<button role="menuitem" data-menu="'+k+'"'+(c?' class="'+c+'"':'')+'>'+l+'</button>';
   m.innerHTML='<div class="menu-head">'+avatarHTML(40)+'<span class="mh-t"><b>'+esc(pf.first||em.split('@')[0])+'</b><small>'+esc(em)+'</small></span></div>'
-    +it('runner','Mon espace coureur')+it('settings','Paramètres du compte')+it('prefs','Préférences')+it('help','Aide et à propos')+'<hr>'+it('signout','Se déconnecter','dng');
+    +it('runner','Ma fiche coureur')+it('settings','Paramètres du compte')+it('prefs','Préférences')+it('help','Aide et à propos')+'<hr>'+it('signout','Se déconnecter','dng');
   const rc=ab.getBoundingClientRect();
   m.style.top=(rc.bottom+8)+'px';m.style.right=Math.max(8,window.innerWidth-rc.right)+'px';
   m.hidden=false;menuOpen=true;ab.setAttribute('aria-expanded','true');
@@ -2091,15 +2101,15 @@ function renderHelp(){
   +'<div class="card"><h2>Guide de démarrage</h2><p class="hint">Un parcours en quelques étapes pour découvrir Rubalise.</p><div class="row"><button class="btn primary" data-act="tour-start">Revoir le guide</button></div></div>'
   +betaCard()
   +'<section>'
-  +'<details><summary>Importer un parcours GPX</summary><p>Dans l’onglet Plan, appuie sur « Importer un fichier GPX » et choisis le fichier. Si le sélecteur ne l’ouvre pas, utilise « Coller son contenu » : ouvre le GPX dans un éditeur de texte, copie tout et colle-le. Demande le GPX à l’organisateur, ou exporte-le depuis ta montre ou ton application de suivi.</p></details>'
+  +'<details><summary>Importer un parcours GPX</summary><p>Sur l’accueil, appuie sur « Importer un fichier GPX » et choisis le fichier. Si le sélecteur ne l’ouvre pas, utilise « Coller son contenu » : ouvre le GPX dans un éditeur de texte, copie tout et colle-le. Demande le GPX à l’organisateur, ou exporte-le depuis ta montre ou ton application de suivi.</p></details>'
   +'<details><summary>Partager une course en direct</summary><ol><li>Connecte-toi (rond en haut à droite).</li><li>Onglet Assistance, « Partager en direct » : un code de 6 caractères apparaît.</li><li>Ton assistance et tes supporters saisissent ce code dans « Rejoindre », sans compte.</li></ol></details>'
   +'<details><summary>Pointer un passage</summary><p>Dans l’onglet En course, indique l’heure de passage au ravito et appuie sur « Pointer le passage ». Les heures suivantes se recalculent chez tout le monde. Sans réseau, le pointage est gardé sur le téléphone et envoyé dès que le signal revient.</p></details>'
   +'<details><summary>Suivre le coureur</summary><p>À chaque ravito pointé (onglet En course), les heures suivantes se recalculent chez tout le monde. Le coureur peut aussi coller le lien de suivi de sa montre (LiveTrack chez Garmin, Live Tracking chez Coros) : l’assistance l’ouvre, lit où il se trouve et saisit son kilomètre dans En course.</p></details>'
   +'<details><summary>Se connecter avec Google</summary><p>Sur l’écran de connexion, appuie sur « Continuer avec Google » : Google s’ouvre dans le navigateur du téléphone, puis tu reviens dans Rubalise. Une adresse e-mail correspond à un seul compte. Si tu as déjà un compte avec ton e-mail et ton mot de passe, connecte-toi avec, puis associe Google dans Paramètres du compte, « Méthodes de connexion ».</p></details>'
   +'<details><summary>Vue horizontale du profil</summary><p>Sur le Plan ou En course, appuie sur « Vue horizontale », puis sur un point numéroté du profil : tu vois le nom du ravito, l’heure d’arrivée prévue et le matériel à prévoir, avec un lien pour le modifier. Le bouton « 3D » remplace le profil par un tracé en relief : fais-le tourner du doigt, pince pour zoomer.</p></details>'
-  +'<details><summary>Zones d’allure et de fréquence cardiaque</summary><p>Elles sont calculées dans l’espace coureur à partir de ta performance de référence (indice de forme de Daniels) et de tes fréquences cardiaques (réserve cardiaque de Karvonen, pourcentage de la FC max ou FC de seuil). Les allures sont données sur terrain plat.</p></details>'
+  +'<details><summary>Zones d’allure et de fréquence cardiaque</summary><p>Elles sont calculées dans ta fiche coureur à partir de ta performance de référence (indice de forme de Daniels) et de tes fréquences cardiaques (réserve cardiaque de Karvonen, pourcentage de la FC max ou FC de seuil). Les allures sont données sur terrain plat.</p></details>'
   +'<details><summary>Mises à jour et hors connexion</summary><p>Rubalise installée depuis le navigateur se met à jour toute seule quand tu l’ouvres avec du réseau. Si un bandeau « Une nouvelle version est prête » apparaît, appuie sur « Recharger ». Sans réseau, tes plans et tes heures de passage restent utilisables. Appli Android (APK) : installe le nouveau fichier par-dessus l’ancien, tes données sont conservées.</p></details>'
-  +'<details><summary>Sauvegarder mes données</summary><p>Connecté, tes plans sont enregistrés dans ton compte : tu les retrouves sur ton ordinateur comme sur ton téléphone. Quand tu te déconnectes, ou que ta session se ferme, plans, carnet et profil sont retirés de l’appareil et reviennent à ta prochaine connexion. Sans compte, ils restent sur cet appareil : si tu effaces les données du navigateur ou désinstalles l’appli, ils sont perdus. Pour en garder une copie : onglet Assistance, « Copier le code du plan » (à coller dans un message), ou « Exporter mes données » dans les paramètres du compte.</p></details>'
+  +'<details><summary>Sauvegarder mes données</summary><p>Connecté, tes plans sont enregistrés dans ton compte : tu les retrouves sur ton ordinateur comme sur ton téléphone. Quand tu te déconnectes, ou que ta session se ferme, plans, carnet et profil sont retirés de l’appareil et reviennent à ta prochaine connexion. Pour en garder une copie : onglet Assistance, « Copier le code du plan » (à coller dans un message), ou « Exporter mes données » dans les paramètres du compte.</p></details>'
   +'<details><summary>Mini-lexique</summary><p><b>Ravito</b> : point de ravitaillement sur le parcours.</p><p><b>Barrière horaire</b> : heure limite pour passer à un point. La marge indique l’avance que tu as sur cette limite.</p><p><b>Pointer</b> : noter l’heure à laquelle le coureur passe à un ravito.</p><p><b>D+ / D−</b> : dénivelé positif (montée) et négatif (descente) cumulés.</p><p><b>Zone d’allure</b> : plage de vitesse adaptée à un type d’effort, calculée à partir de ta performance de référence.</p></details>'
   +'<details><summary>À propos</summary><p>Rubalise, version '+APP_VERSION+' (bêta)'+(window.__swVersion?', cache hors connexion '+window.__swVersion:'')+'. Environnement : '+(isNativeApp()?'application Android':'navigateur')+(testMode()?', mode test':'')+'. Les heures de passage sont des estimations : elles ne remplacent ni ton expérience, ni les barrières horaires officielles de l’organisateur, à vérifier avant le départ. Les zones d’allure, les zones de fréquence cardiaque, la nutrition et le départ conseillé sont indicatifs : ils ne remplacent pas l’avis d’un médecin et ne doivent pas servir à ta sécurité en course.</p><p class="note" id="offstat">Hors connexion : vérification…</p></details>'
   +'<p class="note legal-links">'+legalLinks()+'</p></section>';
@@ -2334,7 +2344,7 @@ function openPlan(id){
   leavePlanView();closePlans();animateNext=true;tab='plan';commit();window.scrollTo(0,0);
   return true;
 }
-function newPlanNow(){stashPlan();leavePlanView();closePlans();tab='plan';animateNext=true;commit();window.scrollTo(0,0);}
+function newPlanNow(){if(!needAccount())return;stashPlan();leavePlanView();closePlans();tab='plan';animateNext=true;commit();window.scrollTo(0,0);}
 function planBar(){
   const n=(state.plans||[]).length+(state.race?1:0);
   if(!n)return '';
@@ -2968,15 +2978,36 @@ function needRace(){
   return '<section class="empty"><h1>Commence par ton plan</h1><p class="lead">Cet onglet sert pendant et après la course. Prépare d’abord ton parcours dans « Plan ».</p><button class="btn primary" data-tab="plan">Aller au plan</button>'
   +'<div class="card" style="margin-top:18px"><h2>Tu suis un coureur ?</h2><p class="hint">Saisis le code donné par le coureur, sans compte à créer.</p>'+joinForm('Code de la course')+'</div></section>';
 }
-function emptyPlan(){
-  return '<section class="empty"><h1>Prépare ta course</h1>'
-  +'<p class="wiz-count">Étape 1 sur '+WIZ.length+' · Parcours</p>'+wizBar(1,false)
+// ---------- accueil connecté ----------
+function profileStatic(pf){
+  const age=ageFrom(pf.birth),est=age?hrMaxEstimate(age):0;
+  const v=(x,u)=>x?esc(String(x))+(u?'&nbsp;'+u:''):'<span class="pf-na">À renseigner</span>';
+  const ref=pf.refTime?String(pf.refDist||'').replace('.',',')+' km en '+pf.refTime:'';
+  const rows=[
+    ['Prénom',v(pf.first)],['Âge',v(age,'ans')],
+    ['FC max',+pf.hrMax>0?v(pf.hrMax,'bpm'):(est?v(est,'bpm')+' <small>(estimée)</small>':v(''))],
+    ['FC de repos',v(pf.hrRest,'bpm')],['FC de seuil',v(pf.hrLt,'bpm')],
+    ['Performance de référence',ref?esc(ref):v('')],
+    ['Cible de glucides',pf.carbsH?v(pf.carbsH,'g/h'):v('')]
+  ];
+  return '<dl class="pf-static">'+rows.map(x=>'<div><dt>'+x[0]+'</dt><dd>'+x[1]+'</dd></div>').join('')+'</dl>';
+}
+function renderHome(){
+  const pf=state.profile||defaultProfile(),r=state.race,has=profileHasData(pf),tot=r?planTotals(r):null;
+  return '<section class="home"><h1>'+(pf.first?'Bonjour '+esc(pf.first):'Bienvenue')+'</h1>'
   +'<p class="lead">Importe le tracé GPX de ta course : Rubalise calcule tes heures de passage et ton plan de nutrition.</p>'
-  +'<div class="card"><h2>Importer mon parcours</h2><p class="hint">Fichier GPX fourni par l’organisateur ou exporté depuis ta montre.</p><div class="row">'+gpxPick('primary','Importer un fichier GPX')+'</div>'+gpxPaste()+'</div>'
-  +'<div class="card"><h2>Essayer sans rien importer</h2><p class="hint">Une course démo de 42 km pour tout découvrir.</p><div class="row"><button class="btn" data-act="demo">Lancer la course démo</button></div></div>'
-  +'<div class="card"><h2>Tu suis un coureur ?</h2><p class="hint">Saisis le code donné par le coureur, sans compte à créer.</p>'+joinForm('Code de la course')+'</div>'
-  +'<p class="note">Tes données restent sur ton téléphone. Elles ne sont envoyées que si tu partages une course en direct.</p>'
-  +'<p style="margin:0"><button class="linkbtn" data-act="tour-start">Revoir le guide de démarrage</button></p></section>';
+  +(r?'<div class="card"><h2>Reprendre mon plan</h2><p class="hint">'+esc(r.name||'Ma course')+(tot&&tot.km?' · '+km1(tot.km)+' km':'')+'</p><div class="row"><button class="btn primary" data-tab="plan">Ouvrir mon plan</button></div></div>':'')
+  +'<div class="card"><p class="wiz-count">Étape 1 sur '+WIZ.length+' · Parcours</p>'+wizBar(1,false)+'<h2>Importer mon parcours</h2><p class="hint">Fichier GPX fourni par l’organisateur ou exporté depuis ta montre.</p><div class="row">'+gpxPick('primary','Importer un fichier GPX')+'<button class="btn" data-act="demo">Course démo</button></div>'+gpxPaste()+'</div>'
+  +'<div class="card pf-card"><h2>Ma fiche coureur</h2>'+(has?'':'<p class="hint">Ta fiche est vide. Elle sert à calculer tes zones d’allure et de fréquence cardiaque, et un temps estimé pour ta course.</p>')+profileStatic(pf)+'<div class="row"><button class="btn'+(has?'':' primary')+'" data-tab="runner">'+(has?'Modifier ma fiche':'Créer ma fiche coureur')+'</button></div></div>'
+  +(state.tourDone?'':'<div class="card"><h2>Guide de démarrage</h2><p class="hint">Un parcours en quelques étapes pour découvrir Rubalise.</p><div class="row"><button class="btn" data-act="tour-start">Lancer le guide</button></div></div>')
+  +'</section>';
+}
+function needAccount(){if(isRunner())return true;flash('Connecte-toi pour créer un plan.');go('welcome');return false;}
+function emptyPlan(){
+  return '<section class="empty"><h1>Aucun plan ouvert</h1>'
+  +'<p class="lead">Importe un parcours GPX depuis l’accueil pour préparer ta course.</p>'
+  +'<div class="row"><button class="btn primary" data-tab="home">Aller à l’accueil</button></div>'
+  +'<div class="card"><h2>Rejoindre une course</h2><p class="hint">Saisis le code donné par le coureur, sans compte à créer.</p>'+joinForm('Code de la course')+'</div></section>';
 }
 function planGuide(r,okT){
   if(r.sync&&r.sync.role==='member')return '';
@@ -3401,6 +3432,11 @@ function applyWizard(){
   root.querySelectorAll('[data-step]').forEach(e=>{e.hidden=e.dataset.step.split(' ').indexOf(stp)<0;});
 }
 function render(top){
+  if(!isRunner()){
+    if(tab==='login')tab='welcome';
+    if(['home','runner','settings','prefs'].indexOf(tab)>=0)tab=state.race?'plan':'welcome';
+    if(!state.race&&tab!=='help'&&tab!=='welcome')tab='welcome';
+  }
   if(!isRunner()&&deviceLinked()){
     errLogAdd('Appareil lié à un compte sans session : données du compte retirées','session');
     wipeAccountData();save();flash('Tu n’es pas connecté : tes plans sont dans ton compte. Connecte-toi pour les retrouver.');
@@ -3413,7 +3449,7 @@ function render(top){
   let html='';
   try{
     updateChrome();
-    html=tab==='welcome'?renderWelcome():tab==='plan'?renderPlan():tab==='assist'?renderAssist():tab==='live'?renderLive():tab==='login'?renderLogin():tab==='runner'?(isRunner()?renderRunner():renderLogin()):tab==='settings'?renderSettings():tab==='prefs'?renderPrefs():tab==='help'?renderHelp():renderDiary();
+    html=tab==='welcome'?renderWelcome():tab==='home'?renderHome():tab==='plan'?renderPlan():tab==='assist'?renderAssist():tab==='live'?renderLive():tab==='login'?renderLogin():tab==='runner'?(isRunner()?renderRunner():renderLogin()):tab==='settings'?renderSettings():tab==='prefs'?renderPrefs():tab==='help'?renderHelp():renderDiary();
   }catch(err){errLogAdd(err.message,'affichage');html='<section class="empty"><h1>Oups</h1><p class="lead">Un calcul a échoué : '+esc(err.message)+'.</p><button class="btn" data-act="demo">Recharger la course démo</button></section>';}
   const H1T={plan:'Plan de course',live:'En course'};
   if(!/<h1[\s>]/.test(html)&&H1T[tab])html='<h1 class="sr-only">'+H1T[tab]+'</h1>'+html;
@@ -3489,9 +3525,10 @@ function act(b){
   if(a==='wiz-exit'){state.wiz=null;commit();window.scrollTo(0,0);flash('Plan complet ouvert. « Revoir pas à pas » rouvre l’assistant.');return;}
   if(a==='wiz-finish'){state.wiz=null;commit();window.scrollTo(0,0);flash('Plan prêt. Tu le retrouves à tout moment dans Plan.');return;}
   if(a==='wiz-start'){if(!r)return;state.wiz={pid:planId(r),step:1};wizDir=1;save();commit();window.scrollTo(0,0);return;}
-  if(a==='demo'){if(state.race)stashPlan();state.race=demoRace();wizOpen(state.race,tourOn);animateNext=true;tab='plan';commit();window.scrollTo(0,0);return;}
+  if(a==='demo'){if(!needAccount())return;if(state.race)stashPlan();state.race=demoRace();wizOpen(state.race,tourOn);animateNext=true;tab='plan';commit();window.scrollTo(0,0);return;}
   if(a==='show-import'){importOpen=!importOpen;shareCode='';commit();return;}
   if(a==='do-import'){
+    if(!needAccount())return;
     const box=document.getElementById('importbox');
     try{const np=importCode(box?box.value:'');if(state.race)stashPlan();state.race=np;importOpen=false;animateNext=true;tab='plan';commit();window.scrollTo(0,0);flash('Plan importé.');}
     catch(err){flash(err.message);}
