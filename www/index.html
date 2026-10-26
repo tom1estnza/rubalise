@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-c2gOHpRTLXvgG90O+8Wc9PONL0oka1jtssEsy2l2rTU=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-rCeF0488cg+yXjI4ufWnu4owy5VGDB3T7gAt1RlKvKs=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -143,6 +143,11 @@ input[type=range]{width:100%;accent-color:var(--accent);min-height:32px}
 /* bêta : mentions, avis, hors connexion */
 .beta-tag{margin-left:8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--live);border:1.5px solid var(--live);border-radius:999px;padding:1px 7px;align-self:center}
 a.btn{text-decoration:none}
+.inline-msg{margin:8px 0 0;padding:8px 12px;border-left:3px solid var(--warn);border-radius:6px;background:color-mix(in srgb,var(--warn) 10%,transparent);font-size:14px;line-height:1.4;color:var(--ink)}
+.sheet .inline-msg{margin:0 20px 8px}
+.countdown{margin:4px 0 0}
+.countdown dd{margin:2px 0 0;font:700 clamp(32px,9vw,44px)/1.05 var(--f-num);letter-spacing:.01em}
+.countdown dt{font-size:14px;color:var(--ink2)}
 .legal-links{text-align:center;margin:14px auto 0}
 .about-legal{text-align:left;margin:10px 0 0}
 .legal-links a,.consent a,.stack .note a,.betacard .hint a{color:var(--ink);font-weight:600;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
@@ -515,7 +520,7 @@ fieldset.lock:disabled{opacity:.9}
   <button class="tabbtn" data-tab="diary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg><span>Carnet</span></button>
   <button class="tabbtn" data-tab="runner" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg><span>Coureur</span></button>
 </nav>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 <div class="menu" id="menu" role="menu" hidden></div>
 <div class="modal" id="modal" hidden><div class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="mtitle" aria-describedby="mtext">
   <h2 id="mtitle"></h2><p id="mtext"></p>
@@ -1010,9 +1015,36 @@ function clk(min){const c=fmtClock(min);return '<span class="t">'+c.s+'</span>'+
 function mcls(mn){return mn>=45?'ok':mn>=15?'warn':'bad';}
 function mfmt(mn){return (mn>=0?'+':'−')+Math.abs(Math.round(mn))+' min';}
 function dsign(mn){const r=Math.round(mn);return (r>0?'+':r<0?'−':'')+Math.abs(r)+' min';}
-// Bulles : seulement les erreurs et ce qui demande une action. Les confirmations d'actions déjà visibles à l'écran ne s'affichent plus.
-const QUIET_FLASH=/^(Plan |Parcours importé|GPX importé|\d+ point|Code : |Course |Compte supprimé|Connexion |Création du suivi|Déconnecté|Départ |Données de l|Enregistrement|Google est maintenant|Heure de départ|Km |Passage pointé|Photo |Pointages|Position |Profil enregistré|Cible appliquée|Suivi |Synchronisation|Temps visé mis|Test de connexion|Un plan a été|Mode test)/;
-function flash(msg){if(QUIET_FLASH.test(String(msg)))return;const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');mo(t,{opacity:[0,1],transform:['translateY(14px)','translateY(0px)']},{duration:.25,ease:[.22,1,.36,1]});clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),String(msg).length>70?7000:3200);}
+// Plus aucune bulle flottante. Les confirmations restent silencieuses (le résultat se voit à l'écran) ;
+// les erreurs et ce qui demande une action s'affichent en ligne, juste sous le bouton ou le champ que l'on vient d'utiliser.
+const QUIET_FLASH=/^(Plan |Plans mis à jour|\d+ plans? retrouvés?|Parcours importé|GPX importé|\d+ point|Code : |Course |Compte supprimé|Compte créé|Connecté|Connexion |Création d|Déconnecté|Départ |Données de l|Enregistrement|Google est maintenant|Heure de départ|Hors ligne : ton profil|Km |Mot de passe (défini|modifié)|Partage arrêté|Passage pointé|Photo |Pointages|Position |Profil enregistré|Cible appliquée|Suivi |Synchronisation|Temps visé mis|Test de connexion|Ta session a expiré|Tu as été déconnecté|Tu n’es pas connecté|Un plan a été|Mode test)/;
+const FLASH_ERR=/impossible|n’a pas pu|n'a pas pu|refus|invalide|erreur|échou|annulée|introuvable|incorrect|trop court/i;
+let msgAnchor=null,msgAt=0,inlineMsg=null,inlineT=0;
+function anchorKey(el){
+  if(!el||!root.contains(el))return null;
+  if(el.id)return '#'+CSS.escape(el.id);
+  const a=el.dataset||{},k=['act','id','r','s','f','p','tab'].filter(x=>a[x]!==undefined).map(x=>'[data-'+x+'="'+CSS.escape(a[x])+'"]').join('');
+  return k?el.tagName.toLowerCase()+k:null;
+}
+document.addEventListener('pointerdown',e=>{const el=e.target.closest&&e.target.closest('button,input,textarea,select');const k=anchorKey(el);if(k){msgAnchor=k;msgAt=Date.now();}},true);
+document.addEventListener('focusin',e=>{const k=anchorKey(e.target);if(k){msgAnchor=k;msgAt=Date.now();}});
+function flash(msg){
+  msg=String(msg||'');
+  if(QUIET_FLASH.test(msg)&&!FLASH_ERR.test(msg))return;
+  if(!msgAnchor||Date.now()-msgAt>8000)return;   // aucune action récente : rien à signaler à cet endroit
+  inlineMsg={text:msg,sel:msgAnchor,until:Date.now()+(msg.length>70?9000:6000)};
+  placeInlineMsg();
+}
+function placeInlineMsg(){
+  const old=document.getElementById('inline-msg');if(old)old.remove();
+  if(!inlineMsg||Date.now()>inlineMsg.until){inlineMsg=null;return;}
+  const a=root.querySelector(inlineMsg.sel);if(!a)return;
+  const host=a.closest('.sheet-foot,.row,.fld')||a,p=document.createElement('p');
+  p.id='inline-msg';p.className='inline-msg';p.setAttribute('role','alert');p.textContent=inlineMsg.text;
+  if(host.classList.contains('sheet-foot'))host.parentNode.insertBefore(p,host);else host.insertAdjacentElement('afterend',p);
+  mo(p,{opacity:[0,1],transform:['translateY(-4px)','translateY(0px)']},{duration:.2,ease:'easeOut'});
+  clearTimeout(inlineT);inlineT=setTimeout(()=>{inlineMsg=null;const o=document.getElementById('inline-msg');if(o)o.remove();},inlineMsg.until-Date.now());
+}
 function commit(){save();clearTimeout(renderTimer);render();maybePush();}
 function schedule(){save();clearTimeout(renderTimer);renderTimer=setTimeout(render,220);maybePush();}
 function nowClock(){const d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60;}
@@ -1523,6 +1555,28 @@ function syncText(r){
 }
 function updateSyncUI(){const el=document.getElementById('syncstat'),r=state.race;if(el&&r&&r.sync)el.textContent=syncText(r);}
 function typing(){const ae=document.activeElement;return !!(ae&&root.contains(ae)&&/INPUT|TEXTAREA/.test(ae.tagName));}
+// Le rendu remplace la page : on retrouve le champ qui avait le focus (et ce qui y était déjà tapé) pour ne pas le perdre.
+// Cas typique : on modifie un champ, on clique dans le suivant, et le rendu déclenché par le premier arrive juste après.
+function focusSnap(){
+  const ae=document.activeElement;
+  if(!ae||!root.contains(ae)||!/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))return null;
+  let sel=null;
+  if(ae.id)sel='#'+CSS.escape(ae.id);
+  else{
+    const k=['r','s','f','p','pref','diary','itadd','crewnotif'].filter(a=>ae.dataset[a]!==undefined).map(a=>'[data-'+a+'="'+CSS.escape(ae.dataset[a])+'"]').join('');
+    if(k)sel=ae.tagName.toLowerCase()+k;
+  }
+  if(!sel)return null;
+  let st=null,en=null;try{st=ae.selectionStart;en=ae.selectionEnd;}catch(e){}
+  return {sel,val:ae.type==='checkbox'?null:ae.value,st,en};
+}
+function focusRestore(f){
+  if(!f)return;
+  const el=root.querySelector(f.sel);if(!el)return;
+  if(f.val!=null&&el.value!==f.val)el.value=f.val;
+  try{el.focus({preventScroll:true});}catch(e){}
+  if(f.st!=null)try{el.setSelectionRange(f.st,f.en);}catch(e){}
+}
 async function syncNow(){
   const r=state.race;if(!r||!r.sync)return;
   if(syncing){resync=true;return;}
@@ -2334,7 +2388,7 @@ async function syncPlans(opts){
   }
 }
 function planSyncLine(){
-  if(!isRunner())return '<p class="note">Connecte-toi pour retrouver tes plans sur tous tes appareils (téléphone et ordinateur).</p>';
+  if(!isRunner())return '';
   const c=state.cloud||{};let t;
   if(navigator.onLine===false)t='Hors connexion : tes modifications seront enregistrées dans ton compte au retour du réseau.';
   else if(c.err)t='Non enregistré dans ton compte : '+c.err;
@@ -2387,7 +2441,7 @@ function plansHTML(){
   return '<h2 id="plansT">Mes plans</h2>'+(list.length?'<ul class="plan-list">'+rows+'</ul>':'<p class="hint">Aucun plan pour le moment.</p>')
     +planSyncLine()
     +'<div class="row"><button class="btn primary" data-act="plan-new">Nouveau plan</button><button class="btn quiet" data-act="plans-close">Fermer</button></div>'
-    +(list.length>1?'<p class="note">Un seul plan est ouvert à l’écran à la fois. Chacun garde ses ravitos, ses pointages et sa nutrition. Un plan partagé en direct ne se met à jour que lorsqu’il est ouvert.</p>':'');
+    +(list.length>1?'':'');
 }
 function openPlans(){const el=document.getElementById('plansheet');if(!el)return;el.querySelector('.modal-card').innerHTML=plansHTML();el.hidden=false;plansOpen=true;const f=el.querySelector('.plan-main,[data-act="plan-new"]');if(f)f.focus();}
 function closePlans(){const el=document.getElementById('plansheet');if(el)el.hidden=true;plansOpen=false;}
@@ -2493,13 +2547,13 @@ function itemsBlock(r,st){
   const run=st.items||[];
   const ext=Object.keys(r.extras||{}).filter(k=>r.extras[k].s===st.id).map(k=>Object.assign({id:k},r.extras[k]));
   let h='<div class="igroup"><h4>'+(synced?'Demandé par le coureur':'Matériel à préparer')+'</h4>'
-    +(member?'<p class="note">Tu peux cocher « préparé », mais pas modifier ces demandes.</p>':'')
+    +(member?'':'')
     +(run.length?'<ul class="items">'+run.map(it=>itemRow(r,it,'runner',st.id)).join('')+'</ul>':'<p class="note">Rien de demandé pour l’instant.</p>')+'</div>';
   if(synced&&(ext.length||member))h+='<div class="igroup"><h4>Ajouté par l’assistance</h4>'+(ext.length?'<ul class="items">'+ext.map(it=>itemRow(r,it,'extra',st.id)).join('')+'</ul>':'<p class="note">Rien d’ajouté pour l’instant.</p>')+'</div>';
   const chips=ITEM_CATS.map(c=>'<button type="button" class="chip" data-act="item-cat" data-id="'+st.id+'" data-cat="'+c[0]+'" data-mode="'+c[3]+'" data-fill="'+esc(c[2])+'">'+c[1]+'</button>').join('');
   const clothes=CLOTHES.map(c=>'<button type="button" class="chip" data-act="cloth-toggle" data-id="'+st.id+'" data-v="'+esc(c)+'" aria-pressed="false">'+esc(c)+'</button>').join('');
   h+='<div class="igroup addbox" id="ab-'+st.id+'" data-mode="count"><h4>'+(member?'Ajouter pour ce ravito (assistance)':'Ajouter une demande')+'</h4><div class="chips">'+chips+'</div>'
-    +'<div class="clothes"><p class="note" style="margin:6px 0 2px">Choisis dans la liste (plusieurs possibles) ou écris un autre vêtement plus bas.</p><div class="chips">'+clothes+'</div></div>'
+    +'<div class="clothes"><div class="chips">'+clothes+'</div></div>'
     +'<div class="addrow"><div class="stepper" role="group" aria-label="Quantité"><button type="button" class="step" data-act="qty-step" data-id="'+st.id+'" data-d="-1" aria-label="Moins">−</button>'
     +'<input class="in qty" id="iq-'+st.id+'" type="number" inputmode="numeric" min="1" max="99" value="1" aria-label="Quantité">'
     +'<button type="button" class="step" data-act="qty-step" data-id="'+st.id+'" data-d="1" aria-label="Plus">+</button></div>'
@@ -2526,8 +2580,8 @@ function trackPanel(r){
   const member=!!(r.sync&&r.sync.role==='member');
   if(member&&!r.trackUrl)return '';
   return '<section class="sec"><h2>Suivi de la montre</h2>'
-    +(member?'<p class="note">Lien de suivi fourni par le coureur. Ouvre-le pour voir sa position sur la carte, puis indique son kilomètre dans l’onglet En course.</p>'
-            :'<p class="note">Active le suivi en direct dans l’appli de ta montre (LiveTrack chez Garmin, Live Tracking chez Coros), copie le lien et colle-le ici. Ton assistance pourra l’ouvrir pour voir où tu es. Toute personne qui a ce lien voit ta position : ne le partage qu’avec ton équipe.</p>'
+    +(member?''
+            :'<p class="note">Toute personne qui a ce lien voit ta position.</p>'
               +'<label class="fld"><span>Lien de suivi</span><input class="in" data-r="trackUrl" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://…" value="'+esc(r.trackUrl||'')+'"></label>')
     +(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'')+'</section>';
 }
@@ -2539,7 +2593,7 @@ function fixPanel(r,m){
     const src=st?'pointage au ravito '+esc(st.name||'Ravito'):(Math.abs(fx.km-m.tot)<0.06?'pointage à l’arrivée':'saisie manuelle');
     last='<p>Dernière position ('+src+') : <b class="t">km '+km1(fx.km)+'</b> à '+clk(fx.t)+'.</p>';
   }
-  const manual='<p class="note">'+'Regarde où est le coureur sur la carte du lien et indique son kilomètre, ou touche le profil plus haut. Quand tu pointes un ravito, la position se met à jour toute seule.</p>'
+  const manual=''
     +'<div class="row"><label class="fld" style="flex:1;min-width:110px"><span>Kilomètre</span><input class="in" id="fix-km" type="number" inputmode="decimal" step="0.1" min="0" max="'+(Math.round(m.tot*10)/10)+'" placeholder="ex. 23,4"></label>'
     +'<label class="fld" style="flex:1;min-width:120px"><span>Heure</span><input class="in" type="time" id="fix-t" value="'+hhmmNow()+'"></label></div>'
     +'<div class="row"><button class="btn primary" data-act="set-fix">Enregistrer la position</button>'+(fx?'<button class="btn quiet" data-act="clear-fix">Annuler la dernière position</button>':'')+'</div>';
@@ -2950,11 +3004,11 @@ function syncPanel(r){
   }
   if(!isRunner()){
     return '<section class="sec"><h2>Suivi en direct</h2>'
-      +'<p class="note">Partager une course en direct est réservé aux coureurs connectés. Ton assistance et tes supporters suivent avec un simple code, sans compte.</p>'
+      +'<p class="note">Réservé aux coureurs connectés.</p>'
       +'<div class="row"><button class="btn primary" data-tab="login">Se connecter ou créer un compte</button></div>'+joinForm()+'</section>';
   }
   return '<section class="sec"><h2>Suivi en direct</h2>'
-    +'<p class="note">Crée un code de course : ton assistance et tes supporters le saisissent dans leur appli, voient tes heures de passage se recalculer en direct et peuvent pointer tes passages. Rien n’est envoyé tant que tu ne crées pas de code.</p>'
+    +''
     +'<div class="row"><button class="btn primary" data-act="share-live">Partager en direct</button><button class="btn quiet small" data-act="sync-test">Tester la connexion</button></div>'
     +joinForm()+'</section>';
 }
@@ -3001,7 +3055,7 @@ function profileSVG(m,tl,opt){
 // ---------- vues ----------
 function needRace(){
   return '<section class="empty"><h1>Commence par ton plan</h1><p class="lead">Cet onglet sert pendant et après la course. Prépare d’abord ton parcours dans « Plan ».</p><button class="btn primary" data-tab="plan">Aller au plan</button>'
-  +'<div class="card" style="margin-top:18px"><h2>Tu suis un coureur ?</h2><p class="hint">Saisis le code donné par le coureur, sans compte à créer.</p>'+joinForm('Code de la course')+'</div></section>';
+  +'<div class="card" style="margin-top:18px"><h2>Tu suis un coureur ?</h2>'+joinForm('Code de la course')+'</div></section>';
 }
 // ---------- accueil connecté ----------
 function profileStatic(pf){
@@ -3229,8 +3283,17 @@ async function crewNotifSync(){
 }
 function cdText(n){n=Math.max(0,Math.round(n));return n>=60?Math.floor(n/60)+' h '+pad2(n%60):n+' min';}
 function crewAdviceInner(r,m){return crewAdviceCore(r,m)+offlineNote();}
+// Avant le départ : seulement le temps qui reste jusqu'à l'heure de départ (mis à jour avec la carte du copilote).
+function raceStarted(r,m,now){return (r.startAt!=null)?now>=m.start0:now>=m.startMin;}
+function cdLong(n){n=Math.max(0,Math.floor(n));const d=Math.floor(n/1440),h=Math.floor(n%1440/60),mi=n%60;return d?d+' j '+h+' h '+pad2(mi)+' min':h?h+' h '+pad2(mi)+' min':mi+' min';}
+function startCountdown(r,m,now){
+  const at=r.startAt!=null?m.start0:m.startMin;
+  return '<dl class="countdown"><div><dt>Départ de la course à <b class="t">'+fmtClock(at).s+'</b> dans</dt><dd>'+cdLong(at-now)+'</dd></div></dl>';
+}
 function crewAdviceCore(r,m){
-  const now=nowMin(r),a=crewAdvice(r,m,now,{}),t=x=>'<b class="t">'+fmtClock(x).s+'</b>';
+  const now=nowMin(r);
+  if(!raceStarted(r,m,now))return startCountdown(r,m,now);
+  const a=crewAdvice(r,m,now,{}),t=x=>'<b class="t">'+fmtClock(x).s+'</b>';
   if(a.status==='none')return '<p class="note">Aucun ravito avec assistance. Coche « Accès pour l’assistance » dans l’onglet Plan.</p>';
   if(a.status==='done')return '<p>Le coureur a passé tous les ravitos avec assistance.</p>';
   const name='<b>'+esc(a.target.name)+'</b> (km '+km1(a.target.km)+')';
@@ -3242,7 +3305,7 @@ function crewAdviceCore(r,m){
   if(a.driveMin!=null)h+='<p class="note">Coureur attendu vers '+t(a.eta)+(a.mode==='fast'?' (estimation rapide, pour arriver avant lui)':'')+' · trajet '+a.driveMin+' min · marche '+(a.walkMin==null?'non renseignée':a.walkMin+' min')+' · marge '+a.margin+' min.</p>';
   if(a.deviation)h+='<p class="warn">Le coureur est '+Math.abs(a.deviationPct)+' % plus '+(a.deviation==='slow'?'lent':'rapide')+' que prévu ('+dsign(a.deviationMin)+' à ce ravito) : le départ conseillé est recalculé.</p>';
   if(a.overdue&&a.status!=='late')h+='<p class="note">L’heure estimée du coureur est dépassée et il n’a pas encore été pointé.</p>';
-  if(a.source==='plan')h+='<p class="note">Estimation d’après le plan : aucune position ni aucun pointage reçu.</p>';
+  if(a.source==='plan')h+='';
   else h+='<p class="note'+(a.stale?' warn':'')+'">Dernière information du coureur : il y a '+(a.ageMin<1?'moins d’1 min':cdText(a.ageMin))+'.'+(a.stale?' Position ancienne : l’heure peut avoir changé.':'')+'</p>';
   return h;
 }
@@ -3266,7 +3329,7 @@ function crewLine(r,st){
   const u=navUrls(st.parkLat,st.parkLon,st.parking);
   if(u)t+='<div class="maplinks">'+navBtns(u,'Aller au stationnement')+'</div>';
   if(list.length>1||(list.length===1&&!isMainPark(st,list[0]))){
-    t+=parkDetails('a-'+st.id,list.length,'<p class="note" style="margin:6px 0 2px">Du plus proche au plus loin :</p><ul class="plist">'
+    t+=parkDetails('a-'+st.id,list.length,'<ul class="plist">'
       +list.map(e=>'<li><span>'+esc(e.name)+' · <b>'+e.walkMin+' min</b>'+(e.est?' (estimé)':'')+(isMainPark(st,e)?' · conseillé':'')+'</span><span class="maplinks">'+navBtns(navUrls(e.lat,e.lon,e.name),'Y aller')+'</span></li>').join('')+'</ul>');
   }
   return t;
@@ -3280,7 +3343,7 @@ function renderAssist(){
   const cards=withAccess.map(x=>{
     const i=x.index,early=tlO.rows[i].adjArr,late=tlP.rows[i].adjArr,passed=x.actual!=null,sg=segs.find(z=>z.fromId===x.id);
     if(!x.st.access)return '<article class="crew watch'+(passed?' passed':'')+'" id="crew-'+x.id+'"><h3><span>'+esc(x.name)+'</span><span class="km">km '+km1(x.km)+'</span></h3>'
-      +'<p class="note">Point sans assistance : tu vois passer le coureur, sans pouvoir l’aider.</p>'
+      +''
       +(passed?'<p class="win">Le coureur est passé à '+clk(x.actual)+'.</p>':'<p class="win">Passage estimé entre '+clk(early)+' et '+clk(late)+'.<br>Être sur place avant <b>'+clk(early-crewMarginOf(r))+'</b>.</p>')
       +crewLine(r,x.st)+(hasCoords(r)?'<div class="maplinks">'+mapsLinks(r,m,x.km)+'</div>':'')+'</article>';
     return '<article class="crew'+(passed?' passed':'')+'" id="crew-'+x.id+'"><h3><span>'+esc(x.name)+'</span><span class="km">km '+km1(x.km)+'</span></h3>'
@@ -3305,7 +3368,7 @@ function renderAssist(){
   +'<section class="sec"><h2>Partager le plan par code</h2>'
   +'<div class="row"><button class="btn" data-act="copy-code">Copier le code du plan</button><button class="btn quiet" data-act="show-import">Coller un code reçu</button></div>'
   +(shareCode?'<textarea class="in code" readonly aria-label="Code du plan" id="codebox">'+esc(shareCode)+'</textarea>':'')
-  +(importOpen?'<textarea class="in code" id="importbox" placeholder="Colle le code ici" aria-label="Code à importer"></textarea><div class="row"><button class="btn primary" data-act="do-import">Importer ce plan</button></div><p class="note">Le plan importé s’ouvre, et ton plan actuel reste dans « Mes plans ».</p>':'')
+  +(importOpen?'<textarea class="in code" id="importbox" placeholder="Colle le code ici" aria-label="Code à importer"></textarea><div class="row"><button class="btn primary" data-act="do-import">Importer ce plan</button></div>':'')
   +'</section>';
 }
 function startCard(r,m){
@@ -3316,7 +3379,7 @@ function startCard(r,m){
       +'<div class="row"><button class="btn primary" data-act="start-race" data-at="plan">Le départ est donné à '+planTime+'</button></div>'
       +'<p class="hint" style="margin:10px 0 4px">Le départ a eu lieu à une autre heure ?</p>'
       +'<div class="row" style="margin:0"><label class="fld" style="flex:1;min-width:130px"><span>Heure réelle du départ</span><input type="time" id="start-time" value="'+hhmmNow()+'"></label><button class="btn" data-act="start-race">Valider cette heure</button></div>'
-      +(owner?'<details style="margin-top:10px"><summary>Le départ est repoussé ?</summary><p class="hint">Modifie l’heure de départ prévue : les heures estimées et les barrières calculées sont recalculées.</p>'
+      +(owner?'<details style="margin-top:10px"><summary>Le départ est repoussé ?</summary>'
         +'<div class="row" style="margin:0"><label class="fld" style="flex:1;min-width:130px"><span>Nouvelle heure prévue</span><input type="time" id="plan-start" value="'+esc(r.start)+'"></label><button class="btn" data-act="set-plan-start">Modifier l’heure prévue</button></div></details>':'')
       +'</div>';
   }
@@ -3516,8 +3579,10 @@ function render(top){
   const H1T={plan:'Plan de course',live:'En course'};
   if(!/<h1[\s>]/.test(html)&&H1T[tab])html='<h1 class="sr-only">'+H1T[tab]+'</h1>'+html;
   const sb0=document.getElementById('sheet-body'),sbKey=sb0?sb0.dataset.k:'',sbY=sb0?sb0.scrollTop:0;
+  const fo=focusSnap();
   root.innerHTML=html;
   const sb1=document.getElementById('sheet-body');if(sb1){sb1.dataset.k=viewKey();if(sbKey===sb1.dataset.k)sb1.scrollTop=sbY;}
+  focusRestore(fo);placeInlineMsg();
   window.scrollTo(0,top?0:y);enterView(viewKey());moveInd();moveSeg();
   if(tab==='assist')checkPerms();
   clearTimeout(crewT);crewT=setTimeout(()=>{crewNotifSync();},800);

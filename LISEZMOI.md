@@ -327,6 +327,12 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - **Ravitos** : « Accès pour l'assistance » et « Accessible au public » côte à côte.
 - **Retirés** : la course démo, les phrases d'explication sous les titres et dans les formulaires, et les bulles de confirmation. Les bulles restent pour les erreurs et ce qui demande une action (temps visé manquant, lien invalide, autorisations…).
 
+## Plus de bulles, champs fiables, compte à rebours
+- Plus aucune bulle flottante. Les confirmations sont silencieuses ; les erreurs et ce qui demande une action s'affichent en ligne, sous le bouton ou le champ utilisé.
+- Champs : le champ cliqué garde le focus (et ce qui y est tapé) même quand l'appli se met à jour juste après la modification d'un autre champ.
+- Copilote de l'assistance : avant le départ, seulement un compte à rebours jusqu'à l'heure de départ.
+- Derniers textes d'explication retirés (Assistance, Mes plans, matériel, suivi de la montre).
+
 ## Liens légaux
 - Mentions légales, politique de confidentialité et conditions d'utilisation : seulement dans Aide, « À propos ».
 - Exception : l'inscription garde ses liens d'acceptation (case à cocher, phrase sous « Continuer avec Google »), qui valent consentement.
