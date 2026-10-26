@@ -327,6 +327,11 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - **Ravitos** : « Accès pour l'assistance » et « Accessible au public » côte à côte.
 - **Retirés** : la course démo, les phrases d'explication sous les titres et dans les formulaires, et les bulles de confirmation. Les bulles restent pour les erreurs et ce qui demande une action (temps visé manquant, lien invalide, autorisations…).
 
+## Carte Garmin LiveTrack dans l'appli
+- Quand le coureur colle un lien `https://livetrack.garmin.com/session/…`, la carte Garmin s'affiche dans Assistance (« Suivi de la montre ») et dans En course (« Position du coureur »). Elle ne se recharge pas quand l'appli se met à jour ou qu'on change d'onglet.
+- Coros et les liens courts `gar.mn` refusent l'affichage dans une autre appli : ils restent un bouton qui ouvre le navigateur.
+- CSP : `frame-src https://livetrack.garmin.com`. Politique de confidentialité (traitement N) et mentions légales mises à jour le 26 octobre 2026.
+
 ## Plus de bulles, champs fiables, compte à rebours
 - Plus aucune bulle flottante. Les confirmations sont silencieuses ; les erreurs et ce qui demande une action s'affichent en ligne, sous le bouton ou le champ utilisé.
 - Champs : le champ cliqué garde le focus (et ce qui y est tapé) même quand l'appli se met à jour juste après la modification d'un autre champ.

@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-rCeF0488cg+yXjI4ufWnu4owy5VGDB3T7gAt1RlKvKs=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-gSQQa0p5VIho9OOi1yQCWPlv48xFeF8b678VZRfPiO8=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -148,6 +148,10 @@ a.btn{text-decoration:none}
 .countdown{margin:4px 0 0}
 .countdown dd{margin:2px 0 0;font:700 clamp(32px,9vw,44px)/1.05 var(--f-num);letter-spacing:.01em}
 .countdown dt{font-size:14px;color:var(--ink2)}
+.lt-slot{height:min(62vh,460px);margin:4px 0 10px;border-radius:12px;background:var(--fill)}
+.lt-host{position:absolute;z-index:1;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.lt-host[hidden]{display:none}
+.lt-host iframe{display:block;width:100%;height:100%;border:0}
 .legal-links{text-align:center;margin:14px auto 0}
 .about-legal{text-align:left;margin:10px 0 0}
 .legal-links a,.consent a,.stack .note a,.betacard .hint a{color:var(--ink);font-weight:600;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
@@ -2574,8 +2578,41 @@ function setFix(r,km,t){
 }
 function clearFix(r){if(r.fix||(r.pending&&(r.pending.fixkm!=null||r.pending.fixt!=null))){queuePoint(r,'fixkm',null);queuePoint(r,'fixt',null);}r.fix=null;}
 function trackLink(r,cls){
-  const u=safeHttpUrl(r.trackUrl);return u?'<a class="btn '+(cls||'')+'" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">Ouvrir le suivi de la montre</a>':'';
+  const u=safeHttpUrl(r.trackUrl);if(!u)return '';
+  const g=!!garminLive(u);
+  return '<a class="btn '+(g?'quiet small':(cls||''))+'" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">'+(g?'Ouvrir dans le navigateur':'Ouvrir le suivi de la montre')+'</a>';
 }
+// ---------- Garmin LiveTrack dans l'appli ----------
+// Garmin autorise l'affichage de sa page LiveTrack dans une autre appli : la carte s'affiche dès que le coureur colle son lien.
+// Coros l'interdit (X-Frame-Options), comme les liens courts gar.mn : ceux-là restent un bouton qui ouvre le navigateur.
+// L'iframe vit hors de la page redessinée (#lt-host), posée au-dessus d'un emplacement réservé : les rendus successifs
+// (toutes les 30 s dans « En course ») ne rechargent donc pas la carte.
+function garminLive(u){
+  u=safeHttpUrl(u);if(!u)return '';
+  try{const x=new URL(u);return (x.protocol==='https:'&&x.hostname==='livetrack.garmin.com'&&/^\/session\//.test(x.pathname))?x.href:'';}catch(e){return '';}
+}
+function liveTrackSlot(r){const u=garminLive(r.trackUrl);return u?'<div class="lt-slot" data-lt="'+esc(u)+'"></div>':'';}
+let ltHost=null;
+function syncLiveTrack(){
+  const ph=root.querySelector('[data-lt]');
+  if(!ph||!ph.offsetWidth){if(ltHost)ltHost.hidden=true;return;}
+  const url=ph.dataset.lt;
+  if(!ltHost){ltHost=document.createElement('div');ltHost.className='lt-host';document.body.appendChild(ltHost);}
+  let f=ltHost.querySelector('iframe');
+  if(!f||f.dataset.src!==url){
+    ltHost.innerHTML='';f=document.createElement('iframe');
+    f.dataset.src=url;f.src=url;f.title='Position du coureur (Garmin LiveTrack)';
+    f.setAttribute('referrerpolicy','no-referrer');f.setAttribute('allow','fullscreen');
+    f.setAttribute('sandbox','allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+    ltHost.appendChild(f);
+  }
+  const b=ph.getBoundingClientRect();
+  ltHost.hidden=false;
+  ltHost.style.left=(b.left+window.scrollX)+'px';ltHost.style.top=(b.top+window.scrollY)+'px';
+  ltHost.style.width=b.width+'px';ltHost.style.height=b.height+'px';
+}
+window.addEventListener('resize',()=>syncLiveTrack());
+if(window.ResizeObserver)new ResizeObserver(()=>syncLiveTrack()).observe(document.body);
 function trackPanel(r){
   const member=!!(r.sync&&r.sync.role==='member');
   if(member&&!r.trackUrl)return '';
@@ -2583,7 +2620,7 @@ function trackPanel(r){
     +(member?''
             :'<p class="note">Toute personne qui a ce lien voit ta position.</p>'
               +'<label class="fld"><span>Lien de suivi</span><input class="in" data-r="trackUrl" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://…" value="'+esc(r.trackUrl||'')+'"></label>')
-    +(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'')+'</section>';
+    +liveTrackSlot(r)+(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'')+'</section>';
 }
 function fixPanel(r,m){
   const fx=r.fix;
@@ -2598,7 +2635,7 @@ function fixPanel(r,m){
     +'<label class="fld" style="flex:1;min-width:120px"><span>Heure</span><input class="in" type="time" id="fix-t" value="'+hhmmNow()+'"></label></div>'
     +'<div class="row"><button class="btn primary" data-act="set-fix">Enregistrer la position</button>'+(fx?'<button class="btn quiet" data-act="clear-fix">Annuler la dernière position</button>':'')+'</div>';
   return '<section class="sec"><h2>Position du coureur</h2>'
-    +(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'')
+    +liveTrackSlot(r)+(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'')
     +manual+(r.trackUrl?'':'<p class="note">Aucun lien de suivi : le coureur peut en ajouter un dans l’onglet Assistance.</p>')
     +last+'</section>';
 }
@@ -3584,6 +3621,7 @@ function render(top){
   const sb1=document.getElementById('sheet-body');if(sb1){sb1.dataset.k=viewKey();if(sbKey===sb1.dataset.k)sb1.scrollTop=sbY;}
   focusRestore(fo);placeInlineMsg();
   window.scrollTo(0,top?0:y);enterView(viewKey());moveInd();moveSeg();
+  syncLiveTrack();setTimeout(syncLiveTrack,450);   // une seconde fois après l'animation d'entrée, qui décale la page
   if(tab==='assist')checkPerms();
   clearTimeout(crewT);crewT=setTimeout(()=>{crewNotifSync();},800);
   setTimeout(refreshOfflineStat,60);
