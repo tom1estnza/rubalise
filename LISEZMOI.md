@@ -327,6 +327,10 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - **Ravitos** : « Accès pour l'assistance » et « Accessible au public » côte à côte.
 - **Retirés** : la course démo, les phrases d'explication sous les titres et dans les formulaires, et les bulles de confirmation. Les bulles restent pour les erreurs et ce qui demande une action (temps visé manquant, lien invalide, autorisations…).
 
+## Liens légaux
+- Mentions légales, politique de confidentialité et conditions d'utilisation : seulement dans Aide, « À propos ».
+- Exception : l'inscription garde ses liens d'acceptation (case à cocher, phrase sous « Continuer avec Google »), qui valent consentement.
+
 ## Entretien du dépôt
 - `/.well-known/security.txt` publié (il était resté dans un zip).
 - APK : modules de localisation retirés (`package.json`, `native-src/native.js`), qui ne servaient plus depuis la 2.3.

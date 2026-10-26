@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-o6nLqjm2+pj+L2RdjDXysIF0mYljeQtfJNCV45GhCtI=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-c2gOHpRTLXvgG90O+8Wc9PONL0oka1jtssEsy2l2rTU=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -144,6 +144,7 @@ input[type=range]{width:100%;accent-color:var(--accent);min-height:32px}
 .beta-tag{margin-left:8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--live);border:1.5px solid var(--live);border-radius:999px;padding:1px 7px;align-self:center}
 a.btn{text-decoration:none}
 .legal-links{text-align:center;margin:14px auto 0}
+.about-legal{text-align:left;margin:10px 0 0}
 .legal-links a,.consent a,.stack .note a,.betacard .hint a{color:var(--ink);font-weight:600;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
 .legal-links a:hover,.consent a:hover,.stack .note a:hover,.betacard .hint a:hover{color:var(--live)}
 .consent{align-items:flex-start;text-align:left}
@@ -1859,7 +1860,7 @@ function renderLogin(){
   +'<p class="lead">Le compte ouvre ton espace coureur (zones d’allure et de fréquence cardiaque) et permet de partager une course en direct. Ton assistance et tes supporters suivent avec un simple code, sans compte.</p>'
   +loginForm()
   +'<p class="note">Rubalise évite les doublons : une adresse e-mail correspond à un seul compte.</p>'
-  +'<p class="note">Ton profil (date de naissance, fréquences cardiaques, performance de référence), tes plans de course, ton carnet et tes préférences sont enregistrés dans ton compte, pour les retrouver sur un autre appareil.</p><p class="note legal-links">'+legalLinks()+'</p></section>';
+  +'<p class="note">Ton profil (date de naissance, fréquences cardiaques, performance de référence), tes plans de course, ton carnet et tes préférences sont enregistrés dans ton compte, pour les retrouver sur un autre appareil.</p></section>';
 }
 function heroArt(){
   return '<svg class="hero-art" viewBox="0 0 360 112" role="img" aria-label="Profil de course avec ravitaillements">'
@@ -1876,7 +1877,7 @@ function renderWelcome(){
   +'<div class="card"><h2>Code d’assistance</h2><p class="hint">Tu assistes ou tu suis un coureur ? Saisis son code, sans compte à créer.</p>'+joinForm('Code du coureur','joincode','assist','Rejoindre')+'</div>'
   +(state.race?'<p class="role-login"><button class="linkbtn" data-tab="plan">Retour à mon suivi</button></p>':'')
   +'<p class="note" style="text-align:center;margin:0 auto">Version bêta : des erreurs sont possibles, ton avis compte.'+(BETA.communityUrl?' <a href="'+esc(BETA.communityUrl)+'" target="_blank" rel="noopener">Rejoindre la communauté WhatsApp</a>':'')+'</p>'
-  +'<p class="note legal-links">'+legalLinks()+'</p></section>';
+  +'</section>';
 }
 
 // ---------- guide de démarrage ----------
@@ -2008,7 +2009,7 @@ function renderRunner(){
        :'<p class="note">Renseigne ta performance de référence ci-dessus pour estimer ton temps.</p>')+carbsApply(r,pf)+'</section>';
   }
   return '<section class="empty"><p style="margin:0 0 8px"><button class="linkbtn" data-act="back" style="padding-left:0">‹ Retour</button></p><h1>Ma fiche coureur</h1><p class="lead">'+(pf.first?'Bonjour '+esc(pf.first)+'. ':'')+'Saisis tes données une fois : elles sont enregistrées dans ton compte.</p></section>'
-  +'<section class="sec"><h2>Mes données</h2><p class="hint">Ces informations (dont ta photo et tes fréquences cardiaques), tes plans de course, ton carnet et tes préférences sont enregistrés dans ton compte, pour les retrouver sur un autre appareil. Tu peux les effacer à tout moment. <a href="'+legalUrl('confidentialite')+'" target="_blank" rel="noopener">Politique de confidentialité</a>.</p>'+photoBlock()
+  +'<section class="sec"><h2>Mes données</h2><p class="hint">Ces informations (dont ta photo et tes fréquences cardiaques), tes plans de course, ton carnet et tes préférences sont enregistrés dans ton compte, pour les retrouver sur un autre appareil. Tu peux les effacer à tout moment.</p>'+photoBlock()
   +'<div class="grid2"><label class="fld"><span>Prénom</span><input data-p="first" value="'+esc(pf.first)+'" autocomplete="given-name"></label>'
   +'<label class="fld"><span>Date de naissance</span><input type="date" data-p="birth" value="'+esc(pf.birth)+'"></label>'
   +'<label class="fld"><span>FC max (bpm)</span><input type="number" inputmode="numeric" min="100" max="230" data-p="hrMax" value="'+esc(pf.hrMax)+'" placeholder="'+(maxEst||'ex. 185')+'"></label>'
@@ -2135,8 +2136,8 @@ function renderHelp(){
   +'<details><summary>Mises à jour et hors connexion</summary><p>Rubalise installée depuis le navigateur se met à jour toute seule quand tu l’ouvres avec du réseau. Si un bandeau « Une nouvelle version est prête » apparaît, appuie sur « Recharger ». Sans réseau, tes plans et tes heures de passage restent utilisables. Appli Android (APK) : installe le nouveau fichier par-dessus l’ancien, tes données sont conservées.</p></details>'
   +'<details><summary>Sauvegarder mes données</summary><p>Connecté, tes plans sont enregistrés dans ton compte : tu les retrouves sur ton ordinateur comme sur ton téléphone. Quand tu te déconnectes, ou que ta session se ferme, plans, carnet et profil sont retirés de l’appareil et reviennent à ta prochaine connexion. Pour en garder une copie : onglet Assistance, « Copier le code du plan » (à coller dans un message), ou « Exporter mes données » dans les paramètres du compte.</p></details>'
   +'<details><summary>Mini-lexique</summary><p><b>Ravito</b> : point de ravitaillement sur le parcours.</p><p><b>Barrière horaire</b> : heure limite pour passer à un point. La marge indique l’avance que tu as sur cette limite.</p><p><b>Pointer</b> : noter l’heure à laquelle le coureur passe à un ravito.</p><p><b>D+ / D−</b> : dénivelé positif (montée) et négatif (descente) cumulés.</p><p><b>Zone d’allure</b> : plage de vitesse adaptée à un type d’effort, calculée à partir de ta performance de référence.</p></details>'
-  +'<details><summary>À propos</summary><p>Rubalise, version '+APP_VERSION+' (bêta)'+(window.__swVersion?', cache hors connexion '+window.__swVersion:'')+'. Environnement : '+(isNativeApp()?'application Android':'navigateur')+(testMode()?', mode test':'')+'. Les heures de passage sont des estimations : elles ne remplacent ni ton expérience, ni les barrières horaires officielles de l’organisateur, à vérifier avant le départ. Les zones d’allure, les zones de fréquence cardiaque, la nutrition et le départ conseillé sont indicatifs : ils ne remplacent pas l’avis d’un médecin et ne doivent pas servir à ta sécurité en course.</p><p class="note" id="offstat">Hors connexion : vérification…</p></details>'
-  +'<p class="note legal-links">'+legalLinks()+'</p></section>';
+  +'<details><summary>À propos</summary><p>Rubalise, version '+APP_VERSION+' (bêta)'+(window.__swVersion?', cache hors connexion '+window.__swVersion:'')+'. Environnement : '+(isNativeApp()?'application Android':'navigateur')+(testMode()?', mode test':'')+'. Les heures de passage sont des estimations : elles ne remplacent ni ton expérience, ni les barrières horaires officielles de l’organisateur, à vérifier avant le départ. Les zones d’allure, les zones de fréquence cardiaque, la nutrition et le départ conseillé sont indicatifs : ils ne remplacent pas l’avis d’un médecin et ne doivent pas servir à ta sécurité en course.</p><p class="note" id="offstat">Hors connexion : vérification…</p><p class="legal-links about-legal">'+legalLinks()+'</p></details>'
+  +'</section>';
 }
 function exportMyData(){
   const r=state.race,o={exporteLe:new Date().toISOString(),compte:isRunner()?authState.email:null,profil:Object.assign({},state.profile,{photo:(state.profile&&state.profile.photo)?'(photo enregistrée dans ton compte)':''}),carnet:state.journal,preferences:state.prefs};
@@ -3514,7 +3515,6 @@ function render(top){
   }catch(err){errLogAdd(err.message,'affichage');html='<section class="empty"><h1>Oups</h1><p class="lead">Un calcul a échoué : '+esc(err.message)+'.</p><button class="btn" data-tab="'+(isRunner()?'home':'welcome')+'">Revenir à l’accueil</button></section>';}
   const H1T={plan:'Plan de course',live:'En course'};
   if(!/<h1[\s>]/.test(html)&&H1T[tab])html='<h1 class="sr-only">'+H1T[tab]+'</h1>'+html;
-  if(html.indexOf('legal-links')<0)html+='<p class="note legal-links">'+legalLinks()+'</p>';
   const sb0=document.getElementById('sheet-body'),sbKey=sb0?sb0.dataset.k:'',sbY=sb0?sb0.scrollTop:0;
   root.innerHTML=html;
   const sb1=document.getElementById('sheet-body');if(sb1){sb1.dataset.k=viewKey();if(sbKey===sb1.dataset.k)sb1.scrollTop=sbY;}
