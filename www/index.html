@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-EDCVtSvv8TOpP3U9hStjqxxd1AMEzjBQOJ4rZSwSLns=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-H/hOxKLrCWWWuYjxUWAV5xfbCR0oiMFjW51+xWaF6KI=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -145,6 +145,48 @@ input[type=range]{width:100%;accent-color:var(--accent);min-height:32px}
 a.btn{text-decoration:none}
 .inline-msg{margin:8px 0 0;padding:8px 12px;border-left:3px solid var(--warn);border-radius:6px;background:color-mix(in srgb,var(--warn) 10%,transparent);font-size:14px;line-height:1.4;color:var(--ink)}
 .sheet .inline-msg{margin:0 20px 8px}
+.pt-actions{margin:4px 0 14px}
+.pt-sum{margin:0 0 6px;color:var(--ink2);font-size:14px}
+.pt-group h2,.pt-h2{display:flex;align-items:center;gap:10px;font-size:20px;margin:22px 0 8px}
+.pt-ico svg{width:22px;height:22px;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linejoin:round;vertical-align:middle}
+.pt-list{list-style:none;margin:0;padding:0}
+.pt-item{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.pt-item.out{opacity:.55}
+.pt-item>.pt-txt:first-child{grid-column:1/3}
+.pt-txt{min-width:0}
+.pt-txt b{display:block;font-weight:600;overflow-wrap:anywhere}
+.pt-txt small{display:block;color:var(--ink2);font-size:13px;line-height:1.35}
+.pt-link{font-size:13px}
+.pt-dot{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;color:#fff;font:700 14px/1 var(--f-num);flex:none}
+.pt-dot.big{width:44px;height:44px;font-size:20px}
+.pt-step{display:flex;align-items:center;gap:6px}
+.pt-step .btn{min-width:40px;min-height:40px;padding:0;font-size:20px}
+.pt-step b{min-width:24px;text-align:center;font:700 18px/1 var(--f-num)}
+.pt-more{font-size:18px}
+.pt-edit{grid-column:1/-1;padding:4px 0 6px}
+.pt-edit .row{margin-top:8px}
+.pt-empty{display:flex;align-items:center;gap:12px;color:var(--ink2)}
+.pt-empty svg{width:32px;height:32px;fill:none;stroke:var(--ink2);stroke-width:1.6}
+.pt-empty p{margin:0}
+.pt-back{padding-left:0;margin-top:4px}
+.pt-brands{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.pt-brand{width:100%;display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 10px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;transition:border-color .15s,transform .12s}
+.pt-brand:hover{border-color:var(--accent)}
+.pt-brand:active{transform:scale(.98)}
+.pt-brand small{color:var(--ink2);font-size:13px}
+.pt-src{margin:14px 0 0;color:var(--ink2);font-size:13px}
+.pt-cats{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 8px}
+.pt-cats button{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink2);font:600 15px/1 var(--f-body);cursor:pointer}
+.pt-cats button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pt-cats button[aria-selected="true"] svg{stroke:var(--accent-ink)}
+.pt-cats .pt-ico svg{width:18px;height:18px}
+.pt-plan{margin:0 0 14px;padding:12px 14px;font-size:15px;border-left:4px solid var(--warn)}
+.pt-plan.ok{border-left-color:var(--ok)}
+.pt-plan .linkbtn{min-height:0;font-size:15px}
+.pt-hint{margin:0 0 10px}
+.pt-hint .linkbtn{padding-left:0;font-size:15px}
+.pt-kit{display:block}
+
 .countdown{margin:4px 0 0}
 .countdown dd{margin:2px 0 0;font:700 clamp(32px,9vw,44px)/1.05 var(--f-num);letter-spacing:.01em}
 .countdown dt{font-size:14px;color:var(--ink2)}
@@ -588,6 +630,7 @@ fieldset.lock:disabled{opacity:.9}
 
 <script src="native.js"></script>
 <script src="rm-motion.js"></script>
+<script src="catalogue.js"></script>
 <script>
 (function(){
 'use strict';
@@ -1646,7 +1689,7 @@ function focusSnap(){
   let sel=null;
   if(ae.id)sel='#'+CSS.escape(ae.id);
   else{
-    const k=['r','s','f','p','pref','diary','itadd','crewnotif'].filter(a=>ae.dataset[a]!==undefined).map(a=>'[data-'+a+'="'+CSS.escape(ae.dataset[a])+'"]').join('');
+    const k=['r','s','f','p','pt','id','pref','diary','itadd','crewnotif'].filter(a=>ae.dataset[a]!==undefined).map(a=>'[data-'+a+'="'+CSS.escape(ae.dataset[a])+'"]').join('');
     if(k)sel=ae.tagName.toLowerCase()+k;
   }
   if(!sel)return null;
@@ -2191,7 +2234,7 @@ function openMenu(){
   const m=document.getElementById('menu'),ab=document.getElementById('acct'),pf=state.profile||{},em=authState.email||'';
   const it=(k,l,c)=>'<button role="menuitem" data-menu="'+k+'"'+(c?' class="'+c+'"':'')+'>'+l+'</button>';
   m.innerHTML='<div class="menu-head">'+avatarHTML(40)+'<span class="mh-t"><b>'+esc(pf.first||em.split('@')[0])+'</b><small>'+esc(em)+'</small></span></div>'
-    +it('runner','Ma fiche coureur')+it('settings','Paramètres du compte')+it('prefs','Préférences')+it('help','Aide et à propos')+'<hr>'+it('signout','Se déconnecter','dng');
+    +it('runner','Ma fiche coureur')+it('pantry','Mon placard')+it('settings','Paramètres du compte')+it('prefs','Préférences')+it('help','Aide et à propos')+'<hr>'+it('signout','Se déconnecter','dng');
   const rc=ab.getBoundingClientRect();
   m.style.top=(rc.bottom+8)+'px';m.style.right=Math.max(8,window.innerWidth-rc.right)+'px';
   m.hidden=false;menuOpen=true;ab.setAttribute('aria-expanded','true');
@@ -3201,11 +3244,159 @@ function profileStatic(pf){
   ];
   return '<dl class="pf-static">'+rows.map(x=>'<div><dt>'+x[0]+'</dt><dd>'+x[1]+'</dd></div>').join('')+'</dl>';
 }
+// ---------- Mon placard : le stock de produits du coureur ----------
+// Rangé dans le profil (state.profile.pantry), donc synchronisé avec le compte comme la fiche coureur.
+// Chaque produit garde une copie de ses valeurs : un changement du catalogue ne modifie pas le placard.
+let ptView='stock',ptBrand='',ptCat='gel',ptEdit='',ptCustom=false;
+const PT_ICONS={
+  gel:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2h6v3l2 3v12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V8l2-3z"/></svg>',
+  barre:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="2"/><path d="M8 8v8M13 8v8"/></svg>',
+  hydra:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2h4v3l2 2v13a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V7l2-2z"/><path d="M8 12h8"/></svg>'
+};
+function ptCatalog(){return window.RB_CATALOG||{cats:[],brands:[],products:[]};}
+function ptBrandOf(id){return ptCatalog().brands.find(b=>b.id===id)||null;}
+function ptCatLabel(c){const x=ptCatalog().cats.find(z=>z.id===c);return x?x.label:'Autre';}
+function pantryItems(){const p=state.profile&&state.profile.pantry;return Array.isArray(p)?p:[];}
+function pantrySet(list){state.profile=state.profile||defaultProfile();state.profile.pantry=list;save();pushProfileSoon();}
+function ptNum(v,max){if(v===null||v===undefined||String(v).trim()==='')return null;const n=parseFloat(String(v).replace(',','.'));return (isFinite(n)&&n>=0&&n<=max)?Math.round(n*10)/10:null;}
+function ptValues(x){
+  const v=[];
+  v.push(x.carbs!=null?nf(x.carbs)+' g de glucides':'glucides ?');
+  v.push(x.sodium!=null?nf(x.sodium)+' mg de sodium':'sodium ?');
+  if(x.caf==null)v.push('caféine ?');else if(+x.caf>0)v.push(nf(x.caf)+' mg de caféine');
+  return v.join(' · ');
+}
+function ptDot(brandId,name){const b=ptBrandOf(brandId);return '<span class="pt-dot" style="background:'+(b?b.color:'var(--ink2)')+'" aria-hidden="true">'+esc((b?b.name:(name||'?')).charAt(0))+'</span>';}
+function ptAddFromCatalog(id){
+  const p=ptCatalog().products.find(z=>z.id===id);if(!p)return;
+  const list=pantryItems().slice(),cur=list.find(z=>z.ref===id);
+  if(cur)cur.qty=Math.min(999,(cur.qty|0)+1);
+  else{const b=ptBrandOf(p.brand);list.push({id:uid(),ref:p.id,brand:p.brand,brandName:b?b.name:'',cat:p.cat,name:p.name,unit:p.unit||'',carbs:p.carbs,sodium:p.sodium,caf:p.caf,qty:1});}
+  pantrySet(list);
+}
+function ptStep(id,d){
+  const list=pantryItems().slice(),x=list.find(z=>z.id===id);if(!x)return;
+  x.qty=Math.max(0,Math.min(999,(x.qty|0)+d));pantrySet(list);
+}
+function ptStepper(x){
+  return '<div class="pt-step" role="group" aria-label="Quantité de '+esc(x.name)+'"><button class="btn quiet small" data-act="pt-dec" data-id="'+x.id+'" aria-label="Retirer un">−</button><b>'+(x.qty|0)+'</b><button class="btn quiet small" data-act="pt-inc" data-id="'+x.id+'" aria-label="Ajouter un">+</button></div>';
+}
+function ptEditForm(x){
+  const f=(k,l,v,max)=>'<label class="fld"><span>'+l+'</span><input class="in" type="number" inputmode="decimal" min="0" max="'+max+'" data-pt="'+k+'" data-id="'+x.id+'" value="'+(v==null?'':v)+'"></label>';
+  return '<div class="pt-edit">'+(x.ref?'':'<label class="fld"><span>Nom</span><input class="in" data-pt="name" data-id="'+x.id+'" value="'+esc(x.name)+'" maxlength="60"></label>')
+    +'<div class="grid3">'+f('carbs','Glucides (g)',x.carbs,200)+f('sodium','Sodium (mg)',x.sodium,3000)+f('caf','Caféine (mg)',x.caf,400)+'</div>'
+    +'<div class="row"><button class="btn quiet small" data-act="pt-edit" data-id="">Fermer</button><button class="btn danger small" data-act="pt-del" data-id="'+x.id+'">Retirer du placard</button></div></div>';
+}
+function renderPantryStock(){
+  const list=pantryItems(),n=list.reduce((a,x)=>a+(x.qty|0),0);
+  let h='<div class="row pt-actions"><button class="btn primary" data-act="pt-view" data-v="brands">Ajouter depuis le catalogue</button><button class="btn" data-act="pt-custom">Produit perso</button></div>';
+  if(ptCustom)h+='<div class="card pt-custom"><h2>Produit perso</h2><div class="grid2"><label class="fld"><span>Nom</span><input class="in" id="pt-c-name" maxlength="60" placeholder="ex. Compote pomme"></label>'
+    +'<label class="fld"><span>Catégorie</span><select class="in" id="pt-c-cat">'+ptCatalog().cats.map(c=>'<option value="'+c.id+'">'+c.label+'</option>').join('')+'</select></label></div>'
+    +'<div class="grid3"><label class="fld"><span>Glucides (g)</span><input class="in" id="pt-c-carbs" type="number" inputmode="decimal" min="0"></label><label class="fld"><span>Sodium (mg)</span><input class="in" id="pt-c-sod" type="number" inputmode="decimal" min="0"></label><label class="fld"><span>Caféine (mg)</span><input class="in" id="pt-c-caf" type="number" inputmode="decimal" min="0" value="0"></label></div>'
+    +'<div class="row"><button class="btn quiet" data-act="pt-custom">Annuler</button><button class="btn primary" data-act="pt-save">Ajouter au placard</button></div></div>';
+  if(!list.length)return h+'<div class="card pt-empty">'+PT_ICONS.gel+'<p>Ton placard est vide.</p></div>';
+  h+='<p class="pt-sum">'+list.length+' produit'+(list.length>1?'s':'')+' · '+n+' portion'+(n>1?'s':'')+'</p>';
+  ptCatalog().cats.forEach(c=>{
+    const items=list.filter(x=>x.cat===c.id);if(!items.length)return;
+    h+='<section class="pt-group"><h2><span class="pt-ico">'+PT_ICONS[c.id]+'</span>'+c.label+'</h2><ul class="pt-list">'
+      +items.map(x=>'<li class="pt-item'+((x.qty|0)===0?' out':'')+'">'+ptDot(x.brand,x.brandName||x.name)
+        +'<div class="pt-txt"><b>'+esc(x.name)+'</b><small>'+esc((x.brandName?x.brandName+' · ':'')+ptValues(x))+'</small></div>'
+        +ptStepper(x)+'<button class="icon pt-more" data-act="pt-edit" data-id="'+(ptEdit===x.id?'':x.id)+'" aria-label="Modifier '+esc(x.name)+'" aria-expanded="'+(ptEdit===x.id)+'">✎</button>'
+        +(ptEdit===x.id?ptEditForm(x):'')+'</li>').join('')+'</ul></section>';
+  });
+  return h;
+}
+function renderPantryBrands(){
+  const C=ptCatalog();
+  return '<button class="linkbtn pt-back" data-act="pt-view" data-v="stock">‹ Mon placard</button><h2 class="pt-h2">Choisis une marque</h2>'
+    +'<ul class="pt-brands">'+C.brands.map(b=>{const n=C.products.filter(p=>p.brand===b.id).length;return '<li><button class="pt-brand" data-act="pt-brand" data-id="'+b.id+'"><span class="pt-dot big" style="background:'+b.color+'" aria-hidden="true">'+esc(b.name.charAt(0))+'</span><b>'+esc(b.name)+'</b><small>'+n+' produit'+(n>1?'s':'')+'</small></button></li>';}).join('')+'</ul>'
+    +'<p class="pt-src">Valeurs relevées sur les sites des marques le '+esc(C.checked.split('-').reverse().join('/'))+'. « ? » : valeur non publiée en texte, à compléter dans ton placard.</p>';
+}
+function renderPantryBrand(){
+  const C=ptCatalog(),b=ptBrandOf(ptBrand);if(!b){ptView='brands';return renderPantryBrands();}
+  const prods=C.products.filter(p=>p.brand===b.id),cats=C.cats.filter(c=>prods.some(p=>p.cat===c.id));
+  if(!cats.some(c=>c.id===ptCat))ptCat=cats.length?cats[0].id:'gel';
+  const inP=id=>pantryItems().find(x=>x.ref===id);
+  return '<button class="linkbtn pt-back" data-act="pt-view" data-v="brands">‹ Marques</button>'
+    +'<h2 class="pt-h2">'+ptDot(b.id)+esc(b.name)+'</h2>'
+    +'<div class="pt-cats" role="tablist">'+cats.map(c=>'<button role="tab" aria-selected="'+(c.id===ptCat)+'" data-act="pt-cat" data-c="'+c.id+'"><span class="pt-ico">'+PT_ICONS[c.id]+'</span>'+c.label+'</button>').join('')+'</div>'
+    +'<ul class="pt-list">'+prods.filter(p=>p.cat===ptCat).map(p=>{const x=inP(p.id);
+      return '<li class="pt-item">'+'<div class="pt-txt"><b>'+esc(p.name)+'</b><small>'+esc((p.unit?p.unit+' · ':'')+ptValues(p))+'</small><a class="pt-link" href="'+esc(p.src)+'" target="_blank" rel="noopener noreferrer">Fiche de la marque</a></div>'
+        +(x?ptStepper(x):'<button class="btn small" data-act="pt-add" data-id="'+p.id+'">Ajouter</button>')+'</li>';}).join('')+'</ul>';
+}
+function renderPantry(){
+  const body=ptView==='brands'?renderPantryBrands():ptView==='brand'?renderPantryBrand():renderPantryStock();
+  return '<section class="empty pantry">'+(ptView==='stock'?'<p style="margin:0 0 8px"><button class="linkbtn" data-tab="home" style="padding-left:0">‹ Accueil</button></p>':'')+'<h1>Mon placard</h1></section>'+body;
+}
+function pantryAct(a,b){
+  if(a==='pt-view'){ptView=b.dataset.v;ptEdit='';ptCustom=false;render(true);return true;}
+  if(a==='pt-brand'){ptBrand=b.dataset.id;ptView='brand';ptCat='gel';render(true);return true;}
+  if(a==='pt-cat'){ptCat=b.dataset.c;render();return true;}
+  if(a==='pt-add'){ptAddFromCatalog(b.dataset.id);render();return true;}
+  if(a==='pt-inc'||a==='pt-dec'){ptStep(b.dataset.id,a==='pt-inc'?1:-1);render();return true;}
+  if(a==='pt-edit'){ptEdit=b.dataset.id||'';render();return true;}
+  if(a==='pt-del'){pantrySet(pantryItems().filter(x=>x.id!==b.dataset.id));ptEdit='';render();return true;}
+  if(a==='pt-custom'){ptCustom=!ptCustom;render();return true;}
+  if(a==='pt-save'){
+    const v=id=>(document.getElementById(id)||{}).value;
+    const name=String(v('pt-c-name')||'').trim().slice(0,60),carbs=ptNum(v('pt-c-carbs'),200);
+    if(!name){flash('Indique le nom du produit.');return true;}
+    if(carbs==null){flash('Indique les glucides par portion.');return true;}
+    const list=pantryItems().slice();
+    list.push({id:uid(),ref:'',brand:'',brandName:'',cat:v('pt-c-cat')||'gel',name:name,unit:'',carbs:carbs,sodium:ptNum(v('pt-c-sod'),3000),caf:ptNum(v('pt-c-caf'),400),qty:1});
+    pantrySet(list);ptCustom=false;render();return true;
+  }
+  return false;
+}
+function pantryChange(t){
+  const list=pantryItems().slice(),x=list.find(z=>z.id===t.dataset.id);if(!x)return;
+  const k=t.dataset.pt;
+  if(k==='name'){const s=String(t.value).trim().slice(0,60);if(s)x.name=s;}
+  else x[k]=ptNum(t.value,k==='carbs'?200:k==='sodium'?3000:400);
+  pantrySet(list);
+}
+// ---------- nutrition calculée à partir du placard ----------
+// Pour chaque tronçon : boissons (une portion par 500 ml d'eau prévus), puis gels et barres selon la part en gels,
+// puis pastilles de sel si le sodium manque. Le stock est décompté sur toute la course ; la caféine attend
+// la seconde moitié ; à égalité, le produit le moins utilisé sur le tronçon passe en premier (variété).
+function pantryActive(r){return isRunner()&&!isMember(r)&&pantryItems().some(x=>(x.qty|0)>0&&+x.carbs>0);}
+function pantryPlan(r,segs){
+  const stock=pantryItems().filter(x=>(x.qty|0)>0).map(x=>({x:x,left:x.qty|0}));
+  const total=segs.reduce((a,s)=>a+Math.max(0,s.dur),0),share=Math.max(0,Math.min(100,nutr(r,'gelShare')))/100;
+  let t=0;
+  return segs.map(sg=>{
+    const late=total>0&&t+sg.dur/2>total/2;t+=Math.max(0,sg.dur);
+    const pick=[];let carbs=0,sodium=0;
+    const used=s=>{const e=pick.find(p=>p.s===s);return e?e.n:0;};
+    const take=s=>{s.left--;const e=pick.find(p=>p.s===s);if(e)e.n++;else pick.push({s:s,n:1});carbs+=+s.x.carbs||0;sodium+=+s.x.sodium||0;};
+    const best=cands=>cands.sort((a,b)=>(used(a)-used(b))||(b.left-a.left))[0];
+    const pool=(cat,carb)=>stock.filter(s=>s.left>0&&s.x.cat===cat&&(carb?+s.x.carbs>0:!(+s.x.carbs>0))&&(late||!(+s.x.caf>0)));
+    for(let n=Math.floor((sg.needs.water||0)/500);n>0;n--){const s=best(pool('hydra',true));if(!s)break;take(s);}
+    // arrondi au plus proche : on ajoute un produit seulement si ce qui reste à couvrir dépasse la moitié de ce qu'il apporte
+    // un « manque » n'est signalé que si le stock est vide alors qu'il reste plus de 10 g à couvrir (pas pour un simple arrondi)
+    let empty=false;
+    const fill=(cat,target)=>{const c0=carbs;let g=0;while(g++<80){const s=best(pool(cat,true));if(!s){if(target-(carbs-c0)>10)empty=true;break;}if(target-(carbs-c0)<=(+s.x.carbs)/2)break;take(s);}return carbs-c0;};
+    const rest=Math.max(0,sg.needs.carbs-carbs),gg=fill('gel',rest*share);
+    fill('barre',rest-gg);
+    empty=false;
+    fill('gel',sg.needs.carbs-carbs);
+    if(empty){empty=false;fill('barre',sg.needs.carbs-carbs);}
+    for(let g=0;sg.needs.sodium-sodium>150&&g<20;g++){const s=best(pool('hydra',false).filter(z=>+z.x.sodium>0));if(!s)break;take(s);}
+    return {items:pick.map(p=>({x:p.s.x,n:p.n})),carbs:Math.round(carbs),sodium:Math.round(sodium),miss:empty?Math.max(0,Math.round(sg.needs.carbs-carbs)):0};
+  });
+}
+function kitText(k){return k.items.length?k.items.map(i=>i.n+' × '+i.x.name+(i.x.brandName?' ('+i.x.brandName+')':'')).join(', '):'rien dans ton placard';}
+function pantrySummary(kits){
+  const miss=kits.reduce((a,k)=>a+k.miss,0);
+  if(!miss)return '<div class="card pt-plan ok"><b>Ton placard couvre toute la course.</b> <button class="linkbtn" data-tab="pantry">Mon placard</button></div>';
+  return '<div class="card pt-plan"><b>Il manque environ '+nf(miss)+' g de glucides dans ton placard</b>, soit à peu près '+Math.ceil(miss/25)+(Math.ceil(miss/25)>1?' gels':' gel')+' de 25 g. <button class="linkbtn" data-tab="pantry">Compléter mon placard</button></div>';
+}
 function renderHome(){
   const pf=state.profile||defaultProfile(),r=state.race,has=profileHasData(pf),tot=r?planTotals(r):null;
   return '<section class="home"><h1>'+(pf.first?'Bonjour '+esc(pf.first):'Bienvenue')+'</h1>'
   +(r?'<div class="card resume"><h2>Reprendre mon plan</h2><p class="resume-name">'+esc(r.name||'Ma course')+(tot&&tot.km?' · '+km1(tot.km)+' km':'')+'</p><div class="row"><button class="btn primary" data-tab="plan">Ouvrir mon plan</button></div></div>':'')
   +'<div class="card import-card"><h2>Importer mon parcours</h2><div class="row">'+gpxPick('primary','Importer un fichier GPX')+'</div>'+gpxPaste()+'</div>'
+  +(()=>{const L=pantryItems(),n=L.reduce((a,x)=>a+(x.qty|0),0);return '<div class="card pt-home"><h2>Mon placard</h2>'+(L.length?'<p class="resume-name">'+L.length+' produit'+(L.length>1?'s':'')+' · '+n+' portion'+(n>1?'s':'')+'</p>':'')+'<div class="row"><button class="btn'+(L.length?'':' primary')+'" data-tab="pantry">'+(L.length?'Ouvrir mon placard':'Remplir mon placard')+'</button></div></div>';})()
   +'<div class="card pf-card"><h2>Ma fiche coureur</h2>'+profileStatic(pf)+'<div class="row"><button class="btn'+(has?'':' primary')+'" data-tab="runner">'+(has?'Modifier ma fiche':'Créer ma fiche coureur')+'</button></div></div>'
   +(state.tourDone?'':'<div class="card"><h2>Guide de démarrage</h2><div class="row"><button class="btn" data-act="tour-start">Lancer le guide</button></div></div>')
   +'</section>';
@@ -3288,19 +3479,21 @@ function secStations(r,m,tl){
   +'<button class="btn" data-act="add-station">Ajouter un ravitaillement</button></section>';
 }
 function secNutrition(r,m,tl){
-  const segs=assistSegments(r,m,tl);
-  const segRows=segs.map(sg=>{
-    const n=sg.needs,carbTxt=n.gels+' gel'+(n.gels>1?'s':'')+' + '+n.bars+' barre'+(n.bars>1?'s':'');
-    return '<tr><td>'+esc(sg.from)+' – '+esc(sg.to)+'<small>'+km1(sg.km)+' km, +'+sg.up+' m'+(sg.via.length?'. Sans assistance : '+sg.via.map(esc).join(', '):'')+'</small></td><td>'+fmtDur(sg.dur)+'</td><td>'+carbTxt+'<small>'+n.carbs+' g de glucides</small></td><td>'+nf(n.water)+' ml<small>'+n.sodium+' mg de sodium</small></td></tr>';
+  const segs=assistSegments(r,m,tl),kits=pantryActive(r)?pantryPlan(r,segs):null;
+  const segRows=segs.map((sg,i)=>{
+    const n=sg.needs,k=kits&&kits[i];
+    const carbTxt=k?'<span class="pt-kit">'+esc(kitText(k))+'</span><small>'+k.carbs+' g sur '+n.carbs+' g de glucides'+(k.miss?' · <span class="warn">manque '+k.miss+' g</span>':'')+'</small>'
+      :n.gels+' gel'+(n.gels>1?'s':'')+' + '+n.bars+' barre'+(n.bars>1?'s':'')+'<small>'+n.carbs+' g de glucides</small>';
+    return '<tr><td>'+esc(sg.from)+' – '+esc(sg.to)+'<small>'+km1(sg.km)+' km, +'+sg.up+' m'+(sg.via.length?'. Sans assistance : '+sg.via.map(esc).join(', '):'')+'</small></td><td>'+fmtDur(sg.dur)+'</td><td>'+carbTxt+'</td><td>'+nf(n.water)+' ml<small>'+n.sodium+' mg de sodium</small></td></tr>';
   }).join('');
-  return '<section class="sec-panel" id="sec-nutrition">'+carbsHint(r)
+  return '<section class="sec-panel" id="sec-nutrition">'+carbsHint(r)+(kits?pantrySummary(kits):(isRunner()&&!isMember(r)?'<p class="pt-hint"><button class="linkbtn" data-tab="pantry">Utiliser les produits de mon placard</button></p>':''))
   +'<div class="grid3"><label class="fld"><span>Glucides (g/h)</span><input type="number" inputmode="numeric" min="0" data-r="carbs" data-num value="'+r.carbs+'"></label>'
   +'<label class="fld"><span>Eau (ml/h)</span><input type="number" inputmode="numeric" min="0" step="50" data-r="water" data-num value="'+r.water+'"></label>'
   +'<label class="fld"><span>Sodium (mg/h)</span><input type="number" inputmode="numeric" min="0" step="50" data-r="sodium" data-num value="'+nutr(r,'sodium')+'"></label>'
   +'<label class="fld"><span>Un gel (g)</span><input type="number" inputmode="numeric" min="0" data-r="gelG" data-num value="'+r.gelG+'"></label>'
   +'<label class="fld"><span>Une barre (g)</span><input type="number" inputmode="numeric" min="0" data-r="barG" data-num value="'+nutr(r,'barG')+'"></label>'
   +'<label class="fld"><span>Part en gels (%)</span><input type="number" inputmode="numeric" min="0" max="100" data-r="gelShare" data-num value="'+nutr(r,'gelShare')+'"></label></div>'
-  +'<div class="tblwrap" style="margin-top:16px"><table><thead><tr><th>Tronçon</th><th>Durée</th><th>Gels et barres</th><th>Eau et sel</th></tr></thead><tbody>'+segRows+'</tbody></table></div></section>';
+  +'<div class="tblwrap" style="margin-top:16px"><table><thead><tr><th>Tronçon</th><th>Durée</th><th>'+(kits?'Depuis ton placard':'Gels et barres')+'</th><th>Eau et sel</th></tr></thead><tbody>'+segRows+'</tbody></table></div></section>';
 }
 function planSeg(sec){
   return '<div class="seg" role="tablist" aria-label="Sections du plan"><span class="seg-ind" id="segind" aria-hidden="true"></span>'
@@ -3467,6 +3660,7 @@ function crewLine(r,st){
 function renderAssist(){
   const r=state.race;if(!r)return needRace();
   const m=model(r),tlN=timeline(r,m,{}),tlO=timeline(r,m,{mult:0.92}),tlP=timeline(r,m,{mult:1.12}),segs=assistSegments(r,m,timeline(r,m,{plan:true}));
+  const kits=pantryActive(r)?pantryPlan(r,segs):null,kitOf=sg=>kits?kitText(kits[segs.indexOf(sg)]):needsText(sg.needs);
   const rows=tlN.rows;
   const withAccess=rows.filter(x=>!x.isFinish&&(x.st.access||x.st.watch));
   const without=rows.filter(x=>!x.isFinish&&!x.st.access&&!x.st.watch);
@@ -3481,11 +3675,11 @@ function renderAssist(){
               :'<p class="win">Passage estimé entre '+clk(early)+' et '+clk(late)+'.<br>Être sur place avant <b>'+clk(early-crewMarginOf(r))+'</b>.</p>')
       +(x.margin!=null&&!passed?'<p class="'+mcls(x.margin)+'">Marge sur la barrière : '+mfmt(x.margin)+'</p>':'')
       +crewLine(r,x.st)
-      +(sg?'<p>Jusqu’à <b>'+esc(sg.to)+'</b> ('+km1(sg.km)+' km, +'+sg.up+' m, −'+sg.down+' m, environ '+fmtDur(sg.dur)+')'+(sg.via.length?', en passant par '+sg.via.map(esc).join(' et ')+' (sans accès assistance)':'')+' : prévoir <b>'+needsText(sg.needs)+'</b>.</p>':'')
+      +(sg?'<p>Jusqu’à <b>'+esc(sg.to)+'</b> ('+km1(sg.km)+' km, +'+sg.up+' m, −'+sg.down+' m, environ '+fmtDur(sg.dur)+')'+(sg.via.length?', en passant par '+sg.via.map(esc).join(' et ')+' (sans accès assistance)':'')+' : prévoir <b>'+kitOf(sg)+'</b>.</p>':'')
       +(hasCoords(r)?'<div class="maplinks">'+mapsLinks(r,m,x.km)+'</div>':'')
       +itemsBlock(r,x.st)+'</article>';
   }).join('');
-  const startNote=(segs.length&&segs[0].fromId==='start')?'<section class="sec"><h2>Au départ</h2><p>Le coureur doit partir avec de quoi aller jusqu’à <b>'+esc(segs[0].to)+'</b> ('+km1(segs[0].km)+' km'+(segs[0].via.length?', en passant par '+segs[0].via.map(esc).join(' et ')+', sans accès assistance':'')+') : <b>'+needsText(segs[0].needs)+'</b>.</p></section>':'';
+  const startNote=(segs.length&&segs[0].fromId==='start')?'<section class="sec"><h2>Au départ</h2><p>Le coureur doit partir avec de quoi aller jusqu’à <b>'+esc(segs[0].to)+'</b> ('+km1(segs[0].km)+' km'+(segs[0].via.length?', en passant par '+segs[0].via.map(esc).join(' et ')+', sans accès assistance':'')+') : <b>'+kitOf(segs[0])+'</b>.</p></section>':'';
   const fin=rows[rows.length-1],finE=tlO.rows[rows.length-1].adjArr,finL=tlP.rows[rows.length-1].adjArr;
   return '<section class="empty"><h1>Équipe d’assistance</h1></section>'
   +crewCard(r,m)
@@ -3684,12 +3878,15 @@ function closeWiz(done){
   const sh=root.querySelector('.sheet'),bd=root.querySelector('.sheet-back');
   const a=mo(sh,{opacity:[1,0],transform:['translateY(0px)','translateY(40px)']},{duration:.22,ease:'easeIn'});
   mo(bd,{opacity:[1,0]},{duration:.22});
-  if(a&&a.finished)a.finished.then(done,done);else done();
+  // au plus tard 300 ms : une animation suspendue (onglet en arrière-plan) ne doit pas bloquer la fermeture
+  let once=false;const fin=()=>{if(!once){once=true;done();}};
+  if(a&&a.finished)a.finished.then(fin,fin);
+  setTimeout(fin,a?300:0);
 }
 function render(top){
   if(!isRunner()){
     if(tab==='login')tab='welcome';
-    if(['home','runner','settings','prefs'].indexOf(tab)>=0)tab=state.race?'plan':'welcome';
+    if(['home','runner','settings','prefs','pantry'].indexOf(tab)>=0)tab=state.race?'plan':'welcome';
     if(!state.race&&tab!=='help'&&tab!=='welcome')tab='welcome';
   }
   if(!isRunner()&&deviceLinked()){
@@ -3704,7 +3901,7 @@ function render(top){
   let html='';
   try{
     updateChrome();
-    html=tab==='welcome'?renderWelcome():tab==='home'?renderHome():tab==='plan'?renderPlan():tab==='assist'?renderAssist():tab==='live'?renderLive():tab==='login'?renderLogin():tab==='runner'?(isRunner()?renderRunner():renderLogin()):tab==='settings'?renderSettings():tab==='prefs'?renderPrefs():tab==='help'?renderHelp():renderDiary();
+    html=tab==='welcome'?renderWelcome():tab==='home'?renderHome():tab==='pantry'?renderPantry():tab==='plan'?renderPlan():tab==='assist'?renderAssist():tab==='live'?renderLive():tab==='login'?renderLogin():tab==='runner'?(isRunner()?renderRunner():renderLogin()):tab==='settings'?renderSettings():tab==='prefs'?renderPrefs():tab==='help'?renderHelp():renderDiary();
   }catch(err){errLogAdd(err.message,'affichage');html='<section class="empty"><h1>Oups</h1><p class="lead">Un calcul a échoué : '+esc(err.message)+'.</p><button class="btn" data-tab="'+(isRunner()?'home':'welcome')+'">Revenir à l’accueil</button></section>';}
   const H1T={plan:'Plan de course',live:'En course'};
   if(!/<h1[\s>]/.test(html)&&H1T[tab])html='<h1 class="sr-only">'+H1T[tab]+'</h1>'+html;
@@ -3724,6 +3921,7 @@ function render(top){
 // ---------- actions ----------
 function act(b){
   const a=b.dataset.act,r=state.race;
+  if(a.indexOf('pt-')===0&&pantryAct(a,b))return;
   if(a==='menu'){toggleMenu();return;}
   if(a==='open-help'){closeMenu();go('help');return;}
   if(a==='tour-start'){startTour();return;}
@@ -4004,6 +4202,7 @@ document.addEventListener('change',e=>{
     const k=t.dataset.pref;let v=parseFloat(String(t.value).replace(',','.'));if(!isFinite(v)||v<0)v=defaultPrefs()[k];
     state.prefs[k]=v;t.value=v;save();return;
   }
+  if(t.dataset&&t.dataset.pt){pantryChange(t);return;}
   if(t.dataset&&t.dataset.p){
     const k=t.dataset.p;let v=t.value;
     if(k==='refTime'){v=fmtTypedTime(v,true);t.value=v;}

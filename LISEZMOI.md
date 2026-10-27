@@ -327,6 +327,13 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - **Ravitos** : « Accès pour l'assistance » et « Accessible au public » côte à côte.
 - **Retirés** : la course démo, les phrases d'explication sous les titres et dans les formulaires, et les bulles de confirmation. Les bulles restent pour les erreurs et ce qui demande une action (temps visé manquant, lien invalide, autorisations…).
 
+## Mon placard (stock de produits) et catalogue des marques
+- « Mon placard » (Accueil et menu du compte) : le coureur y range ses produits et leurs quantités. Enregistré dans le profil, donc dans le compte, sans changer les règles Firestore.
+- Catalogue `www/catalogue.js` : Marques → Gels / Barres / Hydratation → Produits, 67 produits de 9 marques (Maurten, Näak, Overstims, Meltonic, GU, SiS, Tailwind, Isostar, Powerbar). Valeurs par portion relevées sur les sites officiels le 27/10/2026, avec le lien de chaque fiche. « ? » = valeur non publiée en texte par la marque, à compléter par le coureur. Pas de photos (pastille de couleur et icône par catégorie).
+- Pas encore au catalogue : Baouw, Apurna, Aptonia / Decathlon (sites officiels illisibles depuis l'outil de relevé ; seuls des revendeurs donnaient des chiffres).
+- Produit perso : nom, catégorie, glucides, sodium, caféine.
+- Nutrition (onglet Plan et Assistance) : quand le placard contient des produits, chaque tronçon liste les produits à prendre. Boissons (une portion par 500 ml d'eau prévus), puis gels et barres selon la part en gels, puis pastilles de sel. Stock décompté sur toute la course, caféine en seconde moitié, variété des produits. Le manque n'est signalé que si le stock est vide.
+
 ## Écran de connexion sans défilement
 - Tout tient dans la hauteur de l'écran, centré : logo, onglets « Connexion / Créer un compte », Google, e-mail, mot de passe (« Mot de passe oublié ? » sur la ligne du libellé), code d'assistance.
 - Les tailles suivent la hauteur de l'écran ; sous 720 px de haut, la phrase d'accroche disparaît et les champs passent à 40 px.
