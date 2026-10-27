@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-H/hOxKLrCWWWuYjxUWAV5xfbCR0oiMFjW51+xWaF6KI=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-S1Fk7JMbshiLsMkJ8uGAigJ7Ah+dihthiEDVT+YBRvw=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -159,6 +159,10 @@ a.btn{text-decoration:none}
 .pt-link{font-size:13px}
 .pt-dot{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;color:#fff;font:700 14px/1 var(--f-num);flex:none}
 .pt-dot.big{width:44px;height:44px;font-size:20px}
+.pt-dot.logo{background:#fff;overflow:hidden}
+.pt-dot.logo.tint{border:1px solid var(--line)}
+.pt-dot.logo img{width:80%;height:80%;object-fit:contain;display:block}
+.pt-dot.logo.tint img{mix-blend-mode:multiply}
 .pt-step{display:flex;align-items:center;gap:6px}
 .pt-step .btn{min-width:40px;min-height:40px;padding:0;font-size:20px}
 .pt-step b{min-width:24px;text-align:center;font:700 18px/1 var(--f-num)}
@@ -3266,7 +3270,12 @@ function ptValues(x){
   if(x.caf==null)v.push('caféine ?');else if(+x.caf>0)v.push(nf(x.caf)+' mg de caféine');
   return v.join(' · ');
 }
-function ptDot(brandId,name){const b=ptBrandOf(brandId);return '<span class="pt-dot" style="background:'+(b?b.color:'var(--ink2)')+'" aria-hidden="true">'+esc((b?b.name:(name||'?')).charAt(0))+'</span>';}
+// Pastille de la marque : son logo quand on l'a (www/img/brands), sinon l'initiale sur sa couleur.
+function ptDot(brandId,name,big){
+  const b=ptBrandOf(brandId),ini=esc((b?b.name:(name||'?')).charAt(0)),cl=big?' big':'';
+  if(b&&b.logo)return '<span class="pt-dot logo'+(b.tint?' tint':'')+cl+'"'+(b.bg?' style="background:'+esc(b.bg)+'"':'')+' aria-hidden="true"><img src="'+esc(b.logo)+'" alt="" width="64" height="64" loading="lazy" decoding="async"></span>';
+  return '<span class="pt-dot'+cl+'" style="background:'+(b?b.color:'var(--ink2)')+'" aria-hidden="true">'+ini+'</span>';
+}
 function ptAddFromCatalog(id){
   const p=ptCatalog().products.find(z=>z.id===id);if(!p)return;
   const list=pantryItems().slice(),cur=list.find(z=>z.ref===id);
@@ -3309,7 +3318,7 @@ function renderPantryStock(){
 function renderPantryBrands(){
   const C=ptCatalog();
   return '<button class="linkbtn pt-back" data-act="pt-view" data-v="stock">‹ Mon placard</button><h2 class="pt-h2">Choisis une marque</h2>'
-    +'<ul class="pt-brands">'+C.brands.map(b=>{const n=C.products.filter(p=>p.brand===b.id).length;return '<li><button class="pt-brand" data-act="pt-brand" data-id="'+b.id+'"><span class="pt-dot big" style="background:'+b.color+'" aria-hidden="true">'+esc(b.name.charAt(0))+'</span><b>'+esc(b.name)+'</b><small>'+n+' produit'+(n>1?'s':'')+'</small></button></li>';}).join('')+'</ul>'
+    +'<ul class="pt-brands">'+C.brands.map(b=>{const n=C.products.filter(p=>p.brand===b.id).length;return '<li><button class="pt-brand" data-act="pt-brand" data-id="'+b.id+'">'+ptDot(b.id,'',true)+'<b>'+esc(b.name)+'</b><small>'+n+' produit'+(n>1?'s':'')+'</small></button></li>';}).join('')+'</ul>'
     +'<p class="pt-src">Valeurs relevées sur les sites des marques le '+esc(C.checked.split('-').reverse().join('/'))+'. « ? » : valeur non publiée en texte, à compléter dans ton placard.</p>';
 }
 function renderPantryBrand(){
@@ -3359,6 +3368,8 @@ function pantryChange(t){
 // Pour chaque tronçon : boissons (une portion par 500 ml d'eau prévus), puis gels et barres selon la part en gels,
 // puis pastilles de sel si le sodium manque. Le stock est décompté sur toute la course ; la caféine attend
 // la seconde moitié ; à égalité, le produit le moins utilisé sur le tronçon passe en premier (variété).
+// Caféine : une dose connue, ou « caféine » dans le nom quand la marque ne publie pas la dose
+function ptHasCaf(x){return +x.caf>0||(x.caf==null&&/caf[ée]in/i.test(x.name||''));}
 function pantryActive(r){return isRunner()&&!isMember(r)&&pantryItems().some(x=>(x.qty|0)>0&&+x.carbs>0);}
 function pantryPlan(r,segs){
   const stock=pantryItems().filter(x=>(x.qty|0)>0).map(x=>({x:x,left:x.qty|0}));
@@ -3370,7 +3381,7 @@ function pantryPlan(r,segs){
     const used=s=>{const e=pick.find(p=>p.s===s);return e?e.n:0;};
     const take=s=>{s.left--;const e=pick.find(p=>p.s===s);if(e)e.n++;else pick.push({s:s,n:1});carbs+=+s.x.carbs||0;sodium+=+s.x.sodium||0;};
     const best=cands=>cands.sort((a,b)=>(used(a)-used(b))||(b.left-a.left))[0];
-    const pool=(cat,carb)=>stock.filter(s=>s.left>0&&s.x.cat===cat&&(carb?+s.x.carbs>0:!(+s.x.carbs>0))&&(late||!(+s.x.caf>0)));
+    const pool=(cat,carb)=>stock.filter(s=>s.left>0&&s.x.cat===cat&&(carb?+s.x.carbs>0:!(+s.x.carbs>0))&&(late||!ptHasCaf(s.x)));
     for(let n=Math.floor((sg.needs.water||0)/500);n>0;n--){const s=best(pool('hydra',true));if(!s)break;take(s);}
     // arrondi au plus proche : on ajoute un produit seulement si ce qui reste à couvrir dépasse la moitié de ce qu'il apporte
     // un « manque » n'est signalé que si le stock est vide alors qu'il reste plus de 10 g à couvrir (pas pour un simple arrondi)
