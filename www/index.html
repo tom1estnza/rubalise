@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-S1Fk7JMbshiLsMkJ8uGAigJ7Ah+dihthiEDVT+YBRvw=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ziAhyoez5y3AJGctk0wO0k5J4YfplKuGc0m4edg7OtY=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -153,6 +153,11 @@ a.btn{text-decoration:none}
 .pt-item{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
 .pt-item.out{opacity:.55}
 .pt-item>.pt-txt:first-child{grid-column:1/3}
+.pt-list.thumbs .pt-item{grid-template-columns:44px 1fr auto auto}
+.pt-list.thumbs .pt-item>.pt-dot{justify-self:center}
+.pt-thumb{display:flex;align-items:center;justify-content:center;width:44px;height:56px}
+.pt-thumb img{max-width:100%;max-height:100%;object-fit:contain;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.2))}
+.pt-thumb .pt-ico{opacity:.45}
 .pt-txt{min-width:0}
 .pt-txt b{display:block;font-weight:600;overflow-wrap:anywhere}
 .pt-txt small{display:block;color:var(--ink2);font-size:13px;line-height:1.35}
@@ -3276,6 +3281,11 @@ function ptDot(brandId,name,big){
   if(b&&b.logo)return '<span class="pt-dot logo'+(b.tint?' tint':'')+cl+'"'+(b.bg?' style="background:'+esc(b.bg)+'"':'')+' aria-hidden="true"><img src="'+esc(b.logo)+'" alt="" width="64" height="64" loading="lazy" decoding="async"></span>';
   return '<span class="pt-dot'+cl+'" style="background:'+(b?b.color:'var(--ink2)')+'" aria-hidden="true">'+ini+'</span>';
 }
+function ptImgOf(x){const p=x.img?x:ptCatalog().products.find(z=>z.id===x.ref);return p&&p.img||'';}
+function ptThumb(x){
+  const src=ptImgOf(x);
+  return '<span class="pt-thumb" aria-hidden="true">'+(src?'<img src="'+esc(src)+'" alt="" width="44" height="56" loading="lazy" decoding="async">':'<span class="pt-ico">'+(PT_ICONS[x.cat]||'')+'</span>')+'</span>';
+}
 function ptAddFromCatalog(id){
   const p=ptCatalog().products.find(z=>z.id===id);if(!p)return;
   const list=pantryItems().slice(),cur=list.find(z=>z.ref===id);
@@ -3307,8 +3317,9 @@ function renderPantryStock(){
   h+='<p class="pt-sum">'+list.length+' produit'+(list.length>1?'s':'')+' · '+n+' portion'+(n>1?'s':'')+'</p>';
   ptCatalog().cats.forEach(c=>{
     const items=list.filter(x=>x.cat===c.id);if(!items.length)return;
-    h+='<section class="pt-group"><h2><span class="pt-ico">'+PT_ICONS[c.id]+'</span>'+c.label+'</h2><ul class="pt-list">'
-      +items.map(x=>'<li class="pt-item'+((x.qty|0)===0?' out':'')+'">'+ptDot(x.brand,x.brandName||x.name)
+    const th=items.some(ptImgOf);
+    h+='<section class="pt-group"><h2><span class="pt-ico">'+PT_ICONS[c.id]+'</span>'+c.label+'</h2><ul class="pt-list'+(th?' thumbs':'')+'">'
+      +items.map(x=>'<li class="pt-item'+((x.qty|0)===0?' out':'')+'">'+(ptImgOf(x)?ptThumb(x):ptDot(x.brand,x.brandName||x.name))
         +'<div class="pt-txt"><b>'+esc(x.name)+'</b><small>'+esc((x.brandName?x.brandName+' · ':'')+ptValues(x))+'</small></div>'
         +ptStepper(x)+'<button class="icon pt-more" data-act="pt-edit" data-id="'+(ptEdit===x.id?'':x.id)+'" aria-label="Modifier '+esc(x.name)+'" aria-expanded="'+(ptEdit===x.id)+'">✎</button>'
         +(ptEdit===x.id?ptEditForm(x):'')+'</li>').join('')+'</ul></section>';
@@ -3330,7 +3341,7 @@ function renderPantryBrand(){
     +'<h2 class="pt-h2">'+ptDot(b.id)+esc(b.name)+'</h2>'
     +'<div class="pt-cats" role="tablist">'+cats.map(c=>'<button role="tab" aria-selected="'+(c.id===ptCat)+'" data-act="pt-cat" data-c="'+c.id+'"><span class="pt-ico">'+PT_ICONS[c.id]+'</span>'+c.label+'</button>').join('')+'</div>'
     +'<ul class="pt-list">'+prods.filter(p=>p.cat===ptCat).map(p=>{const x=inP(p.id);
-      return '<li class="pt-item">'+'<div class="pt-txt"><b>'+esc(p.name)+'</b><small>'+esc((p.unit?p.unit+' · ':'')+ptValues(p))+'</small><a class="pt-link" href="'+esc(p.src)+'" target="_blank" rel="noopener noreferrer">Fiche de la marque</a></div>'
+      return '<li class="pt-item">'+(prods.some(z=>z.img)?ptThumb(p):'')+'<div class="pt-txt"><b>'+esc(p.name)+'</b><small>'+esc((p.unit?p.unit+' · ':'')+ptValues(p))+'</small><a class="pt-link" href="'+esc(p.src)+'" target="_blank" rel="noopener noreferrer">Fiche de la marque</a></div>'
         +(x?ptStepper(x):'<button class="btn small" data-act="pt-add" data-id="'+p.id+'">Ajouter</button>')+'</li>';}).join('')+'</ul>';
 }
 function renderPantry(){

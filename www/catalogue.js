@@ -25,13 +25,14 @@ window.RB_CATALOG = {
   // carbs : glucides (g) ; sodium (mg) ; caf : caféine (mg) ; unit : format d'une portion
   products: [
     // ---- Maurten ----
-    { id: 'maurten-gel100', brand: 'maurten', cat: 'gel', name: 'Gel 100', carbs: 25, sodium: null, caf: 0, unit: 'gel 40 g', src: 'https://www.maurten.com/fr/products/gel-100-box' },
-    { id: 'maurten-gel100caf', brand: 'maurten', cat: 'gel', name: 'Gel 100 Caf 100', carbs: 25, sodium: null, caf: 100, unit: 'gel 40 g', src: 'https://www.maurten.com/fr/products/gel-100-caf-100-box' },
-    { id: 'maurten-gel160', brand: 'maurten', cat: 'gel', name: 'Gel 160', carbs: 40, sodium: null, caf: 0, unit: 'gel', src: 'https://www.maurten.com/fr/products/gel-160-box' },
-    { id: 'maurten-solid160', brand: 'maurten', cat: 'barre', name: 'Solid 160', carbs: 40, sodium: null, caf: 0, unit: 'barre 40 g', src: 'https://www.maurten.com/fr/products/solid-160' },
-    { id: 'maurten-solidc160', brand: 'maurten', cat: 'barre', name: 'Solid C 160', carbs: 40, sodium: null, caf: 0, unit: 'barre 40 g', src: 'https://www.maurten.com/fr/products/solid-c-160' },
-    { id: 'maurten-drink160', brand: 'maurten', cat: 'hydra', name: 'Drink Mix 160', carbs: 40, sodium: null, caf: 0, unit: 'sachet pour 500 ml', ml: 500, src: 'https://www.maurten.com/fr/products/drink-mix-160' },
-    { id: 'maurten-drink320', brand: 'maurten', cat: 'hydra', name: 'Drink Mix 320', carbs: 80, sodium: null, caf: 0, unit: 'sachet pour 500 ml', ml: 500, src: 'https://www.maurten.com/fr/products/drink-mix-320' },
+    { id: 'maurten-gel100', brand: 'maurten', cat: 'gel', name: 'Gel 100', carbs: 25, sodium: 0, caf: 0, unit: 'gel 40 g', img: 'img/products/maurten-gel100.webp', src: 'https://www.maurten.com/fr/products/gel-100-box' },
+    { id: 'maurten-gel100caf', brand: 'maurten', cat: 'gel', name: 'Gel 100 Caf 100', carbs: 25, sodium: 0, caf: 100, unit: 'gel 40 g', img: 'img/products/maurten-gel100caf.webp', src: 'https://www.maurten.com/fr/products/gel-100-caf-100-box' },
+    { id: 'maurten-gel160', brand: 'maurten', cat: 'gel', name: 'Gel 160', carbs: 40, sodium: 0, caf: 0, unit: 'gel 65 g', img: 'img/products/maurten-gel160.webp', src: 'https://www.maurten.com/fr/products/gel-160-box' },
+    { id: 'maurten-solid160', brand: 'maurten', cat: 'barre', name: 'Solid 160', carbs: 40, sodium: 0, caf: 0, unit: 'barre 55 g', img: 'img/products/maurten-solid160.webp', src: 'https://www.maurten.com/fr/products/solid-160' },
+    { id: 'maurten-solidc160', brand: 'maurten', cat: 'barre', name: 'Solid C 160', carbs: 40, sodium: 0, caf: 0, unit: 'barre 55 g', img: 'img/products/maurten-solidc160.webp', src: 'https://www.maurten.com/fr/products/solid-c-160' },
+    { id: 'maurten-drink160', brand: 'maurten', cat: 'hydra', name: 'Drink Mix 160', carbs: 40, sodium: 0, caf: 0, unit: 'sachet 42 g pour 500 ml', ml: 500, img: 'img/products/maurten-drink160.webp', src: 'https://www.maurten.com/fr/products/drink-mix-160' },
+    { id: 'maurten-drink320', brand: 'maurten', cat: 'hydra', name: 'Drink Mix 320', carbs: 80, sodium: 0, caf: 0, unit: 'sachet 83 g pour 500 ml', ml: 500, img: 'img/products/maurten-drink320.webp', src: 'https://www.maurten.com/fr/products/drink-mix-320' },
+    { id: 'maurten-drink320caf', brand: 'maurten', cat: 'hydra', name: 'Drink Mix 320 Caf 100', carbs: 80, sodium: 0, caf: 100, unit: 'sachet 83 g pour 500 ml', ml: 500, img: 'img/products/maurten-drink320caf.webp', src: 'https://www.maurten.com/fr/products/drink-mix-320-caf-100' },
     // ---- Näak ----
     { id: 'naak-boost30-neutre', brand: 'naak', cat: 'gel', name: 'Gel BOOST 30 · Neutre', carbs: 30, sodium: null, caf: 0, unit: 'gel', src: 'https://www.naak.com/fr/products/boost-gel-30-neutral' },
     { id: 'naak-boost30-citron', brand: 'naak', cat: 'gel', name: 'Gel BOOST 30 · Citron salé', carbs: 30, sodium: null, caf: 0, unit: 'gel', src: 'https://www.naak.com/fr/products/boost-gel-30-salted-lemon' },
