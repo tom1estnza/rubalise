@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-W0fNuIt64K4k6TnpIjss39+fRYqArh3md9rM18WduNc=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-1cZrwdbZqJwVa567B8rbM1keY2Rm84Vu+hUh2zTxrD8=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -161,6 +161,9 @@ a.btn{text-decoration:none}
 .pt-txt{min-width:0}
 .pt-txt b{display:block;font-weight:600;overflow-wrap:anywhere}
 .pt-txt small{display:block;color:var(--ink2);font-size:13px;line-height:1.35}
+.pt-txt small.pt-macro{margin-top:1px}
+.pt-kcal{margin:8px 0 0;font-size:14px}
+.pt-kcal small{display:block;color:var(--ink2);font-size:13px}
 .pt-link{display:inline-flex;align-items:center;min-height:32px;margin-top:6px;padding:0 14px;border-radius:999px;background:#1E6F8E;color:#fff;font:700 13px/1 var(--f-body);text-decoration:none}
 .pt-link:hover{background:#185C76}
 .pt-link:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
@@ -3286,7 +3289,19 @@ function ptValues(x){
   v.push(x.carbs!=null?nf(x.carbs)+' g de glucides':'glucides ?');
   v.push(x.sodium!=null?nf(x.sodium)+' mg de sodium':'sodium ?');
   if(x.caf==null)v.push('caféine ?');else if(+x.caf>0)v.push(nf(x.caf)+' mg de caféine');
+  if(ptK(x,'kcal')!=null)v.push(nf(ptK(x,'kcal'))+' kcal');
   return v.join(' · ');
+}
+// Valeurs facultatives (calories, lipides, protéines, fibres) : celles du produit, sinon celles du catalogue
+const PT_EXTRA=[['kcal','Calories (kcal)',1000],['fat','Lipides (g)',100],['protein','Protéines (g)',100],['fiber','Fibres (g)',50]];
+function ptK(x,k){
+  if(x[k]!=null)return x[k];
+  if(x.ref&&!x.hasOwnProperty(k)){const p=ptCatalog().products.find(z=>z.id===x.ref);if(p&&p[k]!=null)return p[k];}
+  return null;
+}
+function ptMacros(x){
+  const v=[['fat','lipides'],['protein','protéines'],['fiber','fibres']].filter(a=>ptK(x,a[0])!=null).map(a=>String(ptK(x,a[0])).replace('.',',')+' g de '+a[1]);
+  return v.length?'<small class="pt-macro">'+esc(v.join(' · '))+'</small>':'';
 }
 // Pastille de la marque : son logo quand on l'a (www/img/brands), sinon l'initiale sur sa couleur.
 function ptDot(brandId,name,big){
@@ -3317,6 +3332,7 @@ function ptEditForm(x){
   const f=(k,l,v,max)=>'<label class="fld"><span>'+l+'</span><input class="in" type="number" inputmode="decimal" min="0" max="'+max+'" data-pt="'+k+'" data-id="'+x.id+'" value="'+(v==null?'':v)+'"></label>';
   return '<div class="pt-edit">'+(x.ref?'':'<label class="fld"><span>Nom</span><input class="in" data-pt="name" data-id="'+x.id+'" value="'+esc(x.name)+'" maxlength="60"></label>')
     +'<div class="grid3">'+f('carbs','Glucides (g)',x.carbs,200)+f('sodium','Sodium (mg)',x.sodium,3000)+f('caf','Caféine (mg)',x.caf,400)+'</div>'
+    +'<div class="grid2">'+PT_EXTRA.map(e=>f(e[0],e[1],ptK(x,e[0]),e[2])).join('')+'</div>'
     +'<div class="row"><button class="btn quiet small" data-act="pt-edit" data-id="">Fermer</button><button class="btn danger small" data-act="pt-del" data-id="'+x.id+'">Retirer du placard</button></div></div>';
 }
 function renderPantryStock(){
@@ -3325,6 +3341,7 @@ function renderPantryStock(){
   if(ptCustom)h+='<div class="card pt-custom"><h2>Produit perso</h2><div class="grid2"><label class="fld"><span>Nom</span><input class="in" id="pt-c-name" maxlength="60" placeholder="ex. Compote pomme"></label>'
     +'<label class="fld"><span>Catégorie</span><select class="in" id="pt-c-cat">'+ptCatalog().cats.map(c=>'<option value="'+c.id+'">'+c.label+'</option>').join('')+'</select></label></div>'
     +'<div class="grid3"><label class="fld"><span>Glucides (g)</span><input class="in" id="pt-c-carbs" type="number" inputmode="decimal" min="0"></label><label class="fld"><span>Sodium (mg)</span><input class="in" id="pt-c-sod" type="number" inputmode="decimal" min="0"></label><label class="fld"><span>Caféine (mg)</span><input class="in" id="pt-c-caf" type="number" inputmode="decimal" min="0" value="0"></label></div>'
+    +'<div class="grid2">'+PT_EXTRA.map(e=>'<label class="fld"><span>'+e[1]+'</span><input class="in" id="pt-c-'+e[0]+'" type="number" inputmode="decimal" min="0"></label>').join('')+'</div>'
     +'<div class="row"><button class="btn quiet" data-act="pt-custom">Annuler</button><button class="btn primary" data-act="pt-save">Ajouter au placard</button></div></div>';
   if(!list.length)return h+'<div class="card pt-empty">'+PT_ICONS.gel+'<p>Ton placard est vide.</p></div>';
   h+='<p class="pt-sum">'+list.length+' produit'+(list.length>1?'s':'')+' · '+n+' portion'+(n>1?'s':'')+'</p>';
@@ -3341,7 +3358,7 @@ function renderPantryStock(){
     const th=items.some(ptImgOf);
     h+='<section class="pt-group"><h2><span class="pt-ico">'+PT_ICONS[c.id]+'</span>'+c.label+'</h2><ul class="pt-list'+(th?' thumbs':'')+'">'
       +items.map(x=>'<li class="pt-item'+((x.qty|0)===0?' out':'')+'">'+(ptImgOf(x)?ptThumb(x):ptDot(x.brand,x.brandName||x.name))
-        +'<div class="pt-txt"><b>'+esc(x.name)+'</b><small>'+esc((x.brandName?x.brandName+' · ':'')+ptValues(x))+'</small></div>'
+        +'<div class="pt-txt"><b>'+esc(x.name)+'</b><small>'+esc((x.brandName?x.brandName+' · ':'')+ptValues(x))+'</small>'+ptMacros(x)+'</div>'
         +ptStepper(x)+'<button class="icon pt-more" data-act="pt-edit" data-id="'+(ptEdit===x.id?'':x.id)+'" aria-label="Modifier '+esc(x.name)+'" aria-expanded="'+(ptEdit===x.id)+'">✎</button>'
         +(ptEdit===x.id?ptEditForm(x):'')+'</li>').join('')+'</ul></section>';
   });
@@ -3396,7 +3413,7 @@ function renderPantryBrand(){
     +'<h2 class="pt-h2">'+ptDot(b.id)+esc(b.name)+'</h2>'
     +'<div class="pt-cats" role="tablist">'+cats.map(c=>'<button role="tab" aria-selected="'+(c.id===ptCat)+'" data-act="pt-cat" data-c="'+c.id+'"><span class="pt-ico">'+PT_ICONS[c.id]+'</span>'+c.label+'</button>').join('')+'</div>'
     +'<ul class="pt-list">'+prods.filter(p=>p.cat===ptCat).map(p=>{const x=inP(p.id);
-      return '<li class="pt-item">'+(prods.some(z=>z.img)?ptThumb(p):'')+'<div class="pt-txt"><b>'+esc(p.name)+'</b><small>'+esc((p.unit?p.unit+' · ':'')+ptValues(p))+'</small><a class="pt-link" href="'+esc(p.src)+'" target="_blank" rel="noopener noreferrer" aria-label="Recharger '+esc(p.name)+' sur le site de '+esc(b.name)+'">Recharger</a></div>'
+      return '<li class="pt-item">'+(prods.some(z=>z.img)?ptThumb(p):'')+'<div class="pt-txt"><b>'+esc(p.name)+'</b><small>'+esc((p.unit?p.unit+' · ':'')+ptValues(p))+'</small>'+ptMacros(p)+'<a class="pt-link" href="'+esc(p.src)+'" target="_blank" rel="noopener noreferrer" aria-label="Recharger '+esc(p.name)+' sur le site de '+esc(b.name)+'">Recharger</a></div>'
         +(x?ptStepper(x):'<button class="btn small" data-act="pt-add" data-id="'+p.id+'">Ajouter</button>')+'</li>';}).join('')+'</ul>';
 }
 function renderPantry(){
@@ -3421,7 +3438,9 @@ function pantryAct(a,b){
     if(!name){flash('Indique le nom du produit.');return true;}
     if(carbs==null){flash('Indique les glucides par portion.');return true;}
     const list=pantryItems().slice();
-    list.push({id:uid(),ref:'',brand:'',brandName:'',cat:v('pt-c-cat')||'gel',name:name,unit:'',carbs:carbs,sodium:ptNum(v('pt-c-sod'),3000),caf:ptNum(v('pt-c-caf'),400),qty:1});
+    const it={id:uid(),ref:'',brand:'',brandName:'',cat:v('pt-c-cat')||'gel',name:name,unit:'',carbs:carbs,sodium:ptNum(v('pt-c-sod'),3000),caf:ptNum(v('pt-c-caf'),400),qty:1};
+    PT_EXTRA.forEach(e=>{const n=ptNum(v('pt-c-'+e[0]),e[2]);if(n!=null)it[e[0]]=n;});
+    list.push(it);
     pantrySet(list);ptCustom=false;render();return true;
   }
   return false;
@@ -3430,7 +3449,7 @@ function pantryChange(t){
   const list=pantryItems().slice(),x=list.find(z=>z.id===t.dataset.id);if(!x)return;
   const k=t.dataset.pt;
   if(k==='name'){const s=String(t.value).trim().slice(0,60);if(s)x.name=s;}
-  else x[k]=ptNum(t.value,k==='carbs'?200:k==='sodium'?3000:400);
+  else{const e=PT_EXTRA.find(z=>z[0]===k);x[k]=ptNum(t.value,e?e[2]:k==='carbs'?200:k==='sodium'?3000:400);}
   pantrySet(list);
 }
 // ---------- nutrition calculée à partir du placard ----------
@@ -3466,10 +3485,18 @@ function pantryPlan(r,segs){
   });
 }
 function kitText(k){return k.items.length?k.items.map(i=>i.n+' × '+i.x.name+(i.x.brandName?' ('+i.x.brandName+')':'')).join(', '):'rien dans ton placard';}
-function pantrySummary(kits){
-  const miss=kits.reduce((a,k)=>a+k.miss,0);
-  if(!miss)return '<div class="card pt-plan ok"><b>Ton placard couvre toute la course.</b> <button class="linkbtn" data-tab="pantry">Mon placard</button></div>';
-  return '<div class="card pt-plan"><b>Il manque environ '+nf(miss)+' g de glucides dans ton placard</b>, soit à peu près '+Math.ceil(miss/25)+(Math.ceil(miss/25)>1?' gels':' gel')+' de 25 g. <button class="linkbtn" data-tab="pantry">Compléter mon placard</button></div>';
+// Énergie du plan : somme des calories connues, et par heure sur la durée des tronçons
+function pantryKcal(kits,segs){
+  let kcal=0,unk=false,any=false;
+  kits.forEach(k=>k.items.forEach(i=>{const c=ptK(i.x,'kcal');if(c==null)unk=true;else{any=true;kcal+=c*i.n;}}));
+  if(!any)return '';
+  const h=segs.reduce((a,s)=>a+Math.max(0,s.dur),0)/60;
+  return '<p class="pt-kcal">Énergie apportée : '+(unk?'au moins ':'environ ')+nf(Math.round(kcal))+' kcal'+(h>0?', soit '+nf(Math.round(kcal/h))+' kcal/h':'')+(unk?'<small>Calories inconnues pour une partie des produits : complète-les dans ton placard.</small>':'')+'</p>';
+}
+function pantrySummary(kits,segs){
+  const miss=kits.reduce((a,k)=>a+k.miss,0),en=pantryKcal(kits,segs||[]);
+  if(!miss)return '<div class="card pt-plan ok"><b>Ton placard couvre toute la course.</b> <button class="linkbtn" data-tab="pantry">Mon placard</button>'+en+'</div>';
+  return '<div class="card pt-plan"><b>Il manque environ '+nf(miss)+' g de glucides dans ton placard</b>, soit à peu près '+Math.ceil(miss/25)+(Math.ceil(miss/25)>1?' gels':' gel')+' de 25 g. <button class="linkbtn" data-tab="pantry">Compléter mon placard</button>'+en+'</div>';
 }
 function renderHome(){
   const pf=state.profile||defaultProfile(),r=state.race,has=profileHasData(pf),tot=r?planTotals(r):null;
@@ -3566,7 +3593,7 @@ function secNutrition(r,m,tl){
       :n.gels+' gel'+(n.gels>1?'s':'')+' + '+n.bars+' barre'+(n.bars>1?'s':'')+'<small>'+n.carbs+' g de glucides</small>';
     return '<tr><td>'+esc(sg.from)+' – '+esc(sg.to)+'<small>'+km1(sg.km)+' km, +'+sg.up+' m'+(sg.via.length?'. Sans assistance : '+sg.via.map(esc).join(', '):'')+'</small></td><td>'+fmtDur(sg.dur)+'</td><td>'+carbTxt+'</td><td>'+nf(n.water)+' ml<small>'+n.sodium+' mg de sodium</small></td></tr>';
   }).join('');
-  return '<section class="sec-panel" id="sec-nutrition">'+carbsHint(r)+(kits?pantrySummary(kits):(isRunner()&&!isMember(r)?'<p class="pt-hint"><button class="linkbtn" data-tab="pantry">Utiliser les produits de mon placard</button></p>':''))
+  return '<section class="sec-panel" id="sec-nutrition">'+carbsHint(r)+(kits?pantrySummary(kits,segs):(isRunner()&&!isMember(r)?'<p class="pt-hint"><button class="linkbtn" data-tab="pantry">Utiliser les produits de mon placard</button></p>':''))
   +'<div class="grid3"><label class="fld"><span>Glucides (g/h)</span><input type="number" inputmode="numeric" min="0" data-r="carbs" data-num value="'+r.carbs+'"></label>'
   +'<label class="fld"><span>Eau (ml/h)</span><input type="number" inputmode="numeric" min="0" step="50" data-r="water" data-num value="'+r.water+'"></label>'
   +'<label class="fld"><span>Sodium (mg/h)</span><input type="number" inputmode="numeric" min="0" step="50" data-r="sodium" data-num value="'+nutr(r,'sodium')+'"></label>'
