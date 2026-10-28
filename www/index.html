@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-1cZrwdbZqJwVa567B8rbM1keY2Rm84Vu+hUh2zTxrD8=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-nbeRNNRxBPSn7L4hPv7B6/z5MKta3h99NjlQ8k+6zDk=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -162,6 +162,26 @@ a.btn{text-decoration:none}
 .pt-txt b{display:block;font-weight:600;overflow-wrap:anywhere}
 .pt-txt small{display:block;color:var(--ink2);font-size:13px;line-height:1.35}
 .pt-txt small.pt-macro{margin-top:1px}
+.pt-name{all:unset;cursor:pointer;font-weight:600;overflow-wrap:anywhere;border-radius:4px}
+.pt-name:hover{text-decoration:underline;text-underline-offset:3px}
+.pt-name:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#ptsheet{justify-content:flex-start}
+#ptsheet .modal-card{margin:4vh auto 16px}
+.pt-card{position:relative}
+.pt-sh-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.pt-sh-brand{display:inline-flex;align-items:center;gap:8px;color:var(--ink2);font-size:14px}
+.pt-sh-top .icon{min-width:44px;min-height:44px;font-size:22px}
+.pt-sh-img{display:flex;justify-content:center;margin:4px 0 10px}
+.pt-sh-img img{max-height:160px;width:auto;max-width:60%;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.22))}
+.pt-sh-unit{margin:-4px 0 10px;color:var(--ink2)}
+.pt-sh-tab{width:100%;border-collapse:collapse;font-size:15px}
+.pt-sh-tab thead th{text-align:left;font-size:13px;color:var(--ink2);font-weight:600;padding:0 0 6px;border-bottom:2px solid var(--ink)}
+.pt-sh-tab tbody th{text-align:left;font-weight:500;padding:8px 0;border-bottom:1px solid var(--line)}
+.pt-sh-tab td{text-align:right;padding:8px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;font-weight:600}
+.pt-na{color:var(--ink2);font-weight:400;font-style:italic}
+.pt-sh-act{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:14px 0 4px}
+.pt-sh-act .pt-link{margin-top:0;min-height:40px}
+.pt-sh-qty{font-size:14px;color:var(--ink2)}
 .pt-kcal{margin:8px 0 0;font-size:14px}
 .pt-kcal small{display:block;color:var(--ink2);font-size:13px}
 .pt-link{display:inline-flex;align-items:center;min-height:32px;margin-top:6px;padding:0 14px;border-radius:999px;background:#1E6F8E;color:#fff;font:700 13px/1 var(--f-body);text-decoration:none}
@@ -634,6 +654,7 @@ fieldset.lock:disabled{opacity:.9}
   <div class="row"><button class="btn quiet" data-mact="cancel">Annuler</button><button class="btn primary" data-mact="ok">Confirmer</button></div>
 </div></div>
 <div class="modal sheet" id="plansheet" hidden><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="plansT"></div></div>
+<div class="modal sheet" id="ptsheet" hidden><div class="modal-card pt-card" role="dialog" aria-modal="true" aria-labelledby="ptsT"></div></div>
 <div id="tour" hidden>
   <div id="tourblock"></div>
   <div id="tourhl" class="none"></div>
@@ -3358,7 +3379,7 @@ function renderPantryStock(){
     const th=items.some(ptImgOf);
     h+='<section class="pt-group"><h2><span class="pt-ico">'+PT_ICONS[c.id]+'</span>'+c.label+'</h2><ul class="pt-list'+(th?' thumbs':'')+'">'
       +items.map(x=>'<li class="pt-item'+((x.qty|0)===0?' out':'')+'">'+(ptImgOf(x)?ptThumb(x):ptDot(x.brand,x.brandName||x.name))
-        +'<div class="pt-txt"><b>'+esc(x.name)+'</b><small>'+esc((x.brandName?x.brandName+' · ':'')+ptValues(x))+'</small>'+ptMacros(x)+'</div>'
+        +'<div class="pt-txt"><b>'+ptNameBtn(x,'stock')+'</b><small>'+esc((x.brandName?x.brandName+' · ':'')+ptValues(x))+'</small>'+ptMacros(x)+'</div>'
         +ptStepper(x)+'<button class="icon pt-more" data-act="pt-edit" data-id="'+(ptEdit===x.id?'':x.id)+'" aria-label="Modifier '+esc(x.name)+'" aria-expanded="'+(ptEdit===x.id)+'">✎</button>'
         +(ptEdit===x.id?ptEditForm(x):'')+'</li>').join('')+'</ul></section>';
   });
@@ -3398,6 +3419,55 @@ function ptFilters(list){
     +chip('stock',true,'En stock')+chip('todo',true,'À compléter')
     +(ptFilterOn()?'<button class="linkbtn pt-reset" data-act="pt-reset">Effacer</button>':'')+'</div></div>';
 }
+// Fiche produit en fenêtre : toutes les valeurs connues, la photo, l'ajout au placard et le lien vers la marque
+let ptInfo=null,ptInfoFrom=null;
+function ptInfoData(){
+  if(!ptInfo)return null;
+  const C=ptCatalog(),L=pantryItems();
+  if(ptInfo.src==='stock'){const x=L.find(z=>z.id===ptInfo.id);if(!x)return null;return {x:x,p:x.ref?C.products.find(z=>z.id===x.ref):null};}
+  const p=C.products.find(z=>z.id===ptInfo.id);if(!p)return null;
+  return {p:p,x:L.find(z=>z.ref===p.id)||null};
+}
+function ptSheetHTML(){
+  const d=ptInfoData();if(!d)return '';
+  const p=d.p,x=d.x,o=x||p,b=ptBrandOf(o.brand),cat=ptCatalog().cats.find(c=>c.id===o.cat),img=ptImgOf(o);
+  const val=k=>k==='carbs'||k==='sodium'||k==='caf'?o[k]:ptK(o,k);
+  const ml=(p&&p.ml)||o.ml;
+  const caf=val('caf');
+  const rows=[['Glucides',val('carbs'),'g'],['Sodium',val('sodium'),'mg'],['Caféine',caf==null&&ptHasCaf(o)?'dose non publiée':caf,'mg'],['Calories',val('kcal'),'kcal'],['Lipides',val('fat'),'g'],['Protéines',val('protein'),'g'],['Fibres',val('fiber'),'g']];
+  if(ml)rows.push(['Eau conseillée',ml,'ml']);
+  const fmt=(v,u)=>v==null?'<span class="pt-na">non publié</span>':typeof v==='string'?esc(v):esc(String(v).replace('.',','))+' '+u;
+  const src=p&&p.src;
+  return '<div class="pt-sh-top"><span class="pt-sh-brand">'+ptDot(o.brand,o.brandName||o.name)+esc(b?b.name:(o.brandName||'Produit perso'))+(cat?' · '+cat.label:'')+'</span><button class="icon" data-act="pt-info-x" aria-label="Fermer la fiche">×</button></div>'
+    +(img?'<div class="pt-sh-img"><img src="'+esc(img)+'" alt="'+esc(o.name)+'" width="160" height="200"></div>':'')
+    +'<h2 id="ptsT">'+esc(o.name)+'</h2>'+((p&&p.unit)||o.unit?'<p class="pt-sh-unit">'+esc((p&&p.unit)||o.unit)+'</p>':'')
+    +'<table class="pt-sh-tab"><caption class="sr">Valeurs pour une portion</caption><thead><tr><th scope="col">Pour une portion</th><th scope="col"></th></tr></thead><tbody>'
+    +rows.map(r=>'<tr><th scope="row">'+r[0]+'</th><td>'+fmt(r[1],r[2])+'</td></tr>').join('')+'</tbody></table>'
+    +'<div class="pt-sh-act">'+(x?'<span class="pt-sh-qty">Dans ton placard</span>'+ptStepper(x):(p?'<button class="btn primary" data-act="pt-add" data-id="'+esc(p.id)+'">Ajouter au placard</button>':''))
+    +(src?'<a class="pt-link" href="'+esc(src)+'" target="_blank" rel="noopener noreferrer" aria-label="Recharger '+esc(o.name)+' sur le site de la marque">Recharger</a>':'')+'</div>'
+    +(p?'<p class="pt-src">Valeurs relevées sur le site de la marque'+(ptCatalog().checked?' le '+esc(ptCatalog().checked.split('-').reverse().join('/')):'')+', complétées par Open Food Facts quand la marque ne les publie pas en texte.</p>':'');
+}
+function ptInfoOpen(id,src,from){
+  ptInfo={id:id,src:src};ptInfoFrom=from||null;
+  const el=document.getElementById('ptsheet');if(!el)return;
+  el.querySelector('.modal-card').innerHTML=ptSheetHTML();el.hidden=false;
+  const f=el.querySelector('[data-act="pt-info-x"]');if(f)f.focus();
+}
+function ptInfoClose(){
+  const el=document.getElementById('ptsheet');if(el)el.hidden=true;
+  // la liste a pu être redessinée pendant que la fiche était ouverte : on retrouve le nom du produit
+  let f=ptInfoFrom&&document.body.contains(ptInfoFrom)?ptInfoFrom:null;
+  if(!f&&ptInfo)f=document.querySelector('[data-act="pt-info"][data-id="'+ptInfo.id+'"]');
+  ptInfo=null;ptInfoFrom=null;if(f)f.focus();
+}
+function ptInfoRefresh(){
+  if(!ptInfo)return;const el=document.getElementById('ptsheet');if(!el)return;
+  const h=ptSheetHTML();if(!h){ptInfoClose();return;}
+  const fo=document.activeElement&&el.contains(document.activeElement)?document.activeElement.dataset.act:'';
+  el.querySelector('.modal-card').innerHTML=h;
+  const f=fo&&el.querySelector('[data-act="'+fo+'"]')||el.querySelector('[data-act="pt-info-x"]');if(f)f.focus();
+}
+function ptNameBtn(o,src){return '<button class="pt-name" data-act="pt-info" data-id="'+esc(src==='stock'?o.id:o.id)+'" data-src="'+src+'">'+esc(o.name)+'</button>';}
 function renderPantryBrands(){
   const C=ptCatalog();
   return '<button class="linkbtn pt-back" data-act="pt-view" data-v="stock">‹ Mon placard</button><h2 class="pt-h2">Choisis une marque</h2>'
@@ -3413,7 +3483,7 @@ function renderPantryBrand(){
     +'<h2 class="pt-h2">'+ptDot(b.id)+esc(b.name)+'</h2>'
     +'<div class="pt-cats" role="tablist">'+cats.map(c=>'<button role="tab" aria-selected="'+(c.id===ptCat)+'" data-act="pt-cat" data-c="'+c.id+'"><span class="pt-ico">'+PT_ICONS[c.id]+'</span>'+c.label+'</button>').join('')+'</div>'
     +'<ul class="pt-list">'+prods.filter(p=>p.cat===ptCat).map(p=>{const x=inP(p.id);
-      return '<li class="pt-item">'+(prods.some(z=>z.img)?ptThumb(p):'')+'<div class="pt-txt"><b>'+esc(p.name)+'</b><small>'+esc((p.unit?p.unit+' · ':'')+ptValues(p))+'</small>'+ptMacros(p)+'<a class="pt-link" href="'+esc(p.src)+'" target="_blank" rel="noopener noreferrer" aria-label="Recharger '+esc(p.name)+' sur le site de '+esc(b.name)+'">Recharger</a></div>'
+      return '<li class="pt-item">'+(prods.some(z=>z.img)?ptThumb(p):'')+'<div class="pt-txt"><b>'+ptNameBtn(p,'cat')+'</b><small>'+esc((p.unit?p.unit+' · ':'')+ptValues(p))+'</small>'+ptMacros(p)+'<a class="pt-link" href="'+esc(p.src)+'" target="_blank" rel="noopener noreferrer" aria-label="Recharger '+esc(p.name)+' sur le site de '+esc(b.name)+'">Recharger</a></div>'
         +(x?ptStepper(x):'<button class="btn small" data-act="pt-add" data-id="'+p.id+'">Ajouter</button>')+'</li>';}).join('')+'</ul>';
 }
 function renderPantry(){
@@ -3425,6 +3495,8 @@ function pantryAct(a,b){
   if(a==='pt-brand'){ptBrand=b.dataset.id;ptView='brand';ptCat='gel';render(true);return true;}
   if(a==='pt-cat'){ptCat=b.dataset.c;render();return true;}
   if(a==='pt-tab'){ptTab=b.dataset.c;render();return true;}
+  if(a==='pt-info'){ptInfoOpen(b.dataset.id,b.dataset.src,b);return true;}
+  if(a==='pt-info-x'){ptInfoClose();return true;}
   if(a==='pt-f'){const k=b.dataset.k,v=typeof ptF[k]==='boolean'?true:b.dataset.v;ptF[k]=String(ptF[k])===String(v)?(typeof ptF[k]==='boolean'?false:''):v;render();return true;}
   if(a==='pt-reset'){Object.assign(ptF,{brand:'',caf:'',sod:'',stock:false,todo:false,sort:''});ptTab='all';render();return true;}
   if(a==='pt-add'){ptAddFromCatalog(b.dataset.id);render();return true;}
@@ -4024,6 +4096,7 @@ function render(top){
   setTimeout(refreshOfflineStat,60);
   if(tab==='settings'&&isRunner()&&provInfo===null&&!provLoading){provLoading=true;loadProviders();}
   viewSave();
+  ptInfoRefresh();
 }
 // Écran affiché, gardé pour l'onglet du navigateur : un rafraîchissement rouvre le même écran au même endroit
 const VIEW_KEY='rb-view';
@@ -4289,6 +4362,7 @@ function act(b){
 }
 document.addEventListener('click',e=>{
   if(e.target.id==='plansheet'){closePlans();return;}
+  if(e.target.id==='ptsheet'){ptInfoClose();return;}
   const tr=e.target.closest('[data-tour]');
   if(tr){tourAct(tr.dataset.tour);return;}
   const ma=e.target.closest('[data-mact]');
@@ -4393,6 +4467,7 @@ document.addEventListener('keydown',e=>{
     if(tourOn)endTour();
     else if(!document.getElementById('modal').hidden)closeModal();
     else if(plansOpen)closePlans();
+    else if(ptInfo)ptInfoClose();
     else if(landOpen)closeLand();
     else if(menuOpen){closeMenu();const ab=document.getElementById('acct');if(ab)ab.focus();}
     else if(document.querySelector('.sheet')){const x=document.querySelector('.sheet-x');if(x)x.click();}
