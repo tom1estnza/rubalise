@@ -20,7 +20,7 @@ window.RB_CATALOG = {
     { id: 'tailwind', name: 'Tailwind', color: '#8E5BC4', logo: 'img/brands/tailwind.svg', bg: '#ECE2F6', tint: true },
     { id: 'isostar', name: 'Isostar', color: '#D23C5A', logo: 'img/brands/isostar.svg', bg: '#010101' },
     { id: 'powerbar', name: 'Powerbar', color: '#3E4FB0', logo: 'img/brands/powerbar.svg', bg: '#161616' },
-    { id: 'ta', name: 'Tā Energy', color: '#2F9C5A', logo: 'img/brands/ta.svg', bg: '#E2E5F2', tint: true }
+    { id: 'ta', name: 'Tä', color: '#2F9C5A', logo: 'img/brands/ta.svg', bg: '#E2E5F2', tint: true }
   ],
   // carbs : glucides (g) ; sodium (mg) ; caf : caféine (mg) ; unit : format d'une portion
   products: [
@@ -101,7 +101,7 @@ window.RB_CATALOG = {
     { id: 'powerbar-powergel-caf', brand: 'powerbar', cat: 'gel', name: 'PowerGel Original (50 mg caféine)', carbs: 26, sodium: 205, caf: 50, unit: 'sachet 41 g', src: 'https://www.powerbar.com/fr-de/products/powergel-original-high-carb-gel-energetique' },
     { id: 'powerbar-hydro', brand: 'powerbar', cat: 'gel', name: 'PowerGel Hydro', carbs: 25, sodium: null, caf: 0, unit: 'sachet 67 ml', src: 'https://www.powerbar.com/fr-de/products/powergel-hydro-high-carb-gel-energetique' },
     { id: 'powerbar-fuel30', brand: 'powerbar', cat: 'gel', name: 'Fuel Gel 30 · Cola-orange (caféine)', carbs: 30, sodium: 205, caf: 100, unit: 'gel 50 ml', src: 'https://www.powerbar.com/fr-de/products/fuel-gel-30-gel-glucidique' },
-    // ---- Tā Energy (valeurs relevées le 27/10/2026 ; dose de caféine non publiée pour les saveurs caféinées) ----
+    // ---- Tä (valeurs relevées le 27/10/2026 ; dose de caféine non publiée pour les saveurs caféinées) ----
     { id: 'ta-gel', brand: 'ta', cat: 'gel', name: 'Gel énergétique 40 ml (sans caféine)', carbs: 33, sodium: null, caf: 0, unit: 'gel 40 ml', src: 'https://www.ta-energy.com/products/energie-gels-vanilla' },
     { id: 'ta-gel-caf', brand: 'ta', cat: 'gel', name: 'Gel énergétique 40 ml · Café, cola ou fruits des bois (caféine)', carbs: 33, sodium: null, caf: null, unit: 'gel 40 ml', src: 'https://www.ta-energy.com/products/energie-gels-coffee' },
     { id: 'ta-jelly', brand: 'ta', cat: 'gel', name: 'Gel Jelly 51 g · Neutre ou citron yuzu', carbs: 35, sodium: null, caf: 0, unit: 'gel 51 g', src: 'https://www.ta-energy.com/products/jelly-gels-neutre' },
