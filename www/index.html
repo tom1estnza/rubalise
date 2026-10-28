@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-wlbL7EcjZIFYleYmOMSn5tpjRl60k/GSWimC4zShHlQ=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-W0fNuIt64K4k6TnpIjss39+fRYqArh3md9rM18WduNc=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -161,7 +161,9 @@ a.btn{text-decoration:none}
 .pt-txt{min-width:0}
 .pt-txt b{display:block;font-weight:600;overflow-wrap:anywhere}
 .pt-txt small{display:block;color:var(--ink2);font-size:13px;line-height:1.35}
-.pt-link{font-size:13px}
+.pt-link{display:inline-flex;align-items:center;min-height:32px;margin-top:6px;padding:0 14px;border-radius:999px;background:#1E6F8E;color:#fff;font:700 13px/1 var(--f-body);text-decoration:none}
+.pt-link:hover{background:#185C76}
+.pt-link:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .pt-dot{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;color:#fff;font:700 14px/1 var(--f-num);flex:none}
 .pt-dot.big{width:44px;height:44px;font-size:20px}
 .pt-dot.logo{background:#fff;overflow:hidden}
@@ -3394,7 +3396,7 @@ function renderPantryBrand(){
     +'<h2 class="pt-h2">'+ptDot(b.id)+esc(b.name)+'</h2>'
     +'<div class="pt-cats" role="tablist">'+cats.map(c=>'<button role="tab" aria-selected="'+(c.id===ptCat)+'" data-act="pt-cat" data-c="'+c.id+'"><span class="pt-ico">'+PT_ICONS[c.id]+'</span>'+c.label+'</button>').join('')+'</div>'
     +'<ul class="pt-list">'+prods.filter(p=>p.cat===ptCat).map(p=>{const x=inP(p.id);
-      return '<li class="pt-item">'+(prods.some(z=>z.img)?ptThumb(p):'')+'<div class="pt-txt"><b>'+esc(p.name)+'</b><small>'+esc((p.unit?p.unit+' · ':'')+ptValues(p))+'</small><a class="pt-link" href="'+esc(p.src)+'" target="_blank" rel="noopener noreferrer">Fiche de la marque</a></div>'
+      return '<li class="pt-item">'+(prods.some(z=>z.img)?ptThumb(p):'')+'<div class="pt-txt"><b>'+esc(p.name)+'</b><small>'+esc((p.unit?p.unit+' · ':'')+ptValues(p))+'</small><a class="pt-link" href="'+esc(p.src)+'" target="_blank" rel="noopener noreferrer" aria-label="Recharger '+esc(p.name)+' sur le site de '+esc(b.name)+'">Recharger</a></div>'
         +(x?ptStepper(x):'<button class="btn small" data-act="pt-add" data-id="'+p.id+'">Ajouter</button>')+'</li>';}).join('')+'</ul>';
 }
 function renderPantry(){
