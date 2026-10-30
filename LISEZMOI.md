@@ -352,10 +352,23 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - Cache des recherches renouvelé (préfixe `pk2:`) : les anciens résultats ne sont plus réutilisés.
 - Liste : les 5 stationnements les plus proches à pied (à moins de 20 min), du plus proche au plus loin, avec le temps et la distance de marche réels (OSRM à pied). Le premier est celui retenu.
 
-## Carte Garmin LiveTrack dans l'appli
-- Quand le coureur colle un lien `https://livetrack.garmin.com/session/…`, la carte Garmin s'affiche dans Assistance (« Suivi de la montre ») et dans En course (« Position du coureur »). Elle ne se recharge pas quand l'appli se met à jour ou qu'on change d'onglet.
-- Coros et les liens courts `gar.mn` refusent l'affichage dans une autre appli : ils restent un bouton qui ouvre le navigateur.
-- CSP : `frame-src https://livetrack.garmin.com`. Politique de confidentialité (traitement N) et mentions légales mises à jour le 26 octobre 2026.
+## Lien de suivi de la montre (sans carte intégrée)
+- La carte Garmin LiveTrack intégrée a été retirée le 30 octobre 2026 (ne fonctionnait pas). Le coureur colle toujours son lien dans Assistance ; « Ouvrir le suivi de la montre » l'ouvre dans le navigateur, pour l'assistance aussi.
+- CSP : plus de `frame-src`. Politique de confidentialité (traitement N) et mentions légales mises à jour le 30 octobre 2026.
+
+## Copilot (assistance qui rejoint avec le code)
+- Quand la course ouverte est une course rejointe avec un code (`isMember`), l'appli passe en Copilot : pas de bouton de connexion ni d'aide, seulement « Quitter Copilot » ; pas de barre « Mes plans » ; deux onglets seulement, rien à saisir.
+- Onglet Ravitos : nom du ravito, km en face, heure d'arrivée estimée en gros (et la fourchette), liste déroulante des parkings (conseillé puis autres) et bouton « GPS vers ce parking » (sinon « GPS vers le ravito »). Bouton « Ouvrir le suivi de la montre » si le coureur a mis son lien.
+- Onglet Nutrition : choix du ravito (le prochain par défaut, gardé au rafraîchissement), puis gels et barres exacts (nom, marque), flasques de 500 ml (avec la poudre de boisson ou à l'eau, pastilles de sel) et matériel demandé.
+- Produits exacts : le coureur qui partage envoie dans le plan `kits` (par ravito : produits de son placard, nombre, marque), calculé comme dans son plan nutrition. Sans placard, on affiche le nombre de gels et de barres du plan.
+- Les heures se recalculent toutes les 30 s.
+
+## Assistance simplifiée
+- Une carte « Inviter ton assistance » : créer le code (ou le code et « Copier » une fois partagé), le lien de la montre, et les options du partage repliées (synchroniser, tester, arrêter).
+- « Prochain départ » (copilote) juste dessous.
+- « Les ravitos » en frise du départ à l'arrivée (rail en pointillés et pastilles numérotées, d'après le composant 21st.dev « Vertical How It Works Timeline ») : heure de passage, heure d'arrivée sur place, bouton Itinéraire ; « À préparer » (kit jusqu'au ravito suivant, demandes, ajout) et « Accès et stationnement » repliés, ouverts ou fermés comme on les a laissés.
+- Motion : les étapes de la frise arrivent l'une après l'autre, le contenu replié glisse à l'ouverture (rien si « réduire les animations »).
+- « Partager le plan par code » replié en bas.
 
 ## Plus de bulles, champs fiables, compte à rebours
 - Plus aucune bulle flottante. Les confirmations sont silencieuses ; les erreurs et ce qui demande une action s'affichent en ligne, sous le bouton ou le champ utilisé.

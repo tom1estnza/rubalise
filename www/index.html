@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-nbeRNNRxBPSn7L4hPv7B6/z5MKta3h99NjlQ8k+6zDk=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src https://livetrack.garmin.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-gUOiAVS4T+e3AXp2AtfpcHTUvy0QYSupv+CCnExXOvs=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -234,10 +234,6 @@ a.btn{text-decoration:none}
 .countdown{margin:4px 0 0}
 .countdown dd{margin:2px 0 0;font:700 clamp(32px,9vw,44px)/1.05 var(--f-num);letter-spacing:.01em}
 .countdown dt{font-size:14px;color:var(--ink2)}
-.lt-slot{height:min(62vh,460px);margin:4px 0 10px;border-radius:12px;background:var(--fill)}
-.lt-host{position:absolute;z-index:1;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
-.lt-host[hidden]{display:none}
-.lt-host iframe{display:block;width:100%;height:100%;border:0}
 .legal-links{text-align:center;margin:14px auto 0}
 .about-legal{text-align:left;margin:10px 0 0}
 .legal-links a,.consent a,.stack .note a,.betacard .hint a{color:var(--ink);font-weight:600;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
@@ -472,6 +468,89 @@ body input[type=checkbox]:focus-visible{outline:none;box-shadow:0 0 0 2px color-
 .addbox[data-mode="clothes"] .clothes{display:block}
 .addbox[data-mode="clothes"] .stepper,.addbox[data-mode="free"] .stepper{display:none}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+/* Assistance : carte de partage, frise des ravitos (rail en pointillés, pastilles numérotées) */
+.as-share h2,.crewcard h2{margin:0 0 6px}
+.as-lead{margin:0 0 10px;color:var(--ink2)}
+.as-code{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+.as-code .code-big{margin:4px 0}
+.as-watch{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+.as-watch .row{margin:8px 0 0}
+.as-route{margin-top:26px}
+.as-route>h2{margin:0 0 12px}
+.as-tl{list-style:none;margin:0;padding:0 0 0 22px;position:relative}
+.as-tl::before{content:"";position:absolute;left:21px;top:20px;bottom:24px;border-left:2px dashed var(--line)}
+.as-stop{position:relative;padding:0 0 14px 26px}
+.as-node{position:absolute;left:-22px;top:12px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:2px solid var(--accent);color:var(--ink);font:700 14px/1 var(--f-num);z-index:1}
+.as-stop.start .as-node,.as-stop.finish .as-node{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.as-stop.watch .as-node{border-style:dashed}
+.as-stop.next .as-node{background:var(--accent);color:var(--accent-ink);box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 22%,transparent)}
+.as-stop.passed .as-node{background:var(--fill);border-color:var(--line);color:var(--ink2)}
+.as-card{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:12px 14px}
+.as-stop.next .as-card{border-color:var(--accent);box-shadow:0 2px 14px color-mix(in srgb,var(--accent) 16%,transparent)}
+.as-stop.passed .as-card{opacity:.7}
+.as-stop.hl .as-card{background:color-mix(in srgb,var(--accent) 14%,var(--surface))}
+.as-card h3{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 0 4px;font-size:18px}
+.as-card h3 .km{font:500 14px var(--f-num);color:var(--ink2);white-space:nowrap}
+.as-time{margin:0 0 6px;font-size:17px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+.as-time b{font-variant-numeric:tabular-nums}
+.as-time span{font-size:14px;color:var(--ink2)}
+.as-time.done{color:var(--ok)}
+.as-kit{margin:4px 0 8px;font-size:15px}
+.as-card .maplinks{margin:6px 0 4px}
+details.as-more{border:0;padding:0;margin:6px 0 0}
+details.as-more:last-of-type{border:0}
+.as-card details.as-more{border-top:1px solid var(--line);padding-top:2px}
+details.as-more>summary{font:600 15px var(--f-body);min-height:44px;gap:8px;list-style:none}
+details.as-more>summary::-webkit-details-marker{display:none}
+details.as-more>summary::after{content:"";width:8px;height:8px;margin-left:auto;border-right:2px solid var(--ink2);border-bottom:2px solid var(--ink2);transform:rotate(45deg) translateY(-3px);transition:transform .2s}
+details.as-more[open]>summary::after{transform:rotate(-135deg) translateY(-1px)}
+.as-n{min-width:22px;padding:3px 7px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font:700 12px/1 var(--f-num);text-align:center}
+.as-more-body{padding:0 0 8px}
+.as-share details.as-more{border-top:1px solid var(--line);margin-top:12px}
+section>details.as-more,#root>details.as-more{border-top:1px solid var(--line);margin-top:22px}
+@media (prefers-reduced-motion:reduce){details.as-more>summary::after{transition:none}}
+/* Copilot : écran de l'assistance (ravitos en gros, nutrition du ravito choisi) */
+.cp #helpbtn,.cp #acct{display:none}
+#cpquit{white-space:nowrap}
+.cp-head{margin:6px 0 16px}
+.cp-kicker{margin:0;font:700 12px/1 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.cp-head h1{margin:6px 0 4px;font-size:26px}
+.cp-sub{margin:2px 0 0;color:var(--ink2);font-size:15px}
+.cp-sync{display:block;font-size:13px;margin-top:4px}
+.cp-watch{margin:0 0 16px}
+.cp-list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.cp-st{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:14px 16px}
+.cp-st.next{border-color:var(--accent);box-shadow:0 2px 16px color-mix(in srgb,var(--accent) 18%,transparent)}
+.cp-st.passed{opacity:.6}
+.cp-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.cp-name{margin:0;font-size:21px;line-height:1.2}
+.cp-km{font:600 17px var(--f-num);color:var(--ink2);white-space:nowrap}
+.cp-tag{display:inline-block;margin:6px 6px 0 0;padding:3px 9px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font:700 12px/1.3 var(--f-body)}
+.cp-tag.quiet{background:var(--fill);color:var(--ink2)}
+.cp-eta{margin:10px 0 0;font:800 46px/1 var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.cp-eta small{display:block;margin-bottom:4px;font:500 13px/1.2 var(--f-body);letter-spacing:0;color:var(--ink2)}
+.cp-eta.done{color:var(--ok)}
+.cp-range{margin:4px 0 0;color:var(--ink2);font-size:14px}
+.cp-park{display:grid;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.cp-park .fld{margin:0}
+.cp-park .maplinks{margin:0}
+.cp-gps{width:100%;justify-content:center}
+.cp-pk{margin:0;font-size:15px}
+.cp-pk span{display:block;font-size:13px;color:var(--ink2)}
+.cp-more{margin-top:8px;padding-left:0;font-weight:600;min-height:44px}
+.cp-pick{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.cp-pick .chip{min-height:44px;font-size:15px}
+.cp-selh h2{margin:0;font-size:26px}
+.cp-selh{margin:0 0 14px}
+.cp-sec{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:12px 16px;margin:0 0 12px}
+.cp-sec h3{margin:0 0 8px;font-size:15px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2)}
+.cp-big{margin:0 0 6px;font:700 22px/1.2 var(--f-body)}
+.cp-items{list-style:none;margin:0;padding:0}
+.cp-items li{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-top:1px solid var(--line);font-size:17px}
+.cp-items li:first-child{border-top:0}
+.cp-q{min-width:38px;font:800 18px var(--f-num);font-variant-numeric:tabular-nums}
+.cp-items small{display:block;font-size:13px;color:var(--ink2)}
+.cp-sec .note{margin:6px 0 0}
 .crew.hl{background:color-mix(in srgb,var(--accent) 14%,transparent);border-radius:10px}
 .maplinks{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
 .maplinks a.btn{text-decoration:none}
@@ -622,7 +701,7 @@ fieldset.lock:disabled{opacity:.9}
 <div class="app">
   <header class="top">
     <div class="brand"><span class="tape" aria-hidden="true"></span><span>Rubalise</span><span class="beta-tag">bêta</span></div>
-    <div class="topbtns"><button class="icon-btn" id="helpbtn" data-act="open-help" aria-label="Aide et guide de démarrage">?</button><button class="btn quiet small" id="acct" data-tab="login">Se connecter</button></div>
+    <div class="topbtns"><button class="icon-btn" id="helpbtn" data-act="open-help" aria-label="Aide et guide de démarrage">?</button><button class="btn quiet small" id="acct" data-tab="login">Se connecter</button><button class="btn quiet small" id="cpquit" data-act="stop-sync" hidden>Quitter Copilot</button></div>
   </header>
   <main id="view"><noscript>
 <h1>Rubalise, plan de course trail</h1>
@@ -645,6 +724,8 @@ fieldset.lock:disabled{opacity:.9}
   <button class="tabbtn" data-tab="assist"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c3 .2 5 2.2 5 5.3"/></svg><span>Assistance</span></button>
   <button class="tabbtn" data-tab="live"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V9.5M9.5 3h5M12 3v3"/></svg><span>En course</span></button>
   <button class="tabbtn" data-tab="diary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg><span>Carnet</span></button>
+  <button class="tabbtn" data-tab="cp-route" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg><span>Ravitos</span></button>
+  <button class="tabbtn" data-tab="cp-food" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v5l-4 7.5A4 4 0 0 0 9.6 21h4.8a4 4 0 0 0 3.6-5.5L14 8V3"/></svg><span>Nutrition</span></button>
   <button class="tabbtn" data-tab="runner" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.5" r="3.5"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg><span>Coureur</span></button>
 </nav>
 
@@ -1547,6 +1628,18 @@ function planObj(r,withItems){
   const o={};PLAN_KEYS.forEach(k=>{o[k]=r[k];});
   o.profile=r.profile;
   o.stations=r.stations.map(s=>{const x={id:s.id,name:s.name,km:s.km,access:!!s.access,barrier:s.barrier||'',barrierAuto:s.barrierAuto!==false};if(s.parking)x.parking=s.parking;if(s.parkLat!=null&&s.parkLon!=null){x.parkLat=s.parkLat;x.parkLon=s.parkLon;}if(s.walkMin!=null)x.walkMin=s.walkMin;if(s.driveMin!=null)x.driveMin=s.driveMin;if(s.watch)x.watch=true;if(s.parkList&&s.parkList.length)x.parkList=s.parkList;if(withItems)x.items=(s.items||[]).map(i=>({id:i.id,t:i.t,q:i.q||1,cat:i.cat||'autre'}));return x;});
+  if(withItems&&r.sync&&r.sync.role==='owner')try{if(pantryActive(r)){
+    const m=model(r),segs=assistSegments(r,m,timeline(r,m,{plan:true})),ks=pantryPlan(r,segs);o.kits={};
+    segs.forEach((sg,i)=>{const k=ks[i];o.kits[sg.fromId]={it:k.items.map(x=>({n:x.n,t:String(x.x.name||'').slice(0,60),b:String(x.x.brandName||'').slice(0,40),c:String(x.x.cat||'').slice(0,12),cb:+x.x.carbs>0?1:0})),miss:k.miss|0};});
+  }}catch(e){}
+  return o;
+}
+function cleanKits(k){
+  const o={};if(!k||typeof k!=='object')return o;
+  Object.keys(k).slice(0,32).forEach(id=>{
+    const v=k[id],key=String(id).replace(/[^A-Za-z0-9]/g,'').slice(0,12);if(!key||!v||!Array.isArray(v.it))return;
+    o[key]={it:v.it.slice(0,20).map(i=>({n:Math.max(1,Math.min(99,parseInt(i&&i.n,10)||1)),t:String((i&&i.t)||'').slice(0,60),b:String((i&&i.b)||'').slice(0,40),c:String((i&&i.c)||'').slice(0,12),cb:i&&i.cb?1:0})).filter(i=>i.t),miss:Math.max(0,Math.min(2000,parseInt(v.miss,10)||0))};
+  });
   return o;
 }
 function planJSON(r){return JSON.stringify(planObj(r,true));}
@@ -1573,7 +1666,7 @@ function sanitizeRace(r){
     minSpeed:(+r.minSpeed>=3&&+r.minSpeed<=12)?+r.minSpeed:5.5,crewMargin:crewMarginOf(r),sodium:Math.max(0,Math.min(3000,r.sodium===undefined?400:(+r.sodium||0))),barG:Math.max(0,Math.min(100,r.barG===undefined?30:(+r.barG||0))),gelShare:Math.max(0,Math.min(100,r.gelShare===undefined?70:(+r.gelShare||0))),startAt:null,
     trackUrl:/^https?:\/\/[^\s<>"']{3,280}$/i.test(r.trackUrl||'')?String(r.trackUrl):'',
     carbs:Math.max(0,Math.min(200,+r.carbs||0)),water:Math.max(0,Math.min(2000,+r.water||0)),gelG:Math.max(0,Math.min(100,+r.gelG||0)),
-    profile:prof,points:{},extras:{},done:{},diary:{rating:0,nutrition:'',learn:'',gear:''},
+    profile:prof,kits:cleanKits(r.kits),points:{},extras:{},done:{},diary:{rating:0,nutrition:'',learn:'',gear:''},
     stations:r.stations.slice(0,30).map(s=>({id:String(s.id||uid()).replace(/[^A-Za-z0-9]/g,'').slice(0,12)||uid(),name:String(s.name||'Ravito').slice(0,80),km:Math.max(0,+s.km||0),access:!!s.access,barrier:hm.test(s.barrier||'')?s.barrier:'',barrierAuto:s.barrierAuto===undefined?!s.barrier:!!s.barrierAuto,
        parking:String(s.parking||'').slice(0,80),parkLat:okCoord(s.parkLat,90),parkLon:okCoord(s.parkLon,180),walkMin:okMin(s.walkMin,180),driveMin:okMin(s.driveMin,600),watch:!!s.watch,parkList:cleanParkList(s.parkList),
        items:Array.isArray(s.items)?s.items.slice(0,30).map(it=>({id:String(it.id||uid()).replace(/[^A-Za-z0-9]/g,'').slice(0,12)||uid(),t:String(it.t||'').slice(0,60),q:Math.max(1,Math.min(99,parseInt(it.q,10)||1)),cat:String(it.cat||'autre').slice(0,12)})):[]}))
@@ -1661,7 +1754,7 @@ function ptsToFields(pts){const f={};Object.keys(pts||{}).forEach(id=>{f['p_'+id
 function pstr(o){return JSON.stringify(Object.keys(o||{}).sort().map(k=>[k,o[k]]));}
 function mergePlan(r,p){
   PLAN_KEYS.forEach(k=>{r[k]=p[k];});
-  r.profile=p.profile;
+  r.profile=p.profile;r.kits=p.kits||{};
   r.stations=p.stations.map(s=>Object.assign({},s));
 }
 function applyRemote(r,doc){
@@ -2058,7 +2151,11 @@ function updateChrome(){
   const run=isRunner();
   const nav=document.querySelector('.tabs');if(nav)nav.classList.toggle('five',run);
   const rb=document.querySelector('.tabbtn[data-tab="runner"]');if(rb)rb.hidden=true;
-  const hb=document.querySelector('.tabbtn[data-tab="home"]');if(hb)hb.hidden=!run;
+  const hb=document.querySelector('.tabbtn[data-tab="home"]');if(hb)hb.hidden=!run||copilot();
+  const cp=copilot();document.body.classList.toggle('cp',cp);if(nav&&cp)nav.classList.remove('five');
+  ['plan','assist','live','diary'].forEach(t=>{const b=document.querySelector('.tabbtn[data-tab="'+t+'"]');if(b)b.hidden=cp;});
+  ['cp-route','cp-food'].forEach(t=>{const b=document.querySelector('.tabbtn[data-tab="'+t+'"]');if(b)b.hidden=!cp;});
+  const cq=document.getElementById('cpquit');if(cq)cq.hidden=!cp;
   const ab=document.getElementById('acct');
   if(ab){
     if(run){ab.removeAttribute('data-tab');ab.dataset.act='menu';ab.setAttribute('aria-haspopup','menu');ab.setAttribute('aria-expanded',String(menuOpen));}
@@ -2368,7 +2465,7 @@ function renderHelp(){
   +'<details><summary>Importer un parcours GPX</summary><p>Sur l’accueil, appuie sur « Importer un fichier GPX » et choisis le fichier. Si le sélecteur ne l’ouvre pas, utilise « Coller son contenu » : ouvre le GPX dans un éditeur de texte, copie tout et colle-le. Demande le GPX à l’organisateur, ou exporte-le depuis ta montre ou ton application de suivi.</p></details>'
   +'<details><summary>Partager une course en direct</summary><ol><li>Connecte-toi (rond en haut à droite).</li><li>Onglet Assistance, « Partager en direct » : un code de 6 caractères apparaît.</li><li>Ton assistance et tes supporters saisissent ce code dans « Rejoindre », sans compte.</li></ol></details>'
   +'<details><summary>Pointer un passage</summary><p>Dans l’onglet En course, indique l’heure de passage au ravito et appuie sur « Pointer le passage ». Les heures suivantes se recalculent chez tout le monde. Sans réseau, le pointage est gardé sur le téléphone et envoyé dès que le signal revient.</p></details>'
-  +'<details><summary>Suivre le coureur</summary><p>À chaque ravito pointé (onglet En course), les heures suivantes se recalculent chez tout le monde. Le coureur peut aussi coller le lien de suivi de sa montre (LiveTrack chez Garmin, Live Tracking chez Coros) : l’assistance l’ouvre, lit où il se trouve et saisit son kilomètre dans En course.</p></details>'
+  +'<details><summary>Suivre le coureur</summary><p>À chaque ravito pointé (onglet En course), les heures suivantes se recalculent chez tout le monde. Le coureur peut aussi coller le lien de suivi de sa montre (LiveTrack chez Garmin, Live Tracking chez Coros) : l’assistance l’ouvre dans le navigateur, lit où il se trouve et saisit son kilomètre dans En course.</p></details>'
   +'<details><summary>Se connecter avec Google</summary><p>Sur l’écran de connexion, appuie sur « Continuer avec Google » : Google s’ouvre dans le navigateur du téléphone, puis tu reviens dans Rubalise. Une adresse e-mail correspond à un seul compte. Si tu as déjà un compte avec ton e-mail et ton mot de passe, connecte-toi avec, puis associe Google dans Paramètres du compte, « Méthodes de connexion ».</p></details>'
   +'<details><summary>Vue horizontale du profil</summary><p>Sur le Plan ou En course, appuie sur « Vue horizontale », puis sur un point numéroté du profil : tu vois le nom du ravito, l’heure d’arrivée prévue et le matériel à prévoir, avec un lien pour le modifier. Le bouton « 3D » remplace le profil par un tracé en relief : fais-le tourner du doigt, pince pour zoomer.</p></details>'
   +'<details><summary>Zones d’allure et de fréquence cardiaque</summary><p>Elles sont calculées dans ta fiche coureur à partir de ta performance de référence (indice de forme de Daniels) et de tes fréquences cardiaques (réserve cardiaque de Karvonen, pourcentage de la FC max ou FC de seuil). Les allures sont données sur terrain plat.</p></details>'
@@ -2760,48 +2857,7 @@ function setFix(r,km,t){
 function clearFix(r){if(r.fix||(r.pending&&(r.pending.fixkm!=null||r.pending.fixt!=null))){queuePoint(r,'fixkm',null);queuePoint(r,'fixt',null);}r.fix=null;}
 function trackLink(r,cls){
   const u=safeHttpUrl(r.trackUrl);if(!u)return '';
-  const g=!!garminLive(u);
-  return '<a class="btn '+(g?'quiet small':(cls||''))+'" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">'+(g?'Ouvrir dans le navigateur':'Ouvrir le suivi de la montre')+'</a>';
-}
-// ---------- Garmin LiveTrack dans l'appli ----------
-// Garmin autorise l'affichage de sa page LiveTrack dans une autre appli : la carte s'affiche dès que le coureur colle son lien.
-// Coros l'interdit (X-Frame-Options), comme les liens courts gar.mn : ceux-là restent un bouton qui ouvre le navigateur.
-// L'iframe vit hors de la page redessinée (#lt-host), posée au-dessus d'un emplacement réservé : les rendus successifs
-// (toutes les 30 s dans « En course ») ne rechargent donc pas la carte.
-function garminLive(u){
-  u=safeHttpUrl(u);if(!u)return '';
-  try{const x=new URL(u);return (x.protocol==='https:'&&x.hostname==='livetrack.garmin.com'&&/^\/session\//.test(x.pathname))?x.href:'';}catch(e){return '';}
-}
-function liveTrackSlot(r){const u=garminLive(r.trackUrl);return u?'<div class="lt-slot" data-lt="'+esc(u)+'"></div>':'';}
-let ltHost=null;
-function syncLiveTrack(){
-  const ph=root.querySelector('[data-lt]');
-  if(!ph||!ph.offsetWidth){if(ltHost)ltHost.hidden=true;return;}
-  const url=ph.dataset.lt;
-  if(!ltHost){ltHost=document.createElement('div');ltHost.className='lt-host';document.body.appendChild(ltHost);}
-  let f=ltHost.querySelector('iframe');
-  if(!f||f.dataset.src!==url){
-    ltHost.innerHTML='';f=document.createElement('iframe');
-    f.dataset.src=url;f.src=url;f.title='Position du coureur (Garmin LiveTrack)';
-    f.setAttribute('referrerpolicy','no-referrer');f.setAttribute('allow','fullscreen');
-    f.setAttribute('sandbox','allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox');
-    ltHost.appendChild(f);
-  }
-  const b=ph.getBoundingClientRect();
-  ltHost.hidden=false;
-  ltHost.style.left=(b.left+window.scrollX)+'px';ltHost.style.top=(b.top+window.scrollY)+'px';
-  ltHost.style.width=b.width+'px';ltHost.style.height=b.height+'px';
-}
-window.addEventListener('resize',()=>syncLiveTrack());
-if(window.ResizeObserver)new ResizeObserver(()=>syncLiveTrack()).observe(document.body);
-function trackPanel(r){
-  const member=!!(r.sync&&r.sync.role==='member');
-  if(member&&!r.trackUrl)return '';
-  return '<section class="sec"><h2>Suivi de la montre</h2>'
-    +(member?''
-            :'<p class="note">Toute personne qui a ce lien voit ta position.</p>'
-              +'<label class="fld"><span>Lien de suivi</span><input class="in" data-r="trackUrl" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://…" value="'+esc(r.trackUrl||'')+'"></label>')
-    +liveTrackSlot(r)+(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'')+'</section>';
+  return '<a class="btn '+(cls||'')+'" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">Ouvrir le suivi de la montre</a>';
 }
 function fixPanel(r,m){
   const fx=r.fix;
@@ -2816,7 +2872,7 @@ function fixPanel(r,m){
     +'<label class="fld" style="flex:1;min-width:120px"><span>Heure</span><input class="in" type="time" id="fix-t" value="'+hhmmNow()+'"></label></div>'
     +'<div class="row"><button class="btn primary" data-act="set-fix">Enregistrer la position</button>'+(fx?'<button class="btn quiet" data-act="clear-fix">Annuler la dernière position</button>':'')+'</div>';
   return '<section class="sec"><h2>Position du coureur</h2>'
-    +liveTrackSlot(r)+(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'')
+    +(r.trackUrl?'<div class="row">'+trackLink(r,'primary')+'</div>':'')
     +manual+(r.trackUrl?'':'<p class="note">Aucun lien de suivi : le coureur peut en ajouter un dans l’onglet Assistance.</p>')
     +last+'</section>';
 }
@@ -3210,26 +3266,6 @@ function openStation(id){
   if(wasFs)setTimeout(focusIt,450);else focusIt();
 }
 
-function syncPanel(r){
-  const sy=r.sync;
-  if(sy){
-    const owner=sy.role==='owner';
-    return '<section class="sec"><h2>Suivi en direct</h2>'
-      +'<p class="lead">'+(owner?'Donne ce code à ton assistance et à tes supporters : ils le saisissent dans leur appli pour suivre ta course et pointer tes passages.':'Tu suis cette course. Tes pointages sont envoyés à toute l’équipe.')+'</p>'
-      +'<div class="code-big" aria-label="Code de la course">'+esc(sy.code)+'</div>'
-      +'<p class="note" id="syncstat">'+esc(syncText(r))+'</p>'
-      +'<div class="row"><button class="btn" data-act="copy-live-code">Copier le code</button><button class="btn quiet" data-act="sync-now">Synchroniser maintenant</button><button class="btn quiet" data-act="stop-sync">'+(owner?'Arrêter le partage':'Quitter ce suivi')+'</button></div></section>';
-  }
-  if(!isRunner()){
-    return '<section class="sec"><h2>Suivi en direct</h2>'
-      +'<p class="note">Réservé aux coureurs connectés.</p>'
-      +'<div class="row"><button class="btn primary" data-tab="login">Se connecter ou créer un compte</button></div>'+joinForm()+'</section>';
-  }
-  return '<section class="sec"><h2>Suivi en direct</h2>'
-    +''
-    +'<div class="row"><button class="btn primary" data-act="share-live">Partager en direct</button><button class="btn quiet small" data-act="sync-test">Tester la connexion</button></div>'
-    +joinForm()+'</section>';
-}
 
 // ---------- graphique de profil ----------
 function profileSVG(m,tl,opt){
@@ -3813,7 +3849,7 @@ function crewAdviceCore(r,m){
 }
 function crewCard(r,m){
   const on=crewNotifOn(r),nat=hasNotif();
-  return '<section class="sec crewcard"><h2>Copilote : prochain départ</h2><div id="crewadv" aria-live="polite">'+crewAdviceInner(r,m)+'</div>'
+  return '<section class="card crewcard"><h2>Prochain départ</h2><div id="crewadv" aria-live="polite">'+crewAdviceInner(r,m)+'</div>'
     +(nat?'<label class="fld chk" style="margin-top:6px"><input type="checkbox" data-crewnotif'+(on?' checked':'')+'><span>Me prévenir 5 min avant le départ</span></label>'
         +(on&&permState.notif!=='granted'?'<div class="row" style="margin:4px 0"><button class="btn small" data-act="crew-notif-perm">Autoriser les notifications</button></div>':'')
         :'')
@@ -3836,43 +3872,163 @@ function crewLine(r,st){
   }
   return t;
 }
+// Assistance : une carte de partage (code + lien de la montre), le prochain départ, puis les ravitos en frise,
+// du départ à l'arrivée. Chaque arrêt montre l'heure et l'itinéraire ; le détail (à préparer, accès) est replié.
+const asOpen={};
+document.addEventListener('toggle',e=>{const d=e.target;if(!d||!d.classList||!d.classList.contains('as-more')||!d.dataset.k)return;asOpen[d.dataset.k]=d.open;
+  if(d.open){const b=d.querySelector('.as-more-body');mo(b,{opacity:[0,1],transform:['translateY(-6px)','translateY(0px)']},{duration:.24,ease:[.22,1,.36,1]});}},true);
+function asMore(k,label,inner){return '<details class="as-more" data-k="'+k+'"'+(asOpen[k]?' open':'')+'><summary>'+label+'</summary><div class="as-more-body">'+inner+'</div></details>';}
+function assistShare(r){
+  const sy=r.sync,member=isMember(r),url=safeHttpUrl(r.trackUrl);
+  let h='<section class="card as-share">';
+  if(sy){
+    const owner=sy.role==='owner';
+    h+='<h2>'+(owner?'Ton assistance te suit':'Tu suis cette course')+'</h2>'
+      +(owner?'<p class="as-lead">Donne ce code à ton équipe : elle le saisit dans Rubalise.</p>':'')
+      +'<div class="as-code"><span class="code-big" aria-label="Code de la course">'+esc(sy.code)+'</span><button class="btn primary" data-act="copy-live-code">Copier le code</button></div>'
+      +'<p class="note" id="syncstat">'+esc(syncText(r))+'</p>';
+  }else if(!isRunner()){
+    h+='<h2>Suivre un coureur</h2>'+joinForm('Code donné par le coureur')
+      +'<p class="note"><button class="linkbtn" data-tab="login">Se connecter</button> pour partager ta propre course.</p>';
+  }else{
+    h+='<h2>Inviter ton assistance</h2><p class="as-lead">Un code suffit : ton équipe suit tes passages en direct.</p>'
+      +'<div class="row"><button class="btn primary" data-act="share-live">Créer le code de la course</button></div>'
+      +asMore('join','Tu assistes un coureur ?',joinForm('Son code'));
+  }
+  // lien de suivi de la montre : saisi par le coureur, ouvert dans le navigateur
+  if(!member)h+='<div class="as-watch"><label class="fld"><span>Lien de suivi de ta montre</span><input class="in" data-r="trackUrl" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://…" value="'+esc(r.trackUrl||'')+'"></label>'
+    +(url?'<div class="row">'+trackLink(r,'')+'</div>':'')+'</div>';
+  else if(url)h+='<div class="as-watch"><div class="row">'+trackLink(r,'primary')+'</div></div>';
+  if(sy)h+=asMore('opt','Options du partage','<div class="row"><button class="btn quiet small" data-act="sync-now">Synchroniser maintenant</button><button class="btn quiet small" data-act="sync-test">Tester la connexion</button><button class="btn quiet small" data-act="stop-sync">'+(sy.role==='owner'?'Arrêter le partage':'Quitter ce suivi')+'</button></div>');
+  return h+'</section>';
+}
 function renderAssist(){
   const r=state.race;if(!r)return needRace();
   const m=model(r),tlN=timeline(r,m,{}),tlO=timeline(r,m,{mult:0.92}),tlP=timeline(r,m,{mult:1.12}),segs=assistSegments(r,m,timeline(r,m,{plan:true}));
   const kits=pantryActive(r)?pantryPlan(r,segs):null,kitOf=sg=>kits?kitText(kits[segs.indexOf(sg)]):needsText(sg.needs);
-  const rows=tlN.rows;
-  const withAccess=rows.filter(x=>!x.isFinish&&(x.st.access||x.st.watch));
+  const rows=tlN.rows,margin=crewMarginOf(r);
+  const stops=rows.filter(x=>!x.isFinish&&(x.st.access||x.st.watch));
   const without=rows.filter(x=>!x.isFinish&&!x.st.access&&!x.st.watch);
-  const cards=withAccess.map(x=>{
-    const i=x.index,early=tlO.rows[i].adjArr,late=tlP.rows[i].adjArr,passed=x.actual!=null,sg=segs.find(z=>z.fromId===x.id);
-    if(!x.st.access)return '<article class="crew watch'+(passed?' passed':'')+'" id="crew-'+x.id+'"><h3><span>'+esc(x.name)+'</span><span class="km">km '+km1(x.km)+'</span></h3>'
-      +''
-      +(passed?'<p class="win">Le coureur est passé à '+clk(x.actual)+'.</p>':'<p class="win">Passage estimé entre '+clk(early)+' et '+clk(late)+'.<br>Être sur place avant <b>'+clk(early-crewMarginOf(r))+'</b>.</p>')
-      +crewLine(r,x.st)+(hasCoords(r)?'<div class="maplinks">'+mapsLinks(r,m,x.km)+'</div>':'')+'</article>';
-    return '<article class="crew'+(passed?' passed':'')+'" id="crew-'+x.id+'"><h3><span>'+esc(x.name)+'</span><span class="km">km '+km1(x.km)+'</span></h3>'
-      +(passed?'<p class="win">Le coureur est passé à '+clk(x.actual)+'.</p>'
-              :'<p class="win">Passage estimé entre '+clk(early)+' et '+clk(late)+'.<br>Être sur place avant <b>'+clk(early-crewMarginOf(r))+'</b>.</p>')
-      +(x.margin!=null&&!passed?'<p class="'+mcls(x.margin)+'">Marge sur la barrière : '+mfmt(x.margin)+'</p>':'')
-      +crewLine(r,x.st)
-      +(sg?'<p>Jusqu’à <b>'+esc(sg.to)+'</b> ('+km1(sg.km)+' km, +'+sg.up+' m, −'+sg.down+' m, environ '+fmtDur(sg.dur)+')'+(sg.via.length?', en passant par '+sg.via.map(esc).join(' et ')+' (sans accès assistance)':'')+' : prévoir <b>'+kitOf(sg)+'</b>.</p>':'')
-      +(hasCoords(r)?'<div class="maplinks">'+mapsLinks(r,m,x.km)+'</div>':'')
-      +itemsBlock(r,x.st)+'</article>';
-  }).join('');
-  const startNote=(segs.length&&segs[0].fromId==='start')?'<section class="sec"><h2>Au départ</h2><p>Le coureur doit partir avec de quoi aller jusqu’à <b>'+esc(segs[0].to)+'</b> ('+km1(segs[0].km)+' km'+(segs[0].via.length?', en passant par '+segs[0].via.map(esc).join(' et ')+', sans accès assistance':'')+') : <b>'+kitOf(segs[0])+'</b>.</p></section>':'';
-  const fin=rows[rows.length-1],finE=tlO.rows[rows.length-1].adjArr,finL=tlP.rows[rows.length-1].adjArr;
-  return '<section class="empty"><h1>Équipe d’assistance</h1></section>'
+  const nextId=(stops.find(x=>x.actual==null&&!x.passedEst)||{}).id;
+  const when=x=>x.actual!=null?'<p class="as-time done">Passé à <b>'+clk(x.actual)+'</b></p>'
+    :'<p class="as-time"><b>'+clk(tlO.rows[x.index].adjArr)+' – '+clk(tlP.rows[x.index].adjArr)+'</b><span>sur place avant '+clk(tlO.rows[x.index].adjArr-margin)+'</span></p>';
+  const stop=(id,cls,num,title,km,body)=>'<li'+(id?' id="crew-'+id+'"':'')+' class="as-stop'+cls+'"><span class="as-node" aria-hidden="true">'+num+'</span><div class="as-card"><h3><span>'+title+'</span>'+(km!=null?'<span class="km">km '+km1(km)+'</span>':'')+'</h3>'+body+'</div></li>';
+  let list='',n=0;
+  if(segs.length&&segs[0].fromId==='start')
+    list+=stop('',' start','D','Départ',null,'<p class="as-time"><b>'+clk(m.startMin)+'</b></p><p class="as-kit">Part avec <b>'+kitOf(segs[0])+'</b>, jusqu’à '+esc(segs[0].to)+' ('+km1(segs[0].km)+' km).</p>');
+  stops.forEach(x=>{
+    n++;
+    const passed=x.actual!=null,sg=segs.find(z=>z.fromId===x.id),st=x.st;
+    const hasPark=st.parkLat!=null&&st.parkLon!=null;
+    const go=hasPark?navBtns(navUrls(st.parkLat,st.parkLon,st.parking),'Itinéraire')
+      :(hasCoords(r)?navBtns(navUrls(interp(m.p.d,m.p.la,x.km).toFixed(5),interp(m.p.d,m.p.lo,x.km).toFixed(5),''),'Itinéraire'):'');
+    let body=when(x)+(go?'<div class="maplinks">'+go+'</div>':'');
+    if(st.access){
+      const cnt=(st.items||[]).length+Object.keys(r.extras||{}).filter(k=>r.extras[k].s===st.id).length;
+      body+=asMore('prep-'+st.id,'À préparer'+(cnt?' <span class="as-n">'+cnt+'</span>':''),
+        (sg?'<p class="as-kit">Jusqu’à '+esc(sg.to)+' ('+km1(sg.km)+' km, +'+sg.up+' m, environ '+fmtDur(sg.dur)+') : <b>'+kitOf(sg)+'</b>.</p>':'')+itemsBlock(r,st));
+    }else body+='<p class="note">Point de passage pour voir le coureur, sans ravitaillement.</p>';
+    const acc=crewLine(r,st)+(x.margin!=null&&!passed?'<p class="'+mcls(x.margin)+'">Marge sur la barrière : '+mfmt(x.margin)+'</p>':'')+(hasCoords(r)?'<div class="maplinks">'+mapsLinks(r,m,x.km)+'</div>':'');
+    if(acc)body+=asMore('acc-'+st.id,'Accès et stationnement',acc);
+    list+=stop(x.id,(passed?' passed':'')+(x.id===nextId?' next':'')+(st.access?'':' watch'),n,esc(x.name),x.km,body);
+  });
+  const fin=rows[rows.length-1],fi=rows.length-1;
+  list+=stop('',' finish'+(fin.actual!=null?' passed':''),'A','Arrivée',m.tot,fin.actual!=null?'<p class="as-time done">Arrivé à <b>'+clk(fin.actual)+'</b></p>':'<p class="as-time"><b>'+clk(tlO.rows[fi].adjArr)+' – '+clk(tlP.rows[fi].adjArr)+'</b></p>');
+  return '<section class="empty"><h1>Assistance</h1></section>'
+  +assistShare(r)
   +crewCard(r,m)
-  +syncPanel(r)
-  +trackPanel(r)
-    +startNote
-  +(cards||'<p class="note">Aucun ravito avec accès assistance. Coche « Accès pour l’assistance » dans l’onglet Plan.</p>')
-  +(without.length?'<p class="note">Sans accès assistance : '+without.map(x=>esc(x.name)).join(', ')+'.</p>':'')
-  +'<section class="sec"><h2>Pour les supporters à l’arrivée</h2><p>'+(fin.actual!=null?'Arrivée pointée à '+clk(fin.actual)+'.':'Arrivée estimée entre '+clk(finE)+' et '+clk(finL)+'.')+'</p></section>'
-  +'<section class="sec"><h2>Partager le plan par code</h2>'
-  +'<div class="row"><button class="btn" data-act="copy-code">Copier le code du plan</button><button class="btn quiet" data-act="show-import">Coller un code reçu</button></div>'
-  +(shareCode?'<textarea class="in code" readonly aria-label="Code du plan" id="codebox">'+esc(shareCode)+'</textarea>':'')
-  +(importOpen?'<textarea class="in code" id="importbox" placeholder="Colle le code ici" aria-label="Code à importer"></textarea><div class="row"><button class="btn primary" data-act="do-import">Importer ce plan</button></div>':'')
-  +'</section>';
+  +'<section class="as-route"><h2>Les ravitos</h2>'
+  +(stops.length?'':'<p class="note">Aucun ravito avec accès assistance : coche « Accès pour l’assistance » dans l’onglet Plan.</p>')
+  +'<ol class="as-tl">'+list+'</ol>'
+  +(without.length?'<p class="note">Sans accès assistance : '+without.map(x=>esc(x.name)).join(', ')+'.</p>':'')+'</section>'
+  +asMore('plancode','Partager le plan par code','<div class="row"><button class="btn" data-act="copy-code">Copier le code du plan</button><button class="btn quiet" data-act="show-import">Coller un code reçu</button></div>'
+    +(shareCode?'<textarea class="in code" readonly aria-label="Code du plan" id="codebox">'+esc(shareCode)+'</textarea>':'')
+    +(importOpen?'<textarea class="in code" id="importbox" placeholder="Colle le code ici" aria-label="Code à importer"></textarea><div class="row"><button class="btn primary" data-act="do-import">Importer ce plan</button></div>':''));
+}
+// Copilot : l'écran de l'assistance qui a rejoint une course avec le code. Rien à saisir, deux onglets :
+// les ravitos (nom, km, heure d'arrivée estimée en gros, parking et GPS) et la nutrition du ravito choisi.
+let cpSel='',cpPark={};
+function copilot(){return isMember(state.race);}
+function cpParks(st){
+  const L=[];
+  if(st.parkLat!=null&&st.parkLon!=null)L.push({name:st.parking||'Parking conseillé',lat:st.parkLat,lon:st.parkLon,walkMin:st.walkMin});
+  else if(st.parking)L.push({name:st.parking});
+  (st.parkList||[]).forEach(e=>{if(!isMainPark(st,e))L.push(e);});
+  return L;
+}
+function cpGo(u,label){
+  if(!u)return '';
+  const g=isAndroid();
+  return '<div class="maplinks"><a class="btn primary cp-gps" href="'+esc(g?u.geo:u.maps)+'"'+(g?'':' target="_blank" rel="noopener noreferrer"')+'>'+label+'</a></div>';
+}
+function cpData(r){
+  const m=model(r),tl=timeline(r,m,{}),tlO=timeline(r,m,{mult:0.92}),tlP=timeline(r,m,{mult:1.12});
+  const rows=tl.rows,stops=rows.filter(x=>!x.isFinish&&(x.st.access||x.st.watch));
+  const nextId=(stops.find(x=>x.actual==null&&!x.passedEst)||{}).id;
+  return {m:m,tl:tl,tlO:tlO,tlP:tlP,rows:rows,stops:stops,nextId:nextId};
+}
+function cpHead(r,sub){
+  return '<section class="cp-head"><p class="cp-kicker">Copilot</p><h1>'+esc(r.name||'Course')+'</h1>'+(sub?'<p class="cp-sub">'+sub+'</p>':'')+'</section>';
+}
+function renderCpRoute(){
+  const r=state.race,d=cpData(r),m=d.m;
+  const card=(x,cls,body)=>'<li class="cp-st'+cls+'"'+(x.id?' id="crew-'+x.id+'"':'')+'>'+body+'</li>';
+  const eta=(i,actual,lab)=>actual!=null?'<p class="cp-eta done"><small>'+lab+'</small>'+clk(actual)+'</p>'
+    :'<p class="cp-eta"><small>Arrivée estimée</small>'+clk(d.rows[i].adjArr)+'</p><p class="cp-range">entre '+clk(d.tlO.rows[i].adjArr)+' et '+clk(d.tlP.rows[i].adjArr)+'</p>';
+  let list='';
+  d.stops.forEach(x=>{
+    const st=x.st,passed=x.actual!=null,next=x.id===d.nextId;
+    const L=cpParks(st),k=Math.min(cpPark[st.id]|0,Math.max(0,L.length-1)),p=L[k];
+    let park='';
+    if(L.length){
+      park='<div class="cp-park">'+(L.length>1?'<label class="fld"><span>Parking</span><select class="in" data-cpark="'+st.id+'">'+L.map((e,i)=>'<option value="'+i+'"'+(i===k?' selected':'')+'>'+esc(e.name)+(e.walkMin!=null?' · '+e.walkMin+' min à pied':'')+'</option>').join('')+'</select></label>'
+        :'<p class="cp-pk"><span>Parking</span><b>'+esc(p.name)+'</b>'+(p.walkMin!=null?' · '+p.walkMin+' min à pied':'')+'</p>')
+        +cpGo(navUrls(p.lat,p.lon,p.name),'GPS vers ce parking')+'</div>';
+    }else if(hasCoords(r))park='<div class="cp-park">'+cpGo(navUrls(interp(m.p.d,m.p.la,x.km).toFixed(5),interp(m.p.d,m.p.lo,x.km).toFixed(5),''),'GPS vers le ravito')+'</div>';
+    list+=card(x,(passed?' passed':'')+(next?' next':''),
+      '<div class="cp-top"><h2 class="cp-name">'+esc(x.name)+'</h2><span class="cp-km">km '+km1(x.km)+'</span></div>'
+      +(next?'<span class="cp-tag">Prochain</span>':'')+(st.access?'':'<span class="cp-tag quiet">Point de passage</span>')
+      +eta(x.index,x.actual,'Passé à')+park
+      +(st.access?'<button class="linkbtn cp-more" data-act="cp-pick" data-id="'+st.id+'">Nutrition et matériel ›</button>':''));
+  });
+  const fi=d.rows.length-1,fin=d.rows[fi];
+  list+=card({},' finish'+(fin.actual!=null?' passed':''),'<div class="cp-top"><h2 class="cp-name">Arrivée</h2><span class="cp-km">km '+km1(m.tot)+'</span></div>'+eta(fi,fin.actual,'Arrivé à'));
+  return cpHead(r,'Départ à '+clk(m.startMin)+'<span id="syncstat" class="cp-sync">'+esc(syncText(r))+'</span>')
+    +(safeHttpUrl(r.trackUrl)?'<div class="row cp-watch">'+trackLink(r,'')+'</div>':'')
+    +(d.stops.length?'':'<p class="note">Le coureur n’a pas encore indiqué de ravito avec accès pour l’assistance.</p>')
+    +'<ol class="cp-list">'+list+'</ol>';
+}
+function renderCpFood(){
+  const r=state.race,d=cpData(r),segs=assistSegments(r,d.m,timeline(r,d.m,{plan:true}));
+  if(!segs.length)return cpHead(r)+'<p class="note">Aucun ravito avec accès pour l’assistance dans ce plan.</p>';
+  let sg=segs.find(s=>s.fromId===cpSel);
+  if(!sg)sg=segs.find(s=>s.fromId===d.nextId)||segs.find(s=>s.fromId!=='start')||segs[0];
+  const pick='<div class="cp-pick" role="group" aria-label="Choisir le ravito">'+segs.map(s=>'<button type="button" class="chip" data-act="cp-pick" data-id="'+esc(s.fromId)+'" aria-pressed="'+(s===sg)+'">'+esc(s.from)+'</button>').join('')+'</div>';
+  const row=d.rows.find(x=>x.id===sg.fromId),st=row&&row.st;
+  const when=sg.fromId==='start'?'Départ à '+clk(d.m.startMin):(row?(row.actual!=null?'Passé à '+clk(row.actual):'Arrivée estimée '+clk(row.adjArr))+' · km '+km1(row.km):'');
+  const kit=r.kits&&r.kits[sg.fromId],it=kit?kit.it:null,n=sg.needs;
+  const li=x=>'<li><b class="cp-q">'+x.n+' ×</b><span>'+esc(x.t)+(x.b?'<small>'+esc(x.b)+'</small>':'')+'</span></li>';
+  // À manger : les produits exacts du placard du coureur, sinon le nombre de gels et de barres du plan
+  const eat=it?it.filter(x=>x.c!=='hydra'):null;
+  let food=eat?(eat.length?'<ul class="cp-items">'+eat.map(li).join('')+'</ul>':'<p class="note">Rien à manger sur ce tronçon.</p>')
+    :'<ul class="cp-items">'+(n.gels?li({n:n.gels,t:'gels'}):'')+(n.bars?li({n:n.bars,t:'barres'}):'')+'</ul><p class="note">Le coureur n’a pas choisi de produits précis.</p>';
+  if(kit&&kit.miss)food+='<p class="note">Il manque environ '+kit.miss+' g de glucides dans le placard du coureur.</p>';
+  // Flasques de 500 ml : une poudre de boisson par flasque quand le coureur en a, le reste à l'eau
+  const mix=it?it.filter(x=>x.c==='hydra'&&x.cb):[],salt=it?it.filter(x=>x.c==='hydra'&&!x.cb):[];
+  const nMix=mix.reduce((a,x)=>a+x.n,0),fl=Math.max(nMix,Math.ceil((n.water||0)/500));
+  let drink=fl?'<p class="cp-big">'+fl+' flasque'+(fl>1?'s':'')+' de 500 ml</p><ul class="cp-items">'+mix.map(x=>li({n:x.n,t:'avec '+x.t,b:x.b})).join('')+(fl-nMix>0?li({n:fl-nMix,t:'à l’eau'}):'')+'</ul>':'<p class="note">Pas de flasque à prévoir.</p>';
+  if(salt.length)drink+='<ul class="cp-items">'+salt.map(li).join('')+'</ul>';
+  let gear='';
+  if(st){
+    const run=st.items||[],ext=Object.keys(r.extras||{}).filter(k=>r.extras[k].s===st.id).map(k=>r.extras[k]);
+    const all=run.concat(ext);
+    gear='<section class="cp-sec"><h3>Matériel</h3>'+(all.length?'<ul class="cp-items">'+all.map(x=>li({n:x.q||1,t:x.t})).join('')+'</ul>':'<p class="note">Rien de demandé pour ce ravito.</p>')+'</section>';
+  }
+  return cpHead(r)+pick
+    +'<div class="cp-detail"><section class="cp-selh"><h2>'+esc(sg.from)+'</h2><p class="cp-sub">'+when+'</p><p class="cp-sub">Pour aller jusqu’à '+esc(sg.to)+' : '+km1(sg.km)+' km, environ '+fmtDur(sg.dur)+'.</p></section>'
+    +'<section class="cp-sec"><h3>Gels et barres</h3>'+food+'</section>'
+    +'<section class="cp-sec"><h3>Flasques</h3>'+drink+'</section>'
+    +gear+'</div>';
 }
 function startCard(r,m){
   const owner=!isMember(r),planTime=fmtClock(m.startMin).s;
@@ -4001,6 +4157,7 @@ function enterView(key){
   }
   const kids=[].slice.call(root.children).filter(e=>!e.hidden).slice(0,9);
   kids.forEach((el,i)=>mo(el,{opacity:[0,1],transform:['translateY(12px)','translateY(0px)']},{duration:.34,delay:i*.04,ease:[.22,1,.36,1]}));
+  root.querySelectorAll('.as-stop,.cp-st').forEach((el,i)=>{if(i<10)mo(el,{opacity:[0,1],transform:['translateX(-10px)','translateX(0px)']},{duration:.36,delay:.12+i*.05,ease:[.22,1,.36,1]});});
 }
 function moveInd(){
   const ind=document.getElementById('tabind');if(!ind)return;
@@ -4068,6 +4225,8 @@ function render(top){
     if(['home','runner','settings','prefs','pantry'].indexOf(tab)>=0)tab=state.race?'plan':'welcome';
     if(!state.race&&tab!=='help'&&tab!=='welcome')tab='welcome';
   }
+  if(copilot()){if(tab!=='cp-route'&&tab!=='cp-food')tab='cp-route';}
+  else if(/^cp-/.test(tab))tab=state.race?'plan':(isRunner()?'home':'welcome');
   if(!isRunner()&&deviceLinked()){
     errLogAdd('Appareil lié à un compte sans session : données du compte retirées','session');
     wipeAccountData();save();flash('Tu n’es pas connecté : tes plans sont dans ton compte. Connecte-toi pour les retrouver.');
@@ -4080,7 +4239,7 @@ function render(top){
   let html='';
   try{
     updateChrome();
-    html=tab==='welcome'?renderWelcome():tab==='home'?renderHome():tab==='pantry'?renderPantry():tab==='plan'?renderPlan():tab==='assist'?renderAssist():tab==='live'?renderLive():tab==='login'?renderLogin():tab==='runner'?(isRunner()?renderRunner():renderLogin()):tab==='settings'?renderSettings():tab==='prefs'?renderPrefs():tab==='help'?renderHelp():renderDiary();
+    html=tab==='cp-route'?renderCpRoute():tab==='cp-food'?renderCpFood():tab==='welcome'?renderWelcome():tab==='home'?renderHome():tab==='pantry'?renderPantry():tab==='plan'?renderPlan():tab==='assist'?renderAssist():tab==='live'?renderLive():tab==='login'?renderLogin():tab==='runner'?(isRunner()?renderRunner():renderLogin()):tab==='settings'?renderSettings():tab==='prefs'?renderPrefs():tab==='help'?renderHelp():renderDiary();
   }catch(err){errLogAdd(err.message,'affichage');html='<section class="empty"><h1>Oups</h1><p class="lead">Un calcul a échoué : '+esc(err.message)+'.</p><button class="btn" data-tab="'+(isRunner()?'home':'welcome')+'">Revenir à l’accueil</button></section>';}
   const H1T={plan:'Plan de course',live:'En course'};
   if(!/<h1[\s>]/.test(html)&&H1T[tab])html='<h1 class="sr-only">'+H1T[tab]+'</h1>'+html;
@@ -4090,7 +4249,6 @@ function render(top){
   const sb1=document.getElementById('sheet-body');if(sb1){sb1.dataset.k=viewKey();if(sbKey===sb1.dataset.k)sb1.scrollTop=sbY;}
   focusRestore(fo);placeInlineMsg();
   window.scrollTo(0,top?0:y);enterView(viewKey());moveInd();moveSeg();
-  syncLiveTrack();setTimeout(syncLiveTrack,450);   // une seconde fois après l'animation d'entrée, qui décale la page
   if(tab==='assist')checkPerms();
   clearTimeout(crewT);crewT=setTimeout(()=>{crewNotifSync();},800);
   setTimeout(refreshOfflineStat,60);
@@ -4101,7 +4259,7 @@ function render(top){
 // Écran affiché, gardé pour l'onglet du navigateur : un rafraîchissement rouvre le même écran au même endroit
 const VIEW_KEY='rb-view';
 function viewSave(y){
-  try{sessionStorage.setItem(VIEW_KEY,JSON.stringify({tab:tab,planSec:planSec,ptView:ptView,ptBrand:ptBrand,ptCat:ptCat,ptTab:ptTab,ptF:ptF,y:y==null?window.scrollY:y}));}catch(e){}
+  try{sessionStorage.setItem(VIEW_KEY,JSON.stringify({tab:tab,planSec:planSec,ptView:ptView,ptBrand:ptBrand,ptCat:ptCat,ptTab:ptTab,ptF:ptF,cpSel:cpSel,y:y==null?window.scrollY:y}));}catch(e){}
 }
 function viewLoad(){
   let v=null;try{v=JSON.parse(sessionStorage.getItem(VIEW_KEY)||'null');}catch(e){}
@@ -4112,6 +4270,7 @@ function viewLoad(){
   if(typeof v.ptBrand==='string')ptBrand=v.ptBrand;
   if(typeof v.ptCat==='string')ptCat=v.ptCat;
   if(typeof v.ptTab==='string')ptTab=v.ptTab;
+  if(typeof v.cpSel==='string')cpSel=v.cpSel;
   if(v.ptF&&typeof v.ptF==='object')Object.keys(ptF).forEach(k=>{if(typeof v.ptF[k]===typeof ptF[k])ptF[k]=v.ptF[k];});
   return +v.y||0;
 }
@@ -4229,10 +4388,12 @@ function act(b){
     return;
   }
   if(a==='sync-now'){flash('Synchronisation…');syncNow();return;}
+  if(a==='cp-pick'){cpSel=b.dataset.id||'';tab='cp-food';viewSave(0);render(true);mo(root.querySelector('.cp-detail'),{opacity:[0,1],transform:['translateY(8px)','translateY(0px)']},{duration:.26,ease:[.22,1,.36,1]});return;}
   if(a==='stop-sync'){
+    if(!r)return;
     if(r.sync&&r.sync.role==='member'){
       const n=Object.keys(r.pending||{}).length;
-      askConfirm({title:'Quitter ce suivi ?',text:'Le plan, les pointages et la position enregistrés sur cet appareil seront supprimés.'+(n?' '+n+' pointage'+(n>1?'s':'')+' pas encore envoyé'+(n>1?'s':'')+' sera perdu'+(n>1?'s':'')+'.':''),okLabel:'Quitter et tout supprimer',danger:true,onOk:leaveFollowNow});
+      askConfirm({title:copilot()?'Quitter Copilot ?':'Quitter ce suivi ?',text:'Le plan, les pointages et la position enregistrés sur cet appareil seront supprimés.'+(n?' '+n+' pointage'+(n>1?'s':'')+' pas encore envoyé'+(n>1?'s':'')+' sera perdu'+(n>1?'s':'')+'.':''),okLabel:'Quitter et tout supprimer',danger:true,onOk:leaveFollowNow});
     }else{
       askConfirm({title:'Arrêter le partage ?',text:'Le code ne fonctionnera plus pour ton équipe. Ton plan reste sur ton téléphone.',okLabel:'Arrêter le partage',danger:true,onOk:stopShareNow});
     }
@@ -4394,6 +4555,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target,r=state.race;
+  if(t.dataset&&t.dataset.cpark!==undefined){cpPark[t.dataset.cpark]=+t.value||0;render();return;}
   if(t.dataset&&t.dataset.gpx!==undefined){const f=t.files&&t.files[0];if(f)importGPX(f);return;}
   if(t.dataset&&t.dataset.photo!==undefined){const f=t.files&&t.files[0];t.value='';if(f)setPhotoFromFile(f);return;}
   if(t.dataset&&t.dataset.crewnotif!==undefined){state.prefs.crewNotif=!!t.checked;save();crewNotifSync();render();return;}
@@ -4519,7 +4681,7 @@ window.addEventListener('resize',()=>{if(landOpen)renderLand();if(menuOpen)close
 let rz=null,lastW=0;
 window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{const w=root.clientWidth;if(w!==lastW&&(tab==='plan'||tab==='live')){lastW=w;render();}},180);});
 setInterval(()=>{
-  if(tab!=='live'||!state.race)return;
+  if((tab!=='live'&&tab!=='cp-route'&&tab!=='cp-food')||!state.race)return;
   const ae=document.activeElement;
   if(ae&&root.contains(ae)&&/INPUT|TEXTAREA/.test(ae.tagName))return;
   render();
