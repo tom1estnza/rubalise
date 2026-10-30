@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-DSix4OGpmhMap6lzbBwrdUcS3FivO59ti/LbN9uVfl4=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-l4qX3AXUF2a2KWtlhQOYTLVevTd7G8wXHeMSmANLHTU=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -1138,10 +1138,12 @@ function walkDist(m){return m==null?'':m<1000?(Math.round(m/10)*10)+' m':(Math.r
 function parkLabel(c){return ((c.name||'Parking sans nom')+(c.fee?' (payant)':'')).slice(0,80);}
 // ---------- copilote : liste des stationnements à pied et liens de navigation ----------
 // Liens vers Google Maps et Waze (itinéraire en voiture). Coordonnées si on les a, sinon le texte saisi.
+// Lien geo : « geo:0,0?q=lat,lon », sans nom de lieu. Google Maps cherchait le nom (« Parking, D981 ») au lieu des coordonnées,
+// et « geo:lat,lon » seul ouvrait Waze sans lancer l'itinéraire.
 function navUrls(lat,lon,text){
   if(lat!=null&&lon!=null&&lat!==''&&lon!==''&&isFinite(+lat)&&isFinite(+lon)){
     const c=lat+','+lon;
-    return {maps:'https://www.google.com/maps/dir/?api=1&destination='+c+'&travelmode=driving',waze:'https://waze.com/ul?ll='+c+'&navigate=yes&zoom=17',geo:'geo:'+c+'?q='+c};
+    return {maps:'https://www.google.com/maps/dir/?api=1&destination='+c+'&travelmode=driving',waze:'https://waze.com/ul?ll='+c+'&navigate=yes&zoom=17',geo:'geo:0,0?q='+c};
   }
   if(text){
     const q=encodeURIComponent(String(text));
