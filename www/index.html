@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Vbfei5npKxRNmfh9EwWB7/LfBAJ5Dza93uvlncK/ELM=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-YfoqXfSkZNLiwbHU134WojnuTMh6Di1MetTL46K/E18=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -3343,7 +3343,15 @@ const PT_ICONS={
 function ptCatalog(){return window.RB_CATALOG||{cats:[],brands:[],products:[]};}
 function ptBrandOf(id){return ptCatalog().brands.find(b=>b.id===id)||null;}
 function ptCatLabel(c){const x=ptCatalog().cats.find(z=>z.id===c);return x?x.label:'Autre';}
-function pantryItems(){const p=state.profile&&state.profile.pantry;return Array.isArray(p)?p:[];}
+// Produits du catalogue : glucides, sodium, caféine, nom et format suivent le catalogue (corrigé d'après les étiquettes),
+// sauf les valeurs que le coureur a modifiées lui-même (x.own)
+function pantryItems(){
+  const p=state.profile&&state.profile.pantry;if(!Array.isArray(p))return [];
+  let C=null;
+  p.forEach(x=>{if(!x||!x.ref)return;C=C||ptCatalog().products;const c=C.find(z=>z.id===x.ref);if(!c)return;
+    ['carbs','sodium','caf','name','unit'].forEach(k=>{if(c[k]!=null&&!(x.own&&x.own[k])&&x[k]!==c[k])x[k]=c[k];});});
+  return p;
+}
 function pantrySet(list){state.profile=state.profile||defaultProfile();state.profile.pantry=list;save();pushProfileSoon();}
 function ptNum(v,max){if(v===null||v===undefined||String(v).trim()==='')return null;const n=parseFloat(String(v).replace(',','.'));return (isFinite(n)&&n>=0&&n<=max)?Math.round(n*10)/10:null;}
 function ptValues(x){
@@ -3561,6 +3569,7 @@ function pantryAct(a,b){
 function pantryChange(t){
   const list=pantryItems().slice(),x=list.find(z=>z.id===t.dataset.id);if(!x)return;
   const k=t.dataset.pt;
+  x.own=Object.assign({},x.own);x.own[k]=1;
   if(k==='name'){const s=String(t.value).trim().slice(0,60);if(s)x.name=s;}
   else{const e=PT_EXTRA.find(z=>z[0]===k);x[k]=ptNum(t.value,e?e[2]:k==='carbs'?200:k==='sodium'?3000:400);}
   pantrySet(list);
