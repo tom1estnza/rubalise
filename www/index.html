@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-gUOiAVS4T+e3AXp2AtfpcHTUvy0QYSupv+CCnExXOvs=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Vbfei5npKxRNmfh9EwWB7/LfBAJ5Dza93uvlncK/ELM=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -522,6 +522,9 @@ section>details.as-more,#root>details.as-more{border-top:1px solid var(--line);m
 .cp-st{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:14px 16px}
 .cp-st.next{border-color:var(--accent);box-shadow:0 2px 16px color-mix(in srgb,var(--accent) 18%,transparent)}
 .cp-st.passed{opacity:.6}
+.cp-st.hl{background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.cp-prof{margin:0 0 16px}
+.cp-prof .chart{margin:0}
 .cp-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
 .cp-name{margin:0;font-size:21px;line-height:1.2}
 .cp-km{font:600 17px var(--f-num);color:var(--ink2);white-space:nowrap}
@@ -1544,6 +1547,7 @@ function crewAutoBlock(r){
 }
 function migrateRace(r){
   if(!r)return;
+  if(isMember(r)&&!r.kits&&r.sync.lastPlan)try{r.kits=sanitizeRace(JSON.parse(r.sync.lastPlan)).kits;}catch(e){}
   if(r.trackUrl&&!safeHttpUrl(r.trackUrl))r.trackUrl='';   // adresse de suivi falsifiée : retirée
   if(!(+r.minSpeed>0))r.minSpeed=5.5;
   ['sodium','barG','gelShare'].forEach(k=>{if(r[k]===undefined)r[k]=nutr({},k);});
@@ -1779,7 +1783,7 @@ function applyRemote(r,doc){
   if(merged.fixkm!=null&&merged.fixt!=null)r.fix={km:merged.fixkm/100,t:merged.fixt};else r.fix=null;
   delete merged.fixkm;delete merged.fixt;delete merged.fixsrc;
   r.points=merged;
-  if(r.sync.role!=='owner'&&f.plan&&f.plan.stringValue&&f.plan.stringValue!==r.sync.lastPlan){
+  if(r.sync.role!=='owner'&&f.plan&&f.plan.stringValue&&(f.plan.stringValue!==r.sync.lastPlan||!r.kits)){
     try{mergePlan(r,sanitizeRace(JSON.parse(f.plan.stringValue)));r.sync.lastPlan=f.plan.stringValue;}catch(e){}
   }
   return before!==pstr(r.points)+'|'+r.sync.lastPlan+'|'+JSON.stringify(r.fix||null)+'|'+r.startAt+'|'+JSON.stringify([r.extras,r.done]);
@@ -2943,7 +2947,7 @@ function renderLand(){
   document.querySelectorAll('.land-mode button').forEach(bt=>bt.setAttribute('aria-pressed',String(bt.dataset.v===landMode)));
   document.getElementById('landhint').textContent=(d.portrait?'Tourne ton téléphone. ':'')+(landMode==='3d'?'Fais glisser pour tourner, pince pour zoomer. Touche un point numéroté.':'Touche un point numéroté.');
   const ch=document.getElementById('landchart'),w=Math.max(200,ch.offsetWidth),h=Math.max(120,ch.offsetHeight);
-  let kmNow=null;if(landFrom==='live'){const now=nowMin(r);if(r.startAt!=null?now>=m.start0:now>=m.startMin)kmNow=tl.kmAt(now);}
+  let kmNow=null;if(landFrom==='live'||landFrom==='cp-route'){const now=nowMin(r);if(r.startAt!=null?now>=m.start0:now>=m.startMin)kmNow=tl.kmAt(now);}
   if(landMode==='3d')show3D(ch,r,m,tl,kmNow,w,h);
   else{cur3=null;ch.innerHTML=profileSVG(m,tl,{w:w,h:h,kmNow:kmNow,hit:true,sel:landSel});}
 }
@@ -3256,6 +3260,7 @@ function openStation(id){
   const r=state.race,st=r&&r.stations.find(x=>x.id===id),toAssist=!!(st&&(st.access||st.watch));
   const wasFs=!!document.fullscreenElement;
   if(landOpen)closeLand();
+  if(copilot()&&st&&st.access){cpSel=id;tab='cp-food';viewSave(0);render(true);return;}
   tab=toAssist?'assist':'plan';render(true);
   const focusIt=()=>{
     const el=document.getElementById((toAssist?'crew-':'stn-')+id);if(!el)return;
@@ -3971,7 +3976,7 @@ function cpHead(r,sub){
   return '<section class="cp-head"><p class="cp-kicker">Copilot</p><h1>'+esc(r.name||'Course')+'</h1>'+(sub?'<p class="cp-sub">'+sub+'</p>':'')+'</section>';
 }
 function renderCpRoute(){
-  const r=state.race,d=cpData(r),m=d.m;
+  const r=state.race,d=cpData(r),m=d.m,fi=d.rows.length-1,fin=d.rows[fi];
   const card=(x,cls,body)=>'<li class="cp-st'+cls+'"'+(x.id?' id="crew-'+x.id+'"':'')+'>'+body+'</li>';
   const eta=(i,actual,lab)=>actual!=null?'<p class="cp-eta done"><small>'+lab+'</small>'+clk(actual)+'</p>'
     :'<p class="cp-eta"><small>Arrivée estimée</small>'+clk(d.rows[i].adjArr)+'</p><p class="cp-range">entre '+clk(d.tlO.rows[i].adjArr)+' et '+clk(d.tlP.rows[i].adjArr)+'</p>';
@@ -3991,10 +3996,14 @@ function renderCpRoute(){
       +eta(x.index,x.actual,'Passé à')+park
       +(st.access?'<button class="linkbtn cp-more" data-act="cp-pick" data-id="'+st.id+'">Nutrition et matériel ›</button>':''));
   });
-  const fi=d.rows.length-1,fin=d.rows[fi];
   list+=card({},' finish'+(fin.actual!=null?' passed':''),'<div class="cp-top"><h2 class="cp-name">Arrivée</h2><span class="cp-km">km '+km1(m.tot)+'</span></div>'+eta(fi,fin.actual,'Arrivé à'));
+  const now=nowMin(r),started=(r.startAt!=null)?now>=m.start0:now>=m.startMin,kmNow=started?d.tl.kmAt(now):null;
   return cpHead(r,'Départ à '+clk(m.startMin)+'<span id="syncstat" class="cp-sync">'+esc(syncText(r))+'</span>')
     +(safeHttpUrl(r.trackUrl)?'<div class="row cp-watch">'+trackLink(r,'')+'</div>':'')
+    +(fin.actual!=null?'':startCard(r,m))
+    +'<section class="cp-prof"><div class="chart">'+profileSVG(m,d.tl,{w:chartW(),kmNow:kmNow})+'</div>'
+    +(kmNow!=null?'<div class="legend"><span style="color:var(--live)">Point rose : position estimée, km '+km1(kmNow)+'</span></div>':'')
+    +'<div class="row" style="margin:8px 0 0"><button class="btn quiet small" data-act="land-open">Vue horizontale et 3D</button></div></section>'
     +(d.stops.length?'':'<p class="note">Le coureur n’a pas encore indiqué de ravito avec accès pour l’assistance.</p>')
     +'<ol class="cp-list">'+list+'</ol>';
 }

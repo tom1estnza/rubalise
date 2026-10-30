@@ -362,6 +362,8 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - Onglet Nutrition : choix du ravito (le prochain par défaut, gardé au rafraîchissement), puis gels et barres exacts (nom, marque), flasques de 500 ml (avec la poudre de boisson ou à l'eau, pastilles de sel) et matériel demandé.
 - Produits exacts : le coureur qui partage envoie dans le plan `kits` (par ravito : produits de son placard, nombre, marque), calculé comme dans son plan nutrition. Sans placard, on affiche le nombre de gels et de barres du plan.
 - Les heures se recalculent toutes les 30 s.
+- En haut de l'onglet Ravitos : confirmation du départ (départ donné à l'heure prévue, ou heure réelle), profil avec le point rose (position estimée) et « Vue horizontale et 3D » (profil, 3D, satellite). Dans la vue horizontale, « Voir et préparer ce ravito » ouvre sa nutrition.
+- Gels : un Copilot ouvert avant la mise à jour avait reçu le plan sans garder les produits ; il relit maintenant le plan reçu quand `kits` manque (au chargement et à chaque synchronisation).
 
 ## Assistance simplifiée
 - Une carte « Inviter ton assistance » : créer le code (ou le code et « Copier » une fois partagé), le lien de la montre, et les options du partage repliées (synchroniser, tester, arrêter).
