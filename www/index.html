@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-l4qX3AXUF2a2KWtlhQOYTLVevTd7G8wXHeMSmANLHTU=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-r4cHZel/V/oQZFR2vV8bA+ptkLHjhFfyLrHKudIzPo4=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -3358,9 +3358,10 @@ function pantrySet(list){state.profile=state.profile||defaultProfile();state.pro
 function ptNum(v,max){if(v===null||v===undefined||String(v).trim()==='')return null;const n=parseFloat(String(v).replace(',','.'));return (isFinite(n)&&n>=0&&n<=max)?Math.round(n*10)/10:null;}
 function ptValues(x){
   const v=[];
-  if(x.carbs==null)v.push('glucides ?');else if(+x.carbs>0)v.push(nf(x.carbs)+' g de glucides');
-  if(x.sodium==null)v.push('sodium ?');else if(+x.sodium>0)v.push(nf(x.sodium)+' mg de sodium');
-  if(x.caf==null)v.push('caféine ?');else if(+x.caf>0)v.push(nf(x.caf)+' mg de caféine');
+  // valeurs non publiées ou à 0 : pas affichées
+  if(+x.carbs>0)v.push(nf(x.carbs)+' g de glucides');
+  if(+x.sodium>0)v.push(nf(x.sodium)+' mg de sodium');
+  if(+x.caf>0)v.push(nf(x.caf)+' mg de caféine');
   if(+ptK(x,'kcal')>0)v.push(nf(ptK(x,'kcal'))+' kcal');
   return v.join(' · ');
 }
@@ -3485,16 +3486,16 @@ function ptSheetHTML(){
   const val=k=>k==='carbs'||k==='sodium'||k==='caf'?o[k]:ptK(o,k);
   const ml=(p&&p.ml)||o.ml;
   const caf=val('caf');
-  const rows=[['Glucides',val('carbs'),'g'],['Sodium',val('sodium'),'mg'],['Caféine',caf==null&&ptHasCaf(o)?'dose non publiée':caf,'mg'],['Calories',val('kcal'),'kcal'],['Lipides',val('fat'),'g'],['Protéines',val('protein'),'g'],['Fibres',val('fiber'),'g']];
+  const rows=[['Glucides',val('carbs'),'g'],['Sodium',val('sodium'),'mg'],['Caféine',caf,'mg'],['Calories',val('kcal'),'kcal'],['Lipides',val('fat'),'g'],['Protéines',val('protein'),'g'],['Fibres',val('fiber'),'g']];
   if(ml)rows.push(['Eau conseillée',ml,'ml']);
-  const shown=rows.filter(r=>r[1]!==0);
+  const shown=rows.filter(r=>typeof r[1]==='number'&&r[1]>0);
   const fmt=(v,u)=>v==null?'<span class="pt-na">non publié</span>':typeof v==='string'?esc(v):esc(String(v).replace('.',','))+' '+u;
   const src=p&&p.src;
   return '<div class="pt-sh-top"><span class="pt-sh-brand">'+ptDot(o.brand,o.brandName||o.name)+esc(b?b.name:(o.brandName||'Produit perso'))+(cat?' · '+cat.label:'')+'</span><button class="icon" data-act="pt-info-x" aria-label="Fermer la fiche">×</button></div>'
     +(img?'<div class="pt-sh-img"><img src="'+esc(img)+'" alt="'+esc(o.name)+'" width="160" height="200"></div>':'')
     +'<h2 id="ptsT">'+esc(o.name)+'</h2>'+((p&&p.unit)||o.unit?'<p class="pt-sh-unit">'+esc((p&&p.unit)||o.unit)+'</p>':'')
-    +'<table class="pt-sh-tab"><caption class="sr">Valeurs pour une portion</caption><thead><tr><th scope="col">Pour une portion</th><th scope="col"></th></tr></thead><tbody>'
-    +shown.map(r=>'<tr><th scope="row">'+r[0]+'</th><td>'+fmt(r[1],r[2])+'</td></tr>').join('')+'</tbody></table>'
+    +(shown.length?'<table class="pt-sh-tab"><caption class="sr">Valeurs pour une portion</caption><thead><tr><th scope="col">Pour une portion</th><th scope="col"></th></tr></thead><tbody>'
+    +shown.map(r=>'<tr><th scope="row">'+r[0]+'</th><td>'+fmt(r[1],r[2])+'</td></tr>').join('')+'</tbody></table>':'')
     +'<div class="pt-sh-act">'+(x?'<span class="pt-sh-qty">Dans ton placard</span>'+ptStepper(x):(p?'<button class="btn primary" data-act="pt-add" data-id="'+esc(p.id)+'">Ajouter au placard</button>':''))
     +(src?'<a class="pt-link" href="'+esc(src)+'" target="_blank" rel="noopener noreferrer" aria-label="Recharger '+esc(o.name)+' sur le site de la marque">Recharger</a>':'')+'</div>'
     +(p?'<p class="pt-src">Valeurs relevées sur le site de la marque'+(ptCatalog().checked?' le '+esc(ptCatalog().checked.split('-').reverse().join('/')):'')+', complétées par Open Food Facts quand la marque ne les publie pas en texte.</p>':'');
