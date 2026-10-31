@@ -20,7 +20,8 @@ window.RB_CATALOG = {
     { id: 'tailwind', name: 'Tailwind', color: '#8E5BC4', logo: 'img/brands/tailwind.svg', bg: '#ECE2F6', tint: true },
     { id: 'isostar', name: 'Isostar', color: '#D23C5A', logo: 'img/brands/isostar.svg', bg: '#010101' },
     { id: 'powerbar', name: 'Powerbar', color: '#3E4FB0', logo: 'img/brands/powerbar.svg', bg: '#161616' },
-    { id: 'ta', name: 'Tä', color: '#2F9C5A', logo: 'img/brands/ta.svg', bg: '#E2E5F2', tint: true }
+    { id: 'ta', name: 'Tä', color: '#2F9C5A', logo: 'img/brands/ta.svg', bg: '#E2E5F2', tint: true },
+    { id: 'impulse', name: 'Impulse Nutrition', color: '#1F2A44', logo: 'img/brands/impulse.svg', bg: '#E6E9F0', tint: true }
   ],
   // carbs : glucides (g) ; sodium (mg) ; caf : caféine (mg) ; unit : format d'une portion
   products: [
@@ -122,6 +123,16 @@ window.RB_CATALOG = {
     { id: 'ta-isotonique', brand: 'ta', cat: 'hydra', name: 'Boisson isotonique', carbs: 35, sodium: null, caf: 0, unit: 'sachet 40 g', src: 'https://www.ta-energy.com/products/boisson-isotonic-sachet-citron' },
     { id: 'ta-maltodextrine', brand: 'ta', cat: 'hydra', name: 'Boisson maltodextrine', carbs: 45, sodium: null, caf: 0, unit: 'portion', src: 'https://www.ta-energy.com/products/maltode6x-neutre' },
     { id: 'ta-pastilles', brand: 'ta', cat: 'hydra', name: 'Pastilles d’électrolytes', carbs: 0, sodium: null, caf: 0, unit: 'pastille', src: 'https://www.ta-energy.com/products/electrolytes-citron' },
-    { id: 'ta-sel', brand: 'ta', cat: 'hydra', name: 'Capsules de sel', carbs: 0, sodium: null, caf: 0, unit: 'capsule', src: 'https://www.ta-energy.com/products/capsules-de-sel' }
+    { id: 'ta-sel', brand: 'ta', cat: 'hydra', name: 'Capsules de sel', carbs: 0, sodium: null, caf: 0, unit: 'capsule', src: 'https://www.ta-energy.com/products/capsules-de-sel' },
+    // ---- Impulse Nutrition (relevé le 01/11/2026 sur impulse-nutrition.fr, tableaux nutritionnels des fiches produit) ----
+    { id: 'impulse-gel-neutre', brand: 'impulse', cat: 'gel', name: 'Gel énergétique · Neutre', carbs: 30, sodium: 157, caf: 0, unit: 'gel 50 g', kcal: 120, fat: 0, protein: 0, src: 'https://impulse-nutrition.fr/products/gel-energetique-neutre' },
+    { id: 'impulse-gel-cola', brand: 'impulse', cat: 'gel', name: 'Gel énergétique · Cola', carbs: 30, sodium: 157, caf: 0, unit: 'gel 50 g', kcal: 121, fat: 0, protein: 0, src: 'https://impulse-nutrition.fr/products/gel-energetique-cola' },
+    { id: 'impulse-iso-menthe', brand: 'impulse', cat: 'hydra', name: 'Boisson d’effort isotonique · Menthe', carbs: 34, sodium: 290, caf: 0, unit: 'sachet 40 g pour 500 ml', ml: 500, kcal: 135, fat: 0, protein: 0, src: 'https://impulse-nutrition.fr/products/boisson-deffort-isotonique-saveur-menthe' },
+    { id: 'impulse-iso-fruits-rouges', brand: 'impulse', cat: 'hydra', name: 'Boisson d’effort isotonique · Fruits rouges', carbs: 33, sodium: 290, caf: 0, unit: 'sachet 40 g pour 500 ml', ml: 500, kcal: 133, fat: 0, protein: 0, src: 'https://impulse-nutrition.fr/products/boisson-deffort-isotonique-saveur-fruits-rouges' },
+    { id: 'impulse-electro-citron', brand: 'impulse', cat: 'hydra', name: 'Électrolytes en poudre · Citron', carbs: 3.7, sodium: 350, caf: 0, unit: 'sachet 9 g pour 500 ml', ml: 500, kcal: 14, fat: 0, protein: 0, src: 'https://impulse-nutrition.fr/products/electrolytes-saveur-citron' },
+    { id: 'impulse-electro-peche', brand: 'impulse', cat: 'hydra', name: 'Électrolytes en poudre · Pêche', carbs: 3.7, sodium: 350, caf: 0, unit: 'sachet 9 g pour 500 ml', ml: 500, kcal: 14, fat: 0, protein: 0, src: 'https://impulse-nutrition.fr/products/electrolytes-saveur-peche' },
+    { id: 'impulse-comprimes-citron', brand: 'impulse', cat: 'hydra', name: 'Électrolytes en comprimés · Citron', carbs: 0.8, sodium: 100, caf: 0, unit: 'comprimé (1 à 2 pour 500 ml)', ml: 500, kcal: 4, fat: 0, protein: 0, src: 'https://impulse-nutrition.fr/products/electrolytes-comprimes-citron' },
+    { id: 'impulse-comprimes-cerise', brand: 'impulse', cat: 'hydra', name: 'Électrolytes en comprimés · Cerise', carbs: 0.9, sodium: 100, caf: 0, unit: 'comprimé (1 à 2 pour 500 ml)', ml: 500, kcal: 5, fat: 0, protein: 0, src: 'https://impulse-nutrition.fr/products/electrolytes-comprimes-cerise' },
+    { id: 'impulse-comprimes-peche', brand: 'impulse', cat: 'hydra', name: 'Électrolytes en comprimés · Pêche', carbs: 0.8, sodium: 100, caf: 0, unit: 'comprimé (1 à 2 pour 500 ml)', ml: 500, kcal: 4, fat: 0, protein: 0, src: 'https://impulse-nutrition.fr/products/electrolytes-comprimes-peche' }
   ]
 };
