@@ -104,6 +104,8 @@ window.RB_CATALOG = {
     // ---- Tä (valeurs relevées le 27/10/2026 ; dose de caféine non publiée pour les saveurs caféinées) ----
     { id: 'ta-gel', brand: 'ta', cat: 'gel', name: 'Gel énergétique 40 ml (sans caféine)', carbs: 33, sodium: null, caf: 0, unit: 'gel 40 ml', src: 'https://www.ta-energy.com/products/energie-gels-vanilla' },
     { id: 'ta-gel-caf', brand: 'ta', cat: 'gel', name: 'Gel énergétique 40 ml · Café, cola ou fruits des bois (caféine)', carbs: 33, sodium: null, caf: null, unit: 'gel 40 ml', src: 'https://www.ta-energy.com/products/energie-gels-coffee' },
+    { id: 'ta-gel40-citron', brand: 'ta', cat: 'gel', name: 'Gel énergétique 40 ml · Citron', carbs: 33, sodium: 50, caf: 0, unit: 'gel 40 ml', img: 'img/products/ta-gel40-citron.webp' },
+    { id: 'ta-gel40-peanut', brand: 'ta', cat: 'gel', name: 'Gel énergétique 40 ml · Beurre de cacahuète salé', carbs: 33, sodium: 100, caf: 0, unit: 'gel 40 ml', img: 'img/products/ta-gel40-peanut.webp' },
     { id: 'ta-jelly', brand: 'ta', cat: 'gel', name: 'Gel Jelly 51 g · Neutre ou citron yuzu', carbs: 35, sodium: null, caf: 0, unit: 'gel 51 g', src: 'https://www.ta-energy.com/products/jelly-gels-neutre' },
     { id: 'ta-jelly-caf', brand: 'ta', cat: 'gel', name: 'Gel Jelly 51 g · Fruits des bois (caféine)', carbs: 35, sodium: null, caf: null, unit: 'gel 51 g', src: 'https://www.ta-energy.com/products/jelly-gels-wild-berry' },
     { id: 'ta-gommes', brand: 'ta', cat: 'barre', name: 'Gommes énergétiques 30 g (sans caféine)', carbs: 25, sodium: null, caf: 0, unit: 'sachet 30 g', src: 'https://www.ta-energy.com/products/energie-gommes-fraise' },
