@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-/a8etOK0MiSYte1QRu+ewcsJAG/Jy7rVjEl765cxzCo=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-JvoELQhnt8b1ANQLsxgD/bIbyQWa9YFBivEPRZEsez4=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -3400,9 +3400,8 @@ function profileStatic(pf){
 // Rangé dans le profil (state.profile.pantry), donc synchronisé avec le compte comme la fiche coureur.
 // Chaque produit garde une copie de ses valeurs : un changement du catalogue ne modifie pas le placard.
 let ptView='stock',ptBrand='',ptCat='gel',ptEdit='',ptCustom=false,ptTab='all',ptUndo=null;
-// Sous 3 portions, le produit est signalé « à recharger » (encart en haut du placard, étiquette sur la ligne, accueil)
-const PT_LOW=3;
-function ptIsLow(x){const q=x.qty|0;return q>0&&q<PT_LOW;}
+// Quand il ne reste qu'une portion, le produit est signalé « à recharger » (encart en haut du placard, étiquette sur la ligne, accueil)
+function ptIsLow(x){return (x.qty|0)===1;}
 function ptLow(){return pantryItems().filter(ptIsLow);}
 const ptF={brand:'',caf:'',sod:'',stock:false,todo:false,sort:''};
 const PT_ICONS={
@@ -3491,7 +3490,7 @@ function renderPantryStock(){
   if(ptUndo)h+='<div class="pt-alert" role="status"><p>« '+esc(ptUndo.x.name)+' » retiré du placard.</p><button class="btn quiet small" data-act="pt-undo">Annuler</button></div>';
   if(!list.length)return h+'<div class="card pt-empty">'+PT_ICONS.gel+'<p>Ton placard est vide.</p></div>';
   const low=list.filter(ptIsLow);
-  if(low.length)h+='<div class="card pt-low" role="status"><h2>À recharger</h2><p>Il te reste moins de '+PT_LOW+' portions de '+(low.length>1?'ces produits':'ce produit')+' :</p><ul>'
+  if(low.length)h+='<div class="card pt-low" role="status"><h2>À recharger</h2><p>Il ne te reste qu’une portion de '+(low.length>1?'ces produits':'ce produit')+' :</p><ul>'
     +low.map(x=>'<li><b>'+(x.qty|0)+' ×</b> '+esc(x.name)+(x.brandName?' <small>'+esc(x.brandName)+'</small>':'')+'</li>').join('')+'</ul></div>';
   h+='<p class="pt-sum">'+list.length+' produit'+(list.length>1?'s':'')+' · '+n+' portion'+(n>1?'s':'')+'</p>';
   const cats=ptCatalog().cats,base=list.filter(x=>ptMatch(x,true));
@@ -3754,7 +3753,7 @@ function renderHome(){
   return '<section class="home"><h1>'+(pf.first?'Bonjour '+esc(pf.first):'Bienvenue')+'</h1>'
   +(r?'<div class="card resume"><h2>Reprendre mon plan</h2><p class="resume-name">'+esc(r.name||'Ma course')+(tot&&tot.km?' · '+km1(tot.km)+' km':'')+'</p><div class="row"><button class="btn primary" data-tab="plan">Ouvrir mon plan</button></div></div>':'')
   +'<div class="card import-card"><h2>Importer mon parcours</h2><div class="row">'+gpxPick('primary','Importer un fichier GPX')+'</div>'+gpxPaste()+'</div>'
-  +(()=>{const L=pantryItems(),n=L.reduce((a,x)=>a+(x.qty|0),0);const lw=L.filter(ptIsLow).length;return '<div class="card pt-home"><h2>Mon placard</h2>'+(L.length?'<p class="resume-name">'+L.length+' produit'+(L.length>1?'s':'')+' · '+n+' portion'+(n>1?'s':'')+'</p>':'')+(lw?'<p class="pt-homelow">'+lw+' produit'+(lw>1?'s':'')+' à recharger (moins de '+PT_LOW+' portions)</p>':'')+'<div class="row"><button class="btn'+(L.length?'':' primary')+'" data-tab="pantry">'+(L.length?'Ouvrir mon placard':'Remplir mon placard')+'</button></div></div>';})()
+  +(()=>{const L=pantryItems(),n=L.reduce((a,x)=>a+(x.qty|0),0);const lw=L.filter(ptIsLow).length;return '<div class="card pt-home"><h2>Mon placard</h2>'+(L.length?'<p class="resume-name">'+L.length+' produit'+(L.length>1?'s':'')+' · '+n+' portion'+(n>1?'s':'')+'</p>':'')+(lw?'<p class="pt-homelow">'+lw+' produit'+(lw>1?'s':'')+' à recharger (plus qu’une portion)</p>':'')+'<div class="row"><button class="btn'+(L.length?'':' primary')+'" data-tab="pantry">'+(L.length?'Ouvrir mon placard':'Remplir mon placard')+'</button></div></div>';})()
   +'<div class="card pf-card"><h2>Ma fiche coureur</h2>'+profileStatic(pf)+'<div class="row"><button class="btn'+(has?'':' primary')+'" data-tab="runner">'+(has?'Modifier ma fiche':'Créer ma fiche coureur')+'</button></div></div>'
   +(state.tourDone?'':'<div class="card"><h2>Guide de démarrage</h2><div class="row"><button class="btn" data-act="tour-start">Lancer le guide</button></div></div>')
   +'</section>';
