@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-zqX//9dTOCw4MZlKSv6PJ//jmPIm2GNw/m21Ieb4ByA=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-S3qaUZngqUVZ4RkqSpdO+w3/ykeorcn73HavPqCccxc=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -531,6 +531,18 @@ section>details.as-more,#root>details.as-more{border-top:1px solid var(--line);m
 .cp-head h1{margin:6px 0 4px;font-size:26px}
 .cp-sub{margin:2px 0 0;color:var(--ink2);font-size:15px}
 .cp-sync{display:block;font-size:13px;margin-top:4px}
+.cp-runners{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:10px 0 12px}
+.cp-runner{display:grid;gap:2px;text-align:left;min-height:56px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;transition:border-color .15s,background-color .15s}
+.cp-runner b{font-size:16px;line-height:1.2}
+.cp-runner small{font-size:12px;color:var(--ink2)}
+.cp-runner.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface));box-shadow:inset 0 0 0 1px var(--accent)}
+.cp-rn{font-size:13px;color:var(--ink2)}
+.cp-rn b{font:700 15px var(--f-num);font-variant-numeric:tabular-nums;color:var(--ink)}
+.cp-rn.done b{color:var(--ok)}
+.cp-add{padding-left:0;font-weight:600;min-height:44px}
+.cp-join{margin:8px 0 4px}
+.cp-also{display:block;margin-top:6px;padding-left:0;min-height:44px;text-align:left;font-size:15px}
+.cp-also b{font-weight:700}
 .cp-watch{margin:0 0 16px}
 .cp-list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
 .cp-st{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:14px 16px}
@@ -1663,6 +1675,7 @@ function planObj(r,withItems){
   const o={};PLAN_KEYS.forEach(k=>{o[k]=r[k];});
   o.profile=r.profile;
   o.stations=r.stations.map(s=>{const x={id:s.id,name:s.name,km:s.km,access:!!s.access,barrier:s.barrier||'',barrierAuto:s.barrierAuto!==false};if(s.parking)x.parking=s.parking;if(s.parkLat!=null&&s.parkLon!=null){x.parkLat=s.parkLat;x.parkLon=s.parkLon;}if(s.meetLat!=null&&s.meetLon!=null){x.meetLat=s.meetLat;x.meetLon=s.meetLon;}if(s.walkMin!=null)x.walkMin=s.walkMin;if(s.driveMin!=null)x.driveMin=s.driveMin;if(s.watch)x.watch=true;if(s.parkList&&s.parkList.length)x.parkList=s.parkList;if(withItems)x.items=(s.items||[]).map(i=>({id:i.id,t:i.t,q:i.q||1,cat:i.cat||'autre'}));return x;});
+  if(withItems&&r.sync&&r.sync.role==='owner'){const fn=String((state.profile&&state.profile.first)||'').trim().slice(0,40);if(fn)o.runner=fn;}
   if(withItems&&r.sync&&r.sync.role==='owner')try{if(pantryActive(r)){
     const m=model(r),segs=assistSegments(r,m,timeline(r,m,{plan:true})),ks=pantryPlan(r,segs);o.kits={};
     segs.forEach((sg,i)=>{const k=ks[i];o.kits[sg.fromId]={it:k.items.map(x=>({n:x.n,t:String(x.x.name||'').slice(0,60),b:String(x.x.brandName||'').slice(0,40),c:String(x.x.cat||'').slice(0,12),cb:+x.x.carbs>0?1:0})),miss:k.miss|0};});
@@ -1694,7 +1707,7 @@ function sanitizeRace(r){
   }
   const hm=/^\d{1,2}:\d{2}$/;
   const clean={
-    name:String(r.name||'Course partagée').slice(0,80),date:/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')?r.date:'',
+    name:String(r.name||'Course partagée').slice(0,80),runner:String(r.runner||'').trim().slice(0,40),date:/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')?r.date:'',
     start:hm.test(r.start||'')?r.start:'06:00',target:String(r.target||'').slice(0,8),
     stopMin:Math.max(0,Math.min(60,+r.stopMin||0)),
     finishBarrier:hm.test(r.finishBarrier||'')?r.finishBarrier:'',finishBarrierAuto:r.finishBarrierAuto===undefined?!r.finishBarrier:!!r.finishBarrierAuto,
@@ -1720,7 +1733,7 @@ function importCode(code){
 const FB={apiKey:'AIzaSyCUW5CSnC--LZeZTc7g7kPIYznm8R_PAg4',projectId:'rubalise'};
 const AUTH_KEY='rubalise:auth';
 let authState=null;try{authState=JSON.parse(localStorage.getItem(AUTH_KEY)||'null');}catch(e){}
-let syncing=false,resync=false,pushTimer=null;
+let resync=false,pushTimer=null;const syncBusy=new Set();
 function setAuth(a){
   if(a&&!a.email){
     try{
@@ -1789,7 +1802,7 @@ function ptsToFields(pts){const f={};Object.keys(pts||{}).forEach(id=>{f['p_'+id
 function pstr(o){return JSON.stringify(Object.keys(o||{}).sort().map(k=>[k,o[k]]));}
 function mergePlan(r,p){
   PLAN_KEYS.forEach(k=>{r[k]=p[k];});
-  r.profile=p.profile;r.kits=p.kits||{};
+  r.profile=p.profile;r.kits=p.kits||{};r.runner=p.runner||'';
   r.stations=p.stations.map(s=>Object.assign({},s));
 }
 function applyRemote(r,doc){
@@ -1840,7 +1853,7 @@ async function joinCourse(raw){
   const f=doc.fields||{};
   if(!f.plan||!f.plan.stringValue)throw new Error('Course introuvable.');
   const race=sanitizeRace(JSON.parse(f.plan.stringValue));
-  race.sync={code:code,role:'member',lastPlan:f.plan.stringValue,lastSync:Date.now(),error:''};race.pending={};
+  race.sync={code:code,role:'member',lastPlan:f.plan.stringValue,lastSync:Date.now(),error:'',joined:Date.now()};race.pending={};
   applyRemote(race,doc);
   return race;
 }
@@ -1876,10 +1889,11 @@ function focusRestore(f){
   try{el.focus({preventScroll:true});}catch(e){}
   if(f.st!=null)try{el.setSelectionRange(f.st,f.en);}catch(e){}
 }
-async function syncNow(){
-  const r=state.race;if(!r||!r.sync)return;
-  if(syncing){resync=true;return;}
-  syncing=true;let changed=false;
+function raceKept(r){return state.race===r||(state.plans||[]).indexOf(r)>=0;}
+async function syncNow(r){
+  r=r||state.race;if(!r||!r.sync)return;
+  if(syncBusy.has(r)){if(r===state.race)resync=true;return;}
+  syncBusy.add(r);let changed=false;
   try{
     const owner=r.sync.role==='owner',pj=owner?planJSON(r):null,dirty=owner&&pj!==r.sync.lastPlan;
     const pend=Object.assign({},r.pending||{}),keys=Object.keys(pend);
@@ -1897,12 +1911,13 @@ async function syncNow(){
       keys.forEach(id=>{if(r.pending&&r.pending[id]===pend[id])delete r.pending[id];});
     }
     const doc=await fsReq('GET','courses/'+r.sync.code);
-    if(state.race===r&&r.sync){changed=applyRemote(r,doc);r.sync.lastSync=Date.now();r.sync.error='';}
+    if(raceKept(r)&&r.sync){changed=applyRemote(r,doc);r.sync.lastSync=Date.now();r.sync.error='';}
   }catch(e){
     if(r.sync)r.sync.error=e.network?'hors ligne':(e.status===403?'accès refusé, vérifie les règles Firestore':(e.message||'erreur'));
   }finally{
-    syncing=false;save();
-    if(changed&&state.race===r&&!typing())render();else updateSyncUI();
+    syncBusy.delete(r);save();
+    if(r!==state.race){if(changed&&copilot()&&!typing())render();return;}
+    if(changed&&!typing())render();else updateSyncUI();
     if(resync){resync=false;setTimeout(syncNow,150);}
   }
 }
@@ -2190,7 +2205,7 @@ function updateChrome(){
   const cp=copilot();document.body.classList.toggle('cp',cp);if(nav&&cp)nav.classList.remove('five');
   ['plan','assist','live','diary'].forEach(t=>{const b=document.querySelector('.tabbtn[data-tab="'+t+'"]');if(b)b.hidden=cp;});
   ['cp-route','cp-food'].forEach(t=>{const b=document.querySelector('.tabbtn[data-tab="'+t+'"]');if(b)b.hidden=!cp;});
-  const cq=document.getElementById('cpquit');if(cq)cq.hidden=!cp;
+  const cq=document.getElementById('cpquit');if(cq){cq.hidden=!cp;cq.textContent=cp&&cpFollowed().length>1?'Quitter ce suivi':'Quitter Copilot';}
   const ab=document.getElementById('acct');
   if(ab){
     if(run){ab.removeAttribute('data-tab');ab.dataset.act='menu';ab.setAttribute('aria-haspopup','menu');ab.setAttribute('aria-expanded',String(menuOpen));}
@@ -2777,8 +2792,9 @@ async function deletePlanNow(id){
 async function leaveFollowNow(){
   const r=state.race;
   try{if(r&&Object.keys(r.pending||{}).length)await Promise.race([syncNow(),new Promise(res=>setTimeout(res,3000))]);}catch(e){}
+  const nx=(state.plans||[]).find(isMember);if(nx)state.lastPlanId=planId(nx);
   state.race=null;openLastPlan();if(landOpen)closeLand();commit();window.scrollTo(0,0);
-  flash('Suivi quitté : plan, pointages et position supprimés de cet appareil.');
+  flash(nx?'Suivi quitté. Tu suis toujours '+cpLabel(nx)+'.':'Suivi quitté : plan, pointages et position supprimés de cet appareil.');
 }
 async function stopShareNow(){
   const r=state.race;if(!r||!r.sync)return;
@@ -4077,8 +4093,57 @@ function cpData(r){
   const nextId=(stops.find(x=>x.actual==null&&!x.passedEst)||{}).id;
   return {m:m,tl:tl,tlO:tlO,tlP:tlP,rows:rows,stops:stops,nextId:nextId};
 }
+// Plusieurs coureurs : l'assistance saisit un code par coureur. Chaque course suivie garde ses pointages, sa liste et ses lieux.
+let cpJoinOpen=false;
+function cpFollowed(){
+  const L=[];if(isMember(state.race))L.push(state.race);
+  (state.plans||[]).forEach(q=>{if(isMember(q))L.push(q);});
+  return L.sort((a,b)=>(a.sync.joined||0)-(b.sync.joined||0));
+}
+function cpLabel(r){
+  const n=String(r.runner||'').trim()||r.name||'Course';
+  return cpFollowed().filter(q=>q!==r&&(String(q.runner||'').trim()||q.name||'Course')===n).length?n+' ('+r.sync.code+')':n;
+}
+// Prochain passage d'un coureur : ravito avec accès (ou point de passage), sinon l'arrivée
+function cpNext(r){
+  try{
+    const d=cpData(r),fin=d.rows[d.rows.length-1],x=d.stops.find(y=>y.id===d.nextId);
+    if(x)return {t:x.name,c:clk(x.adjArr)};
+    return fin.actual!=null?{t:'Arrivé',c:clk(fin.actual),done:1}:{t:'Arrivée',c:clk(fin.adjArr)};
+  }catch(e){return {t:'',c:''};}
+}
+function cpRunners(r){
+  const L=cpFollowed(),multi=L.length>1;
+  let h='';
+  if(multi)h='<div class="cp-runners" role="group" aria-label="Coureurs suivis">'+L.map(q=>{const nx=cpNext(q),on=q===r,sub=String(q.runner||'').trim()&&q.name?q.name:'';
+    return '<button type="button" class="cp-runner'+(on?' on':'')+'" data-act="cp-runner" data-id="'+esc(planId(q))+'" aria-pressed="'+on+'"><b>'+esc(cpLabel(q))+'</b>'+(sub?'<small>'+esc(sub)+'</small>':'')
+      +(nx.t?'<span class="cp-rn'+(nx.done?' done':'')+'">'+esc(nx.t)+' <b>'+nx.c+'</b></span>':'')+'</button>';}).join('')+'</div>';
+  h+=cpJoinOpen?'<div class="cp-join">'+joinForm('Code de l’autre coureur','cpjoin','keep','Suivre')+'<button class="linkbtn" data-act="cp-join">Annuler</button></div>'
+    :'<button class="linkbtn cp-add" data-act="cp-join">+ Suivre un autre coureur</button>';
+  return h;
+}
+// Les autres coureurs suivis qui passent par le même ravito (même nom ou à moins de 500 m sur le tracé)
+function cpAlso(r,x){
+  return cpFollowed().filter(q=>q!==r).map(q=>{
+    let d;try{d=cpData(q);}catch(e){return '';}
+    const n=normLabel(x.name),y=d.stops.find(z=>normLabel(z.name)===n)||d.stops.find(z=>Math.abs(z.km-x.km)<=0.5);
+    if(!y)return '';
+    const t=y.actual!=null?'passé à '+clk(y.actual):'arrivée estimée '+clk(y.adjArr);
+    return '<button type="button" class="linkbtn cp-also" data-act="cp-runner" data-id="'+esc(planId(q))+'" data-st="'+esc(y.id)+'"><b>'+esc(cpLabel(q))+'</b> : '+t+' ›</button>';
+  }).join('');
+}
+function cpSwitch(id,st){
+  const p=(state.plans||[]).find(x=>x.id===id&&isMember(x));if(!p)return;
+  const keep=tab;stashPlan();state.plans=state.plans.filter(x=>x!==p);state.race=p;state.lastPlanId=id;
+  try{migrateRace(p);ensureItems(p);}catch(e){}
+  leavePlanView();cpJoinOpen=false;
+  if(st)cpSel=st;
+  tab=keep;animateNext=true;commit();syncNow();
+  const el=st&&tab==='cp-route'&&document.getElementById('crew-'+st);
+  if(el)el.scrollIntoView({block:'start'});else window.scrollTo(0,0);
+}
 function cpHead(r,sub){
-  return '<section class="cp-head"><p class="cp-kicker">Copilot</p><h1>'+esc(r.name||'Course')+'</h1>'+(sub?'<p class="cp-sub">'+sub+'</p>':'')+'</section>';
+  return '<section class="cp-head"><p class="cp-kicker">Copilot</p>'+cpRunners(r)+'<h1>'+esc(cpFollowed().length>1?cpLabel(r)+' · '+(r.name||'Course'):(r.name||'Course'))+'</h1>'+(sub?'<p class="cp-sub">'+sub+'</p>':'')+'</section>';
 }
 function renderCpRoute(){
   const r=state.race,d=cpData(r),m=d.m,fi=d.rows.length-1,fin=d.rows[fi];
@@ -4098,7 +4163,7 @@ function renderCpRoute(){
     list+=card(x,(passed?' passed':'')+(next?' next':''),
       '<div class="cp-top"><h2 class="cp-name">'+esc(x.name)+'</h2><span class="cp-km">km '+km1(x.km)+'</span></div>'
       +(next?'<span class="cp-tag">Prochain</span>':'')+(st.access?'':'<span class="cp-tag quiet">Point de passage</span>')
-      +eta(x.index,x.actual,'Passé à')+park
+      +eta(x.index,x.actual,'Passé à')+cpAlso(r,x)+park
       +(st.access?'<button class="linkbtn cp-more" data-act="cp-pick" data-id="'+st.id+'">Nutrition et matériel ›</button>':''));
   });
   list+=card({},' finish'+(fin.actual!=null?' passed':''),'<div class="cp-top"><h2 class="cp-name">Arrivée</h2><span class="cp-km">km '+km1(m.tot)+'</span></div>'+eta(fi,fin.actual,'Arrivé à'));
@@ -4141,7 +4206,7 @@ function renderCpFood(){
     gear='<section class="cp-sec"><h3>Matériel</h3>'+(all.length?'<ul class="cp-items">'+all.map(x=>li({n:x.q||1,t:x.t},'',x.id)).join('')+'</ul>':'<p class="note">Rien de demandé pour ce ravito.</p>')+'</section>';
   }
   return cpHead(r)+pick
-    +'<div class="cp-detail"><section class="cp-selh"><h2>'+esc(sg.from)+'</h2><p class="cp-sub">'+when+'</p><p class="cp-sub">Pour aller jusqu’à '+esc(sg.to)+' : '+km1(sg.km)+' km, environ '+fmtDur(sg.dur)+'.</p></section>'
+    +'<div class="cp-detail"><section class="cp-selh"><h2>'+esc(sg.from)+'</h2><p class="cp-sub">'+when+'</p>'+(row?cpAlso(r,row):'')+'<p class="cp-sub">Pour aller jusqu’à '+esc(sg.to)+' : '+km1(sg.km)+' km, environ '+fmtDur(sg.dur)+'.</p></section>'
     +cpProgHTML(food+drink+gear)
     +'<section class="cp-sec"><h3>Gels et barres</h3>'+food+'</section>'
     +'<section class="cp-sec"><h3>Flasques</h3>'+drink+'</section>'
@@ -4481,7 +4546,8 @@ function act(b){
   if(a==='join'){
     const bx=document.getElementById(b.dataset.input||'joincode');
     flash('Connexion au suivi…');
-    joinCourse(bx?bx.value:'').then(race=>{state.welcomed=true;if(state.race)stashPlan();if(race.sync)state.plans=(state.plans||[]).filter(q=>!(q.sync&&q.sync.code===race.sync.code));state.race=race;animateNext=true;tab=b.dataset.land||'live';commit();window.scrollTo(0,0);flash('Course rejointe : '+race.name+'.');}).catch(e=>flash(fbErr(e)));
+    const keep=b.dataset.land==='keep'?tab:'';
+    joinCourse(bx?bx.value:'').then(race=>{state.welcomed=true;if(state.race)stashPlan();if(race.sync)state.plans=(state.plans||[]).filter(q=>!(q.sync&&q.sync.code===race.sync.code));state.race=race;cpJoinOpen=false;animateNext=true;tab=keep||b.dataset.land||'live';commit();window.scrollTo(0,0);flash(keep?'Tu suis aussi '+cpLabel(race)+'.':'Course rejointe : '+race.name+'.');}).catch(e=>flash(fbErr(e)));
     return;
   }
   if(a==='google-login'){googleLogin('signin');return;}
@@ -4515,12 +4581,14 @@ function act(b){
     return;
   }
   if(a==='sync-now'){flash('Synchronisation…');syncNow();return;}
+  if(a==='cp-runner'){if(r&&planId(r)===b.dataset.id){if(b.dataset.st){cpSel=b.dataset.st;render();}return;}cpSwitch(b.dataset.id,b.dataset.st||'');return;}
+  if(a==='cp-join'){cpJoinOpen=!cpJoinOpen;render();if(cpJoinOpen){const i=document.getElementById('cpjoin');if(i)i.focus();}return;}
   if(a==='cp-pick'){cpSel=b.dataset.id||'';tab='cp-food';viewSave(0);render(true);mo(root.querySelector('.cp-detail'),{opacity:[0,1],transform:['translateY(8px)','translateY(0px)']},{duration:.26,ease:[.22,1,.36,1]});return;}
   if(a==='stop-sync'){
     if(!r)return;
     if(r.sync&&r.sync.role==='member'){
       const n=Object.keys(r.pending||{}).length;
-      askConfirm({title:copilot()?'Quitter Copilot ?':'Quitter ce suivi ?',text:'Le plan, les pointages et la position enregistrés sur cet appareil seront supprimés.'+(n?' '+n+' pointage'+(n>1?'s':'')+' pas encore envoyé'+(n>1?'s':'')+' sera perdu'+(n>1?'s':'')+'.':''),okLabel:'Quitter et tout supprimer',danger:true,onOk:leaveFollowNow});
+      askConfirm({title:copilot()?(cpFollowed().length>1?'Ne plus suivre '+cpLabel(r)+' ?':'Quitter Copilot ?'):'Quitter ce suivi ?',text:'Le plan, les pointages et la position enregistrés sur cet appareil seront supprimés.'+(n?' '+n+' pointage'+(n>1?'s':'')+' pas encore envoyé'+(n>1?'s':'')+' sera perdu'+(n>1?'s':'')+'.':''),okLabel:'Quitter et tout supprimer',danger:true,onOk:leaveFollowNow});
     }else{
       askConfirm({title:'Arrêter le partage ?',text:'Le code ne fonctionnera plus pour ton équipe. Ton plan reste sur ton téléphone.',okLabel:'Arrêter le partage',danger:true,onOk:stopShareNow});
     }
@@ -4847,6 +4915,7 @@ setInterval(()=>{
   const r=state.race;if(!r||!r.sync||document.hidden)return;
   const age=Date.now()-(r.sync.lastSync||0),every=(tab==='live')?10000:30000;
   if(age>=every||Object.keys(r.pending||{}).length)syncNow();
+  if(isMember(r))(state.plans||[]).forEach(q=>{if(isMember(q)&&(Date.now()-(q.sync.lastSync||0)>=30000||Object.keys(q.pending||{}).length))syncNow(q);});
 },5000);
 document.addEventListener('click',e=>{
   const sm=e.target.closest&&e.target.closest('summary');
@@ -4855,7 +4924,7 @@ document.addEventListener('click',e=>{
   if(l&&/^geo:/i.test(l.getAttribute('href')||''))return;
   if(l&&N&&N.Browser){e.preventDefault();N.Browser.open({url:l.href}).catch(()=>flash('Impossible d’ouvrir le navigateur.'));}
 });
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){syncNow();planPullThrottled(30000);}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){syncNow();if(copilot())cpFollowed().forEach(q=>{if(q!==state.race)syncNow(q);});planPullThrottled(30000);}});
 // Copilote : la carte se met à jour toute seule, et la notification est reprogrammée si l'heure conseillée change.
 setInterval(()=>{
   const r=state.race,el=document.getElementById('crewadv');

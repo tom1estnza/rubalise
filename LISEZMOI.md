@@ -367,13 +367,15 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - CSP : plus de `frame-src`. Politique de confidentialité (traitement N) et mentions légales mises à jour le 30 octobre 2026.
 
 ## Copilot (assistance qui rejoint avec le code)
-- Quand la course ouverte est une course rejointe avec un code (`isMember`), l'appli passe en Copilot : pas de bouton de connexion ni d'aide, seulement « Quitter Copilot » ; pas de barre « Mes plans » ; deux onglets seulement, rien à saisir.
+- Quand la course ouverte est une course rejointe avec un code (`isMember`), l'appli passe en Copilot : pas de bouton de connexion ni d'aide, seulement « Quitter Copilot » (« Quitter ce suivi » quand il suit plusieurs coureurs) ; pas de barre « Mes plans » ; deux onglets seulement, rien à saisir.
 - Onglet Ravitos : nom du ravito, km en face, heure d'arrivée estimée en gros (et la fourchette), liste déroulante des parkings (conseillé puis autres) et bouton « GPS vers ce parking » (sinon « GPS vers le ravito »). Bouton « Ouvrir le suivi de la montre » si le coureur a mis son lien.
 - Onglet Nutrition : choix du ravito (le prochain par défaut, gardé au rafraîchissement), puis gels et barres exacts (nom, marque), flasques de 500 ml (avec la poudre de boisson ou à l'eau, pastilles de sel) et matériel demandé.
 - Produits exacts : le coureur qui partage envoie dans le plan `kits` (par ravito : produits de son placard, nombre, marque), calculé comme dans son plan nutrition. Sans placard, on affiche le nombre de gels et de barres du plan.
 - Les heures se recalculent toutes les 30 s.
 - En haut de l'onglet Ravitos : confirmation du départ (départ donné à l'heure prévue, ou heure réelle), profil avec le point rose (position estimée) et « Vue horizontale et 3D » (profil, 3D, satellite). Dans la vue horizontale, « Voir et préparer ce ravito » ouvre sa nutrition.
 - Gels : un Copilot ouvert avant la mise à jour avait reçu le plan sans garder les produits ; il relit maintenant le plan reçu quand `kits` manque (au chargement et à chaque synchronisation).
+- Plusieurs coureurs (1er novembre 2026) : « + Suivre un autre coureur » en haut du Copilot pour saisir un autre code. Avec deux coureurs ou plus, une carte par coureur (prénom, course, prochain ravito et heure) permet de passer de l'un à l'autre en gardant l'onglet. Sur chaque ravito (et en haut de sa nutrition), « Julien : arrivée estimée 10:15 › » quand un autre coureur suivi passe au même ravito (même nom ou à moins de 500 m) ; un appui ouvre ce ravito chez lui. Toutes les courses suivies se synchronisent (la course ouverte comme avant, les autres toutes les 30 s). « Quitter ce suivi » n'enlève que le coureur affiché.
+- Le prénom du coureur (profil, champ `first`) part avec le plan partagé (`runner`) pour distinguer deux coureurs sur la même course ; sans prénom, on affiche le nom de la course (et le code si deux se ressemblent).
 
 ## Assistance simplifiée
 - Une carte « Inviter ton assistance » : créer le code (ou le code et « Copier » une fois partagé), le lien de la montre, et les options du partage repliées (synchroniser, tester, arrêter).
