@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Jlq1kIjhxZ0IwXUsMhrTQNwzEBgDGEdTDxQZi8QK/70=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-JaDxOMRHA2Lx8aErj1laTzEIHATmB/poXAx0Kd3EfzY=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -3492,6 +3492,9 @@ function pantrySet(list){state.profile=state.profile||defaultProfile();state.pro
 function ptNum(v,max){if(v===null||v===undefined||String(v).trim()==='')return null;const n=parseFloat(String(v).replace(',','.'));return (isFinite(n)&&n>=0&&n<=max)?Math.round(n*10)/10:null;}
 // Sodium non détaillé mais électrolytes publiés (boissons Tä) : les électrolytes tiennent la ligne du sodium
 function ptElecOnly(x){return x.sodium==null&&+ptK(x,'elec')>0;}
+// Sodium compté dans le plan : celui de la fiche, sinon la moitié des électrolytes (sur les fiches Tä qui détaillent,
+// le sodium fait 50 à 81 % des électrolytes : on garde l'estimation la plus basse)
+function ptSod(x){return +x.sodium>0?+x.sodium:(ptElecOnly(x)?Math.round(+ptK(x,'elec')*0.5):0);}
 function ptValues(x){
   const v=[];
   // valeurs non publiées ou à 0 : pas affichées
@@ -3729,7 +3732,7 @@ function pantryChange(t){
 // ---------- nutrition calculée à partir du placard ----------
 // Pour chaque tronçon : boissons (une portion par flasque d'eau prévue, 500 ml si le volume n'est pas donné, pour la moitié des glucides au plus), puis gels et barres
 // selon la part en gels, puis sel (pastilles, gélules, électrolytes sans glucides) tant que le sodium manque.
-// Chaque produit compte avec tout ce que sa fiche donne : glucides, sodium, caféine, protéines. Le stock est décompté sur
+// Chaque produit compte avec tout ce que sa fiche donne : glucides, sodium (ou la moitié des électrolytes si le sodium n'est pas détaillé), caféine, protéines. Le stock est décompté sur
 // toute la course. Caféine : seulement sur les tronçons où le calcul en prévoit, et sans dépasser la dose du tronçon
 // (un produit passe si au moins la moitié de sa dose est encore prévue) ; dose inconnue comptée 50 mg.
 // Après 3 h en ultra, les produits avec des protéines passent devant. À égalité, le moins utilisé sur le tronçon (variété).
@@ -3751,7 +3754,7 @@ function pantryPlan(r,segs){
     const mid=t+Math.max(0,sg.dur)/2,alt=ultra&&mid>=SALTY_MIN,N=sg.needs,cafOk=N.caf>0;t+=Math.max(0,sg.dur);
     const pick=[];let carbs=0,sodium=0,caf=0,prot=0;
     const used=s=>{const e=pick.find(p=>p.s===s);return e?e.n:0;};
-    const take=s=>{s.left--;const e=pick.find(p=>p.s===s);if(e)e.n++;else pick.push({s:s,n:1});carbs+=+s.x.carbs||0;sodium+=+s.x.sodium||0;caf+=ptCafOf(s.x);prot+=+ptK(s.x,'protein')||0;if(s.x.cat!=='hydra')lastSalty=ptSalty(s.x);};
+    const take=s=>{s.left--;const e=pick.find(p=>p.s===s);if(e)e.n++;else pick.push({s:s,n:1});carbs+=+s.x.carbs||0;sodium+=ptSod(s.x);caf+=ptCafOf(s.x);prot+=+ptK(s.x,'protein')||0;if(s.x.cat!=='hydra')lastSalty=ptSalty(s.x);};
     const turn=s=>alt&&ptSalty(s.x)===lastSalty?1:0;
     const cafFits=s=>{const d=ptCafOf(s.x);return !d||(N.caf-caf)>=d/2;};
     const wantCaf=s=>ptCafOf(s.x)>0?0:1,wantProt=s=>N.prot>prot&&+ptK(s.x,'protein')>0?0:1;
@@ -3781,7 +3784,7 @@ function pantryPlan(r,segs){
       if(empty){empty=false;fill('barre',sg.needs.carbs-carbs);}
     }
     // sel : on ajoute tant que ce qui manque dépasse la moitié de ce que le produit apporte
-    for(let g=0;g<20;g++){const s=best(pool('hydra',false).filter(z=>+z.x.sodium>0));if(!s||N.sodium-sodium<(+s.x.sodium)/2)break;take(s);}
+    for(let g=0;g<20;g++){const s=best(pool('hydra',false).filter(z=>ptSod(z.x)>0));if(!s||N.sodium-sodium<ptSod(s.x)/2)break;take(s);}
     return {items:pick.map(p=>({x:p.s.x,n:p.n})),carbs:Math.round(carbs),sodium:Math.round(sodium),caf:Math.round(caf),prot:Math.round(prot),miss:empty?Math.max(0,Math.round(sg.needs.carbs-carbs)):0,cafOk:cafOk,alt:alt,set:!!set};
   });
 }
