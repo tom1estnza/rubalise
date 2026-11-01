@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-S3qaUZngqUVZ4RkqSpdO+w3/ykeorcn73HavPqCccxc=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-/a8etOK0MiSYte1QRu+ewcsJAG/Jy7rVjEl765cxzCo=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -152,6 +152,15 @@ a.btn{text-decoration:none}
 .pt-list{list-style:none;margin:0;padding:0}
 .pt-item{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
 .pt-item.out{opacity:.55}
+.pt-alert{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:10px 14px;border-radius:12px;background:var(--fill);font-size:15px}
+.pt-alert p{margin:0;overflow-wrap:anywhere}
+.pt-low{margin:0 0 14px;border-left:4px solid var(--warn)}
+.pt-low h2{margin:0 0 4px;font-size:17px;color:var(--warn)}
+.pt-low p{margin:0 0 6px;color:var(--ink2);font-size:14px}
+.pt-low ul{margin:0;padding-left:18px;font-size:15px;line-height:1.5}
+.pt-low small{color:var(--ink2)}
+.pt-lowtag{display:inline-block;margin:2px 0;padding:1px 8px;border-radius:999px;background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn);font:700 12px/1.5 var(--f-body)}
+.pt-homelow{margin:0 0 8px;color:var(--warn);font-weight:600;font-size:15px}
 .pt-item>.pt-txt:first-child{grid-column:1/3}
 .pt-list.thumbs .pt-item{grid-template-columns:44px 1fr auto auto}
 .pt-list.thumbs .pt-item>.pt-dot{justify-self:center}
@@ -3390,7 +3399,11 @@ function profileStatic(pf){
 // ---------- Mon placard : le stock de produits du coureur ----------
 // Rangé dans le profil (state.profile.pantry), donc synchronisé avec le compte comme la fiche coureur.
 // Chaque produit garde une copie de ses valeurs : un changement du catalogue ne modifie pas le placard.
-let ptView='stock',ptBrand='',ptCat='gel',ptEdit='',ptCustom=false,ptTab='all';
+let ptView='stock',ptBrand='',ptCat='gel',ptEdit='',ptCustom=false,ptTab='all',ptUndo=null;
+// Sous 3 portions, le produit est signalé « à recharger » (encart en haut du placard, étiquette sur la ligne, accueil)
+const PT_LOW=3;
+function ptIsLow(x){const q=x.qty|0;return q>0&&q<PT_LOW;}
+function ptLow(){return pantryItems().filter(ptIsLow);}
 const ptF={brand:'',caf:'',sod:'',stock:false,todo:false,sort:''};
 const PT_ICONS={
   gel:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2h6v3l2 3v12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V8l2-3z"/></svg>',
@@ -3450,8 +3463,12 @@ function ptAddFromCatalog(id){
   pantrySet(list);
 }
 function ptStep(id,d){
-  const list=pantryItems().slice(),x=list.find(z=>z.id===id);if(!x)return;
-  x.qty=Math.max(0,Math.min(999,(x.qty|0)+d));pantrySet(list);
+  const list=pantryItems().slice(),i=list.findIndex(z=>z.id===id),x=list[i];if(!x)return;
+  ptUndo=null;
+  const q=Math.max(0,Math.min(999,(x.qty|0)+d));
+  if(q===0&&d<0){list.splice(i,1);ptUndo={x:Object.assign({},x,{qty:1}),i:i};if(ptEdit===id)ptEdit='';}
+  else x.qty=q;
+  pantrySet(list);
 }
 function ptStepper(x){
   return '<div class="pt-step" role="group" aria-label="Quantité de '+esc(x.name)+'"><button class="btn quiet small" data-act="pt-dec" data-id="'+x.id+'" aria-label="Retirer un">−</button><b>'+(x.qty|0)+'</b><button class="btn quiet small" data-act="pt-inc" data-id="'+x.id+'" aria-label="Ajouter un">+</button></div>';
@@ -3471,7 +3488,11 @@ function renderPantryStock(){
     +'<div class="grid3"><label class="fld"><span>Glucides (g)</span><input class="in" id="pt-c-carbs" type="number" inputmode="decimal" min="0"></label><label class="fld"><span>Sodium (mg)</span><input class="in" id="pt-c-sod" type="number" inputmode="decimal" min="0"></label><label class="fld"><span>Caféine (mg)</span><input class="in" id="pt-c-caf" type="number" inputmode="decimal" min="0" value="0"></label></div>'
     +'<div class="grid2">'+PT_EXTRA.map(e=>'<label class="fld"><span>'+e[1]+'</span><input class="in" id="pt-c-'+e[0]+'" type="number" inputmode="decimal" min="0"></label>').join('')+'</div>'
     +'<div class="row"><button class="btn quiet" data-act="pt-custom">Annuler</button><button class="btn primary" data-act="pt-save">Ajouter au placard</button></div></div>';
+  if(ptUndo)h+='<div class="pt-alert" role="status"><p>« '+esc(ptUndo.x.name)+' » retiré du placard.</p><button class="btn quiet small" data-act="pt-undo">Annuler</button></div>';
   if(!list.length)return h+'<div class="card pt-empty">'+PT_ICONS.gel+'<p>Ton placard est vide.</p></div>';
+  const low=list.filter(ptIsLow);
+  if(low.length)h+='<div class="card pt-low" role="status"><h2>À recharger</h2><p>Il te reste moins de '+PT_LOW+' portions de '+(low.length>1?'ces produits':'ce produit')+' :</p><ul>'
+    +low.map(x=>'<li><b>'+(x.qty|0)+' ×</b> '+esc(x.name)+(x.brandName?' <small>'+esc(x.brandName)+'</small>':'')+'</li>').join('')+'</ul></div>';
   h+='<p class="pt-sum">'+list.length+' produit'+(list.length>1?'s':'')+' · '+n+' portion'+(n>1?'s':'')+'</p>';
   const cats=ptCatalog().cats,base=list.filter(x=>ptMatch(x,true));
   h+='<div class="pt-cats" role="tablist" aria-label="Catégorie">'+[{id:'all',label:'Tout'}].concat(cats).map(c=>{
@@ -3486,7 +3507,7 @@ function renderPantryStock(){
     const th=items.some(ptImgOf);
     h+='<section class="pt-group"><h2><span class="pt-ico">'+PT_ICONS[c.id]+'</span>'+c.label+'</h2><ul class="pt-list'+(th?' thumbs':'')+'">'
       +items.map(x=>'<li class="pt-item'+((x.qty|0)===0?' out':'')+'">'+(ptImgOf(x)?ptThumb(x):ptDot(x.brand,x.brandName||x.name))
-        +'<div class="pt-txt"><b>'+ptNameBtn(x,'stock')+'</b><small>'+esc((x.brandName?x.brandName+' · ':'')+ptValues(x))+'</small>'+ptMacros(x)+'</div>'
+        +'<div class="pt-txt"><b>'+ptNameBtn(x,'stock')+'</b>'+(ptIsLow(x)?'<span class="pt-lowtag">À recharger</span>':'')+'<small>'+esc((x.brandName?x.brandName+' · ':'')+ptValues(x))+'</small>'+ptMacros(x)+'</div>'
         +ptStepper(x)+'<button class="icon pt-more" data-act="pt-edit" data-id="'+(ptEdit===x.id?'':x.id)+'" aria-label="Modifier '+esc(x.name)+'" aria-expanded="'+(ptEdit===x.id)+'">✎</button>'
         +(ptEdit===x.id?ptEditForm(x):'')+'</li>').join('')+'</ul></section>';
   });
@@ -3599,7 +3620,7 @@ function renderPantry(){
   return '<section class="empty pantry">'+(ptView==='stock'?'<p style="margin:0 0 8px"><button class="linkbtn" data-tab="home" style="padding-left:0">‹ Accueil</button></p>':'')+'<h1>Mon placard</h1></section>'+body;
 }
 function pantryAct(a,b){
-  if(a==='pt-view'){ptView=b.dataset.v;ptEdit='';ptCustom=false;render(true);return true;}
+  if(a==='pt-view'){ptView=b.dataset.v;ptEdit='';ptCustom=false;ptUndo=null;render(true);return true;}
   if(a==='pt-brand'){ptBrand=b.dataset.id;ptView='brand';ptCat='gel';render(true);return true;}
   if(a==='pt-cat'){ptCat=b.dataset.c;render();return true;}
   if(a==='pt-tab'){ptTab=b.dataset.c;render();return true;}
@@ -3609,6 +3630,7 @@ function pantryAct(a,b){
   if(a==='pt-reset'){Object.assign(ptF,{brand:'',caf:'',sod:'',stock:false,todo:false,sort:''});ptTab='all';render();return true;}
   if(a==='pt-add'){ptAddFromCatalog(b.dataset.id);render();return true;}
   if(a==='pt-inc'||a==='pt-dec'){ptStep(b.dataset.id,a==='pt-inc'?1:-1);render();return true;}
+  if(a==='pt-undo'){if(ptUndo){const list=pantryItems().slice();list.splice(Math.min(ptUndo.i,list.length),0,ptUndo.x);ptUndo=null;pantrySet(list);}render();return true;}
   if(a==='pt-edit'){ptEdit=b.dataset.id||'';render();return true;}
   if(a==='pt-del'){pantrySet(pantryItems().filter(x=>x.id!==b.dataset.id));ptEdit='';render();return true;}
   if(a==='pt-custom'){ptCustom=!ptCustom;render();return true;}
@@ -3732,7 +3754,7 @@ function renderHome(){
   return '<section class="home"><h1>'+(pf.first?'Bonjour '+esc(pf.first):'Bienvenue')+'</h1>'
   +(r?'<div class="card resume"><h2>Reprendre mon plan</h2><p class="resume-name">'+esc(r.name||'Ma course')+(tot&&tot.km?' · '+km1(tot.km)+' km':'')+'</p><div class="row"><button class="btn primary" data-tab="plan">Ouvrir mon plan</button></div></div>':'')
   +'<div class="card import-card"><h2>Importer mon parcours</h2><div class="row">'+gpxPick('primary','Importer un fichier GPX')+'</div>'+gpxPaste()+'</div>'
-  +(()=>{const L=pantryItems(),n=L.reduce((a,x)=>a+(x.qty|0),0);return '<div class="card pt-home"><h2>Mon placard</h2>'+(L.length?'<p class="resume-name">'+L.length+' produit'+(L.length>1?'s':'')+' · '+n+' portion'+(n>1?'s':'')+'</p>':'')+'<div class="row"><button class="btn'+(L.length?'':' primary')+'" data-tab="pantry">'+(L.length?'Ouvrir mon placard':'Remplir mon placard')+'</button></div></div>';})()
+  +(()=>{const L=pantryItems(),n=L.reduce((a,x)=>a+(x.qty|0),0);const lw=L.filter(ptIsLow).length;return '<div class="card pt-home"><h2>Mon placard</h2>'+(L.length?'<p class="resume-name">'+L.length+' produit'+(L.length>1?'s':'')+' · '+n+' portion'+(n>1?'s':'')+'</p>':'')+(lw?'<p class="pt-homelow">'+lw+' produit'+(lw>1?'s':'')+' à recharger (moins de '+PT_LOW+' portions)</p>':'')+'<div class="row"><button class="btn'+(L.length?'':' primary')+'" data-tab="pantry">'+(L.length?'Ouvrir mon placard':'Remplir mon placard')+'</button></div></div>';})()
   +'<div class="card pf-card"><h2>Ma fiche coureur</h2>'+profileStatic(pf)+'<div class="row"><button class="btn'+(has?'':' primary')+'" data-tab="runner">'+(has?'Modifier ma fiche':'Créer ma fiche coureur')+'</button></div></div>'
   +(state.tourDone?'':'<div class="card"><h2>Guide de démarrage</h2><div class="row"><button class="btn" data-act="tour-start">Lancer le guide</button></div></div>')
   +'</section>';
