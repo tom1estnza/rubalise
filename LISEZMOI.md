@@ -338,7 +338,7 @@ Glucides, eau, sodium, caféine et protéines sont calculés pour chaque plan à
 - Protéines : 5 g/h après 3 h pour une course de 6 h et plus (les produits avec protéines passent devant).
 - Sources : Jeukendrup 2014 (Sports Med), ACSM, position ISSN ultra-marathon 2019 (Tiller et al.), position ISSN caféine 2021.
 - Les champs Glucides / Eau / Sodium du plan restent modifiables : une valeur saisie est gardée (`r.nutMan`), « Revenir au calcul » l'efface. Les plans existants suivent le calcul dès la mise à jour. Les produits choisis à la main par tronçon (`r.kitSet`) restent.
-- Placard : chaque produit compte avec ses glucides, son sodium, sa caféine (dose inconnue = 50 mg) et ses protéines. Boissons sucrées dans la limite des glucides du tronçon, gels caféinés d'abord quand de la caféine est prévue, sel ajouté tant que le manque dépasse la moitié d'une pastille. Le résumé signale le sodium (moins des trois quarts) et la caféine manquants.
+- Placard : chaque produit compte avec ses glucides, son sodium, sa caféine (dose inconnue = 50 mg) et ses protéines. Boissons sucrées pour la moitié des glucides du tronçon au plus, à 70 g par litre bu au maximum (50 g/L à partir de 25 °C) : le reste en gels et barres selon la part en gels (boisson, gel et barre sont aussi bien utilisés, varier les formes aide la digestion ; boisson efficace à 6–8 %), gels caféinés d'abord quand de la caféine est prévue, sel ajouté tant que le manque dépasse la moitié d'une pastille. Le résumé signale le sodium (moins des trois quarts) et la caféine manquants.
 - Assistance : le coureur envoie ses taux calculés (`carbs`, `water`, `sodium`, `cafTot`, `temp`) avec le plan.
 - Réglages : « Glucides » et « Eau » par défaut retirés (calculés désormais).
 

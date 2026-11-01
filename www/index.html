@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-JFig3fmRnAUk4qZ9MZLm3LBkCcIEFokmRbgZtEbE9a8=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Jlq1kIjhxZ0IwXUsMhrTQNwzEBgDGEdTDxQZi8QK/70=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -3727,7 +3727,7 @@ function pantryChange(t){
   pantrySet(list);
 }
 // ---------- nutrition calculée à partir du placard ----------
-// Pour chaque tronçon : boissons (une portion par flasque d'eau prévue, 500 ml si le volume n'est pas donné, dans la limite des glucides), puis gels et barres
+// Pour chaque tronçon : boissons (une portion par flasque d'eau prévue, 500 ml si le volume n'est pas donné, pour la moitié des glucides au plus), puis gels et barres
 // selon la part en gels, puis sel (pastilles, gélules, électrolytes sans glucides) tant que le sodium manque.
 // Chaque produit compte avec tout ce que sa fiche donne : glucides, sodium, caféine, protéines. Le stock est décompté sur
 // toute la course. Caféine : seulement sur les tronçons où le calcul en prévoit, et sans dépasser la dose du tronçon
@@ -3739,7 +3739,9 @@ function pantryChange(t){
 function ptHasCaf(x){return +x.caf>0||(x.caf==null&&/caf[ée]in/i.test(x.name||''));}
 function ptCafOf(x){return +x.caf>0?+x.caf:(ptHasCaf(x)?50:0);}
 function pantryActive(r){return isRunner()&&!isMember(r)&&pantryItems().some(x=>(x.qty|0)>0&&+x.carbs>0);}
-const ULTRA_MIN=360,SALTY_MIN=120;
+// Part des glucides apportée par les boissons, au plus : gels, boissons et barres sont aussi bien utilisés (Pfeiffer 2010-2011),
+// varier les formes aide la digestion ; une boisson efficace reste vers 6 à 8 % de glucides (60 à 80 g/L)
+const ULTRA_MIN=360,SALTY_MIN=120,NUT_DRINK=0.5;
 function ptSalty(x){return /sal[ée]|salt|cacahu|peanut|fromage|cheese|bretzel|pretzel|tomate|olive|chips|cracker|bouillon|soupe|pur[ée]e/i.test((x&&x.name)||'');}
 function pantryPlan(r,segs){
   const all=pantryItems(),stock=all.filter(x=>(x.qty|0)>0).map(x=>({x:x,left:x.qty|0}));
@@ -3756,8 +3758,10 @@ function pantryPlan(r,segs){
     const best=cands=>cands.sort((a,b)=>(wantCaf(a)-wantCaf(b))||(turn(a)-turn(b))||(wantProt(a)-wantProt(b))||(used(a)-used(b))||(b.left-a.left))[0];
     const pool=(cat,carb)=>stock.filter(s=>s.left>0&&s.x.cat===cat&&(carb?+s.x.carbs>0:!(+s.x.carbs>0))&&cafFits(s));
     const vol=x=>+x.ml>0?+x.ml:500;
-    // boissons sucrées : une par flasque, sans dépasser les glucides du tronçon (le reste de l'eau se boit nature)
-    for(let w=0,g=0;g<20;g++){const s=best(pool('hydra',true));if(!s||(N.water||0)-w<vol(s.x)/2||N.carbs-carbs<(+s.x.carbs)/2)break;take(s);w+=vol(s.x);}
+    // boissons sucrées : une par flasque, et au plus la moitié des glucides du tronçon, à 70 g par litre bu au maximum
+    // (50 g/L à partir de 25 °C) : le reste vient des gels et des barres, le reste de l'eau se boit nature
+    const tp=raceTemp(r),dCap=Math.min(N.carbs*NUT_DRINK,(N.water||0)/1000*(tp!=null&&tp>=25?50:70));
+    for(let w=0,g=0;g<20;g++){const s=best(pool('hydra',true));if(!s||(N.water||0)-w<vol(s.x)/2||dCap-carbs<(+s.x.carbs)/2)break;take(s);w+=vol(s.x);}
     const set=Array.isArray(sets[sg.fromId])?sets[sg.fromId]:null;
     // arrondi au plus proche : on ajoute un produit seulement si ce qui reste à couvrir dépasse la moitié de ce qu'il apporte
     // un « manque » n'est signalé que si le stock est vide alors qu'il reste plus de 10 g à couvrir (pas pour un simple arrondi)
@@ -3768,8 +3772,9 @@ function pantryPlan(r,segs){
       empty=sg.needs.carbs-carbs>10;
     }else{
       const fill=(cat,target)=>{const c0=carbs;let g=0;while(g++<80){const s=best(pool(cat,true));if(!s){if(target-(carbs-c0)>10)empty=true;break;}if(target-(carbs-c0)<=(+s.x.carbs)/2)break;take(s);}return carbs-c0;};
-      // caféine prévue sur le tronçon : les gels d'abord (c'est là qu'elle se trouve le plus souvent)
-      const rest=Math.max(0,sg.needs.carbs-carbs),gg=fill('gel',N.caf-caf>=25?rest:rest*share);
+      // caféine prévue sur le tronçon : d'abord les gels et gommes caféinés jusqu'à la dose, puis le partage gels / barres
+      for(let g=0;g<20&&N.caf-caf>=25;g++){const s=best(pool('gel',true).concat(pool('barre',true)).filter(z=>ptCafOf(z.x)>0));if(!s||sg.needs.carbs-carbs<(+s.x.carbs)/2)break;take(s);}
+      const rest=Math.max(0,sg.needs.carbs-carbs),gg=fill('gel',rest*share);
       fill('barre',rest-gg);
       empty=false;
       fill('gel',sg.needs.carbs-carbs);
