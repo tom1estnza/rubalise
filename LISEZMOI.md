@@ -327,6 +327,21 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - **Ravitos** : « Accès pour l'assistance » et « Accessible au public » côte à côte.
 - **Retirés** : la course démo, les phrases d'explication sous les titres et dans les formulaires, et les bulles de confirmation. Les bulles restent pour les erreurs et ce qui demande une action (temps visé manquant, lien invalide, autorisations…).
 
+## Besoins nutritionnels calculés (1er novembre 2026)
+
+Glucides, eau, sodium, caféine et protéines sont calculés pour chaque plan à partir de la fiche coureur (poids, digestion à l'effort, transpiration, sel dans la sueur, habitude de la caféine, cible de glucides facultative), de la durée prévue et de la température prévue (champ du plan, 15 °C par défaut). Fonctions `nutCalc`, `nutRates`, `needsFor` dans `www/index.html`.
+
+- Glucides (g/h) selon la durée totale et la digestion (fragile / habituée / entraînée) : moins de 1 h 15 : 0 / 20 / 30 ; jusqu'à 2 h 30 : 30 / 45 / 60 ; jusqu'à 6 h : 45 / 65 / 85 ; ultra : 40 / 60 / 80. La cible de la fiche coureur remplace ce calcul. Rien les 20 premières minutes.
+- Eau : 500 ml/h vers 15 °C, +25 ml/h par degré au-dessus (−10 ml/h par degré sous 10 °C), ×0,8 / ×1 / ×1,25 selon la transpiration, ajusté au poids (70 kg = ×1, entre ×0,85 et ×1,2), entre 350 et 800 ml/h (1 000 ml/h à partir de 25 °C).
+- Sodium : 450 / 650 / 950 mg par litre bu selon le sel de la sueur ; aucun sous 2 h.
+- Caféine pendant la course : 2 / 3 / 4 mg/kg selon l'habitude (aucune si « je n'en prends pas »), ×1,5 au-delà de 12 h, moitié sous 2 h 30 (le reste avant le départ), jamais plus de 6 mg/kg. Répartie de 40 % de la course à 30 min de l'arrivée (à partir de 4 h pour une course plus longue).
+- Protéines : 5 g/h après 3 h pour une course de 6 h et plus (les produits avec protéines passent devant).
+- Sources : Jeukendrup 2014 (Sports Med), ACSM, position ISSN ultra-marathon 2019 (Tiller et al.), position ISSN caféine 2021.
+- Les champs Glucides / Eau / Sodium du plan restent modifiables : une valeur saisie est gardée (`r.nutMan`), « Revenir au calcul » l'efface. Les plans existants suivent le calcul dès la mise à jour. Les produits choisis à la main par tronçon (`r.kitSet`) restent.
+- Placard : chaque produit compte avec ses glucides, son sodium, sa caféine (dose inconnue = 50 mg) et ses protéines. Boissons sucrées dans la limite des glucides du tronçon, gels caféinés d'abord quand de la caféine est prévue, sel ajouté tant que le manque dépasse la moitié d'une pastille. Le résumé signale le sodium (moins des trois quarts) et la caféine manquants.
+- Assistance : le coureur envoie ses taux calculés (`carbs`, `water`, `sodium`, `cafTot`, `temp`) avec le plan.
+- Réglages : « Glucides » et « Eau » par défaut retirés (calculés désormais).
+
 ## Mon placard (stock de produits) et catalogue des marques
 - « Mon placard » (Accueil et menu du compte) : le coureur y range ses produits et leurs quantités. Enregistré dans le profil, donc dans le compte, sans changer les règles Firestore.
 - Catalogue `www/catalogue.js` : Marques → Gels / Barres / Hydratation → Produits, 79 produits de 10 marques (Maurten, Näak, Overstims, Meltonic, GU, SiS, Tailwind, Isostar, Powerbar, Tä). Valeurs par portion relevées sur les sites officiels le 27/10/2026, avec le lien de chaque fiche. « ? » = valeur non publiée en texte par la marque, à compléter par le coureur. Pas de photos (pastille de couleur et icône par catégorie).

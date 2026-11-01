@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qQ0wnU0QMKjIffGEssusKMG7yBbLwvPdoPI71NvA2o0=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-JFig3fmRnAUk4qZ9MZLm3LBkCcIEFokmRbgZtEbE9a8=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -186,6 +186,9 @@ a.btn{text-decoration:none}
 .pt-sh-tab{width:100%;border-collapse:collapse;font-size:15px}
 .pt-sh-tab thead th{text-align:left;font-size:13px;color:var(--ink2);font-weight:600;padding:0 0 6px;border-bottom:2px solid var(--ink)}
 .pt-sh-tab tbody th{text-align:left;font-weight:500;padding:8px 0;border-bottom:1px solid var(--line)}
+.nut-basis{margin:0 0 14px}
+.nut-basis p{margin:0}
+.nut-basis .note{margin-top:6px}
 .pt-sh-tab tr.sub th{padding-left:14px;color:var(--ink2);font-size:14px}
 .pt-sh-tab tr.sub td{font-weight:500;font-size:14px}
 .pt-sh-tab td{text-align:right;padding:8px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;font-weight:600}
@@ -964,29 +967,79 @@ function autoBarrier(race,km){
   const st=parseClock(race.start)||0,sp=(+race.minSpeed>0)?+race.minSpeed:5.5;
   return fmtClock(Math.round(st+km/sp*60)).s;
 }
+// Réglages simples du plan (taille d'un gel, d'une barre, part en gels)
+const NUT_DEF={carbs:60,water:500,sodium:400,gelG:25,barG:30,gelShare:70};
 function nutr(r,k){
-  const d={carbs:60,water:500,sodium:400,gelG:25,barG:30,gelShare:70},v=r[k];
-  return (v===undefined||v===null||v===''||isNaN(+v))?d[k]:+v;
+  const v=r[k];
+  return (v===undefined||v===null||v===''||isNaN(+v))?NUT_DEF[k]:+v;
 }
-function needsFor(r,durMin){
-  const h=Math.max(0,durMin)/60,carbs=h*nutr(r,'carbs'),share=Math.max(0,Math.min(100,nutr(r,'gelShare')))/100;
+// ---------- besoins nutritionnels : calculés pour le coureur et la course ----------
+// Repères publiés (à tester à l'entraînement, pas un avis médical) :
+// - glucides selon la durée totale (Jeukendrup 2014, ACSM) : 30 à 60 g/h jusqu'à 2 h 30, jusqu'à 90 g/h au-delà
+//   avec un mélange glucose + fructose et un ventre entraîné ; ultra (ISSN 2019, Tiller) : 30 à 50 g/h de base, plus si entraîné ;
+// - eau : 450 à 750 ml/h en ultra (ISSN 2019), plus à la chaleur, sans boire plus que la sueur (risque d'hyponatrémie) ;
+// - sodium : 460 à 690 mg par litre bu (ACSM), plus de 575 mg/L en ultra (ISSN 2019), davantage pour une sueur salée ;
+// - caféine (ISSN 2021) : 3 à 6 mg/kg, effet dès 2 mg/kg, effets indésirables vers 9 mg/kg ; en seconde partie de course,
+//   ou à partir de 4 h et la nuit pour un ultra ;
+// - protéines : 5 à 10 g/h en ultra (ISSN 2019), à partir de 3 h d'effort.
+// Les réglages Glucides / Eau / Sodium du plan restent modifiables à la main (r.nutMan) ; sinon tout suit ce calcul.
+const NUT_AUTO=['carbs','water','sodium'],NUT_EAT0=20,NUT_PROT0=180;
+function nutLv(v){return v==='low'?0:v==='high'?2:1;}
+function nutProfile(){
+  const pf=state.profile||defaultProfile(),w=parseFloat(String(pf.weight||'').replace(',','.'));
+  return {w:isFinite(w)&&w>=30&&w<=200?w:0,gut:nutLv(pf.gut),sweat:nutLv(pf.sweat),salty:nutLv(pf.salty),caf:pf.cafHabit==='none'?-1:nutLv(pf.cafHabit)};
+}
+function raceTemp(r){const t=parseFloat(String(r.temp==null?'':r.temp).replace(',','.'));return isFinite(t)?t:null;}
+function nutCalc(r,totalMin){
+  const P=nutProfile(),T=Math.max(0,totalMin)/60,g=P.gut,tp=raceTemp(r),tc=tp==null?15:tp;
+  // glucides par heure, selon la durée totale et la digestion à l'effort (fragile / habituée / entraînée)
+  let carbs=T<1.25?[0,20,30][g]:T<2.5?[30,45,60][g]:T<6?[45,65,85][g]:[40,60,80][g];
+  const ct=carbsTarget();if(ct)carbs=ct;
+  // eau : 500 ml/h vers 15 °C, +25 ml/h par degré au-dessus, selon la transpiration et le poids
+  let water=(500+Math.max(0,tc-15)*25-Math.max(0,10-tc)*10)*[0.8,1,1.25][P.sweat];
+  if(P.w)water*=Math.max(0.85,Math.min(1.2,P.w/70));
+  water=Math.round(Math.max(350,Math.min(tc>=25?1000:800,water))/50)*50;
+  // sodium : par litre bu, selon le sel de la sueur ; pas nécessaire sous 2 h
+  const sodium=T<2?0:Math.round(water/1000*[450,650,950][P.salty]/50)*50;
+  // caféine pendant la course : 2, 3 ou 4 mg/kg selon l'habitude, ×1,5 au-delà de 12 h, jamais plus de 6 mg/kg ;
+  // moitié sous 2 h 30 (le reste se prend avant le départ)
+  const caf=P.caf<0||T<1?0:Math.round(Math.min(6,[2,3,4][P.caf]*(T>=12?1.5:T<2.5?0.5:1))*(P.w||70)/5)*5;
+  return {carbs:carbs,water:water,sodium:sodium,caf:caf,prot:T>=6?5:0};
+}
+// Taux du plan : calculés, sauf ce que le coureur a réglé à la main ; l'assistance reçoit ceux du coureur
+function nutRates(r,totalMin){
+  if(isMember(r))return {carbs:+r.carbs||0,water:+r.water||0,sodium:+r.sodium||0,caf:+r.cafTot||0,prot:totalMin>=360?5:0,man:{}};
+  const a=nutCalc(r,totalMin),man=r.nutMan||{};
+  NUT_AUTO.forEach(k=>{if(man[k]&&r[k]!==''&&r[k]!=null&&isFinite(+r[k]))a[k]=+r[k];});
+  a.man=man;return a;
+}
+function planMinutes(r){try{const m=model(r),rows=timeline(r,m,{plan:true}).rows,f=rows[rows.length-1];return f?Math.max(0,f.adjArr-m.startMin):0;}catch(e){return 0;}}
+function nutOver(a0,a1,b0,b1){return Math.max(0,Math.min(a1,b1)-Math.max(a0,b0));}
+// Besoins d'un tronçon qui part t0 minutes après le départ : on mange à partir de 20 min, la caféine suit sa fenêtre
+function needsFor(r,R,t0,durMin,total){
+  const d=Math.max(0,durMin),h=d/60,share=Math.max(0,Math.min(100,nutr(r,'gelShare')))/100;
+  const carbs=R.carbs*nutOver(t0,t0+d,NUT_EAT0,Math.max(NUT_EAT0,total))/60;
   const gelG=nutr(r,'gelG'),barG=nutr(r,'barG');
+  const cs=total<=240?total*0.4:240,ce=total-30;
+  const caf=R.caf>0&&ce>cs?Math.round(R.caf*nutOver(t0,t0+d,cs,ce)/(ce-cs)/5)*5:0;
   return {
     carbs:Math.round(carbs),
     gels:gelG>0?Math.ceil(carbs*share/gelG-1e-6):0,
     bars:barG>0?Math.ceil(carbs*(1-share)/barG-1e-6):0,
-    water:Math.ceil(h*nutr(r,'water')/50-1e-6)*50,
-    sodium:Math.round(h*nutr(r,'sodium')/10)*10
+    water:Math.ceil(h*R.water/50-1e-6)*50,
+    sodium:Math.round(h*R.sodium/10)*10,
+    caf:caf,
+    prot:R.prot?Math.round(R.prot*nutOver(t0,t0+d,NUT_PROT0,total)/60):0
   };
 }
 function assistSegments(race,m,tl){
   const pts=[{id:'start',name:'Départ',km:0,arr:m.startMin,dep:m.startMin,access:true}];
   tl.rows.forEach(r=>{pts.push({id:r.id,name:r.name,km:r.km,arr:r.adjArr,dep:r.dep,access:r.isFinish||!!(r.st&&r.st.access)});});
-  const acc=pts.filter(x=>x.access),out=[];
+  const acc=pts.filter(x=>x.access),out=[],total=Math.max(0,pts[pts.length-1].arr-m.startMin),R=nutRates(race,total);
   for(let i=0;i<acc.length-1;i++){
     const a=acc[i],b=acc[i+1],dur=b.arr-a.dep;
     out.push(Object.assign({from:a.name,fromId:a.id,to:b.name,toId:b.id,km:b.km-a.km,dur:dur,
-      via:pts.filter(x=>!x.access&&x.km>a.km&&x.km<b.km).map(x=>x.name),needs:needsFor(race,dur)},legStats(m.p,a.km,b.km)));
+      via:pts.filter(x=>!x.access&&x.km>a.km&&x.km<b.km).map(x=>x.name),needs:needsFor(race,R,a.dep-m.startMin,dur,total),rates:R,total:total},legStats(m.p,a.km,b.km)));
   }
   return out;
 }
@@ -1039,16 +1092,16 @@ function carbsTarget(){
 function carbsApply(r,pf){
   const t=carbsTarget();
   if(!t)return pf.carbsH?'<p class="note" style="margin-top:14px">Ta cible de glucides doit être comprise entre 20 et 120 g/h pour être utilisée.</p>':'';
-  const cur=nutr(r,'carbs');
+  const cur=nutRates(r,planMinutes(r)).carbs;
   return '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"><p>Cible de glucides : <b class="t">'+t+' g/h</b>'+(cur===t?'. Elle est déjà appliquée à ce plan.':' (ce plan : '+cur+' g/h).')+'</p>'
     +(cur===t?'':'<div class="row"><button class="btn" data-act="apply-carbs">Appliquer à ce plan</button></div>')+'</div>';
 }
-function carbsHint(r){
+function carbsHint(r,R){
   const t=carbsTarget();
-  if(!t||nutr(r,'carbs')===t)return '';
-  return '<p class="hint">Ta cible de coureur : <b class="t">'+t+' g/h</b> (ce plan : '+nutr(r,'carbs')+' g/h). <button class="btn quiet small" data-act="apply-carbs">Appliquer</button></p>';
+  if(!t||R.carbs===t)return '';
+  return '<p class="hint">Ta cible de coureur : <b class="t">'+t+' g/h</b> (ce plan : '+R.carbs+' g/h, réglé à la main). <button class="btn quiet small" data-act="apply-carbs">Appliquer</button></p>';
 }
-function defaultProfile(){return {first:'',birth:'',hrMax:'',hrRest:'',hrLt:'',refDist:'10',refTime:'',method:'auto',applyZone:'Z2',carbsH:'',photo:''};}
+function defaultProfile(){return {first:'',birth:'',hrMax:'',hrRest:'',hrLt:'',refDist:'10',refTime:'',method:'auto',applyZone:'Z2',carbsH:'',weight:'',gut:'mid',sweat:'mid',salty:'mid',cafHabit:'mid',photo:''};}
 function effMethod(pf,maxEff){
   const lt=+pf.hrLt,rest=+pf.hrRest;
   const avail={lthr:lt>0,karvonen:maxEff>0&&rest>0&&rest<maxEff,pctmax:maxEff>0};
@@ -1681,9 +1734,11 @@ function importGPX(file){
 }
 
 // ---------- plan partageable ----------
-const PLAN_KEYS=['name','date','start','target','stopMin','finishBarrier','finishBarrierAuto','minSpeed','carbs','water','sodium','gelG','barG','gelShare','trackUrl','crewMargin'];
+const PLAN_KEYS=['name','date','start','target','stopMin','finishBarrier','finishBarrierAuto','minSpeed','carbs','water','sodium','gelG','barG','gelShare','trackUrl','crewMargin','temp','cafTot'];
 function planObj(r,withItems){
   const o={};PLAN_KEYS.forEach(k=>{o[k]=r[k];});
+  // l'assistance n'a pas le profil du coureur : on lui envoie les taux calculés
+  if(!isMember(r))try{const R=nutRates(r,planMinutes(r));o.carbs=R.carbs;o.water=R.water;o.sodium=R.sodium;o.cafTot=R.caf;}catch(e){}
   o.profile=r.profile;
   o.stations=r.stations.map(s=>{const x={id:s.id,name:s.name,km:s.km,access:!!s.access,barrier:s.barrier||'',barrierAuto:s.barrierAuto!==false};if(s.parking)x.parking=s.parking;if(s.parkLat!=null&&s.parkLon!=null){x.parkLat=s.parkLat;x.parkLon=s.parkLon;}if(s.meetLat!=null&&s.meetLon!=null){x.meetLat=s.meetLat;x.meetLon=s.meetLon;}if(s.walkMin!=null)x.walkMin=s.walkMin;if(s.driveMin!=null)x.driveMin=s.driveMin;if(s.watch)x.watch=true;if(s.parkList&&s.parkList.length)x.parkList=s.parkList;if(withItems)x.items=(s.items||[]).map(i=>({id:i.id,t:i.t,q:i.q||1,cat:i.cat||'autre'}));return x;});
   if(withItems&&r.sync&&r.sync.role==='owner'){const fn=String((state.profile&&state.profile.first)||'').trim().slice(0,40);if(fn)o.runner=fn;}
@@ -1724,7 +1779,7 @@ function sanitizeRace(r){
     finishBarrier:hm.test(r.finishBarrier||'')?r.finishBarrier:'',finishBarrierAuto:r.finishBarrierAuto===undefined?!r.finishBarrier:!!r.finishBarrierAuto,
     minSpeed:(+r.minSpeed>=3&&+r.minSpeed<=12)?+r.minSpeed:5.5,crewMargin:crewMarginOf(r),sodium:Math.max(0,Math.min(3000,r.sodium===undefined?400:(+r.sodium||0))),barG:Math.max(0,Math.min(100,r.barG===undefined?30:(+r.barG||0))),gelShare:Math.max(0,Math.min(100,r.gelShare===undefined?70:(+r.gelShare||0))),startAt:null,
     trackUrl:/^https?:\/\/[^\s<>"']{3,280}$/i.test(r.trackUrl||'')?String(r.trackUrl):'',
-    carbs:Math.max(0,Math.min(200,+r.carbs||0)),water:Math.max(0,Math.min(2000,+r.water||0)),gelG:Math.max(0,Math.min(100,+r.gelG||0)),
+    carbs:Math.max(0,Math.min(200,+r.carbs||0)),water:Math.max(0,Math.min(2000,+r.water||0)),cafTot:Math.max(0,Math.min(1200,+r.cafTot||0)),temp:(r.temp!==''&&r.temp!=null&&isFinite(+r.temp)&&+r.temp>=-30&&+r.temp<=50)?Math.round(+r.temp):'',gelG:Math.max(0,Math.min(100,+r.gelG||0)),
     profile:prof,kits:cleanKits(r.kits),points:{},extras:{},done:{},diary:{rating:0,nutrition:'',learn:'',gear:''},
     stations:r.stations.slice(0,30).map(s=>({id:String(s.id||uid()).replace(/[^A-Za-z0-9]/g,'').slice(0,12)||uid(),name:String(s.name||'Ravito').slice(0,80),km:Math.max(0,+s.km||0),access:!!s.access,barrier:hm.test(s.barrier||'')?s.barrier:'',barrierAuto:s.barrierAuto===undefined?!s.barrier:!!s.barrierAuto,
        parking:String(s.parking||'').slice(0,80),parkLat:okCoord(s.parkLat,90),parkLon:okCoord(s.parkLon,180),meetLat:okCoord(s.meetLat,90),meetLon:okCoord(s.meetLon,180),walkMin:okMin(s.walkMin,180),driveMin:okMin(s.driveMin,600),watch:!!s.watch,parkList:cleanParkList(s.parkList),
@@ -2079,7 +2134,11 @@ function authErr(e){
   for(let i=0;i<map.length;i++)if(m.indexOf(map[i][0])>=0)return map[i][1];
   return m||'Erreur de connexion.';
 }
-function profileHasData(pf){return !!(pf&&(pf.first||pf.birth||pf.hrMax||pf.hrRest||pf.hrLt||pf.refTime||pf.carbsH||pf.photo));}
+function nutSel(k,l,opts,v){
+  v=v||'mid';
+  return '<label class="fld"><span>'+l+'</span><select class="in" data-p="'+k+'">'+opts.map(o=>'<option value="'+o[0]+'"'+(v===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select></label>';
+}
+function profileHasData(pf){return !!(pf&&(pf.first||pf.birth||pf.hrMax||pf.hrRest||pf.hrLt||pf.refTime||pf.carbsH||pf.weight||pf.photo));}
 function cacheProfile(){
   if(!isRunner())return;
   state.profiles=state.profiles||{};
@@ -2417,8 +2476,14 @@ function renderRunner(){
   +'<label class="fld"><span>Temps</span><input data-p="refTime" value="'+esc(pf.refTime)+'" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="45:00"></label></div>'
   +'<p class="hint" style="margin:6px 0 0">Format mm:ss ou h:mm:ss, par exemple 45:00 pour un 10 km.</p>'
   +'<h3 style="margin-top:20px">Nutrition</h3>'
-  +'<div class="grid2"><label class="fld"><span>Cible de glucides (g/h), facultatif</span><input type="number" inputmode="numeric" min="20" max="120" data-p="carbsH" value="'+esc(pf.carbsH)+'" placeholder="ex. 60"></label></div>'
-  +'<p class="hint" style="margin:6px 0 0">Elle sert de valeur de départ à tes nouveaux plans, et tu peux l’appliquer à un plan existant plus bas. Repères courants : 30 à 60 g/h jusqu’à 2 h 30 d’effort, jusqu’à 90 g/h au-delà avec un mélange de glucose et de fructose, si ton ventre y est habitué. À tester à l’entraînement : ce n’est pas un avis médical.</p>'
+  +'<p class="hint" style="margin:0 0 10px">Rubalise calcule tes glucides, ton eau, ton sodium et ta caféine pour chaque course à partir de ces réponses, de la durée et de la température prévue.</p>'
+  +'<div class="grid2"><label class="fld"><span>Poids (kg)</span><input type="number" inputmode="decimal" min="30" max="200" data-p="weight" value="'+esc(pf.weight||'')+'" placeholder="ex. 70"></label>'
+  +nutSel('gut','Digestion à l’effort',[['low','Fragile, je mange peu'],['mid','Habituée'],['high','Entraînée, 80 g/h et plus']],pf.gut)
+  +nutSel('sweat','Transpiration',[['low','Je transpire peu'],['mid','Normale'],['high','Je transpire beaucoup']],pf.sweat)
+  +nutSel('salty','Sel dans la sueur',[['low','Peu, pas de traces'],['mid','Normal'],['high','Traces blanches sur la casquette']],pf.salty)
+  +nutSel('cafHabit','Caféine',[['none','Je n’en prends pas'],['low','Sensible'],['mid','Modérée'],['high','Habitué, je bois du café chaque jour']],pf.cafHabit)
+  +'<label class="fld"><span>Cible de glucides (g/h), facultatif</span><input type="number" inputmode="numeric" min="20" max="120" data-p="carbsH" value="'+esc(pf.carbsH)+'" placeholder="calculée"></label></div>'
+  +'<p class="hint" style="margin:6px 0 0">Repères utilisés : 30 à 60 g/h de glucides jusqu’à 2 h 30, 60 à 90 g/h au-delà si ton ventre y est entraîné (mélange glucose et fructose), 40 à 80 g/h en ultra ; 450 à 750 ml/h d’eau selon la chaleur ; 450 à 950 mg de sodium par litre bu ; caféine 2 à 4 mg/kg en seconde partie de course (moitié avant le départ sous 2 h 30), jamais plus de 6 mg/kg ; pas de sel nécessaire sous 2 h. Une cible de glucides saisie ici remplace le calcul. À tester à l’entraînement : ce n’est pas un avis médical.</p>'
   +'<div class="row"><button class="btn" data-act="save-profile">Enregistrer dans mon compte</button></div>'
   +'<p class="note" id="profstat">'+esc(profStatText())+'</p></section>'
   +'<section class="sec"><h2>Zones de fréquence cardiaque</h2>'+hr+'</section>'
@@ -2481,7 +2546,7 @@ function renderPrefs(){
   +[['auto','Automatique'],['light','Clair'],['dark','Sombre']].map(o=>'<button data-act="set-theme" data-v="'+o[0]+'" aria-pressed="'+(p.theme===o[0])+'" style="font-size:16px">'+o[1]+'</button>').join('')+'</div>'
   +'<p class="note">« Automatique » suit le réglage clair ou sombre de ton téléphone.</p></section>'
   +'<section class="sec"><h2>Nouvelle course</h2><p class="note">Valeurs proposées quand tu crées un plan. Tu peux les modifier course par course. Si tu as une cible de glucides dans ton profil coureur, elle passe avant celle-ci.</p>'
-  +'<div class="grid2">'+fld('Arrêt moyen par ravito (min)','defStop')+fld('Glucides (g/h)','defCarbs')+fld('Eau (ml/h)','defWater')+fld('Un gel (g)','defGel')+'</div></section>';
+  +'<div class="grid2">'+fld('Arrêt moyen par ravito (min)','defStop')+fld('Un gel (g)','defGel')+'</div></section>';
 }
 // ---------- bêta : avis, infos techniques, mentions ----------
 function techInfo(){
@@ -3662,29 +3727,37 @@ function pantryChange(t){
   pantrySet(list);
 }
 // ---------- nutrition calculée à partir du placard ----------
-// Pour chaque tronçon : boissons (une portion par 500 ml d'eau prévus), puis gels et barres selon la part en gels,
-// puis pastilles de sel si le sodium manque. Le stock est décompté sur toute la course ; la caféine attend
-// 4 h d'effort (milieu du tronçon) ; à égalité, le produit le moins utilisé sur le tronçon passe en premier (variété).
+// Pour chaque tronçon : boissons (une portion par flasque d'eau prévue, 500 ml si le volume n'est pas donné, dans la limite des glucides), puis gels et barres
+// selon la part en gels, puis sel (pastilles, gélules, électrolytes sans glucides) tant que le sodium manque.
+// Chaque produit compte avec tout ce que sa fiche donne : glucides, sodium, caféine, protéines. Le stock est décompté sur
+// toute la course. Caféine : seulement sur les tronçons où le calcul en prévoit, et sans dépasser la dose du tronçon
+// (un produit passe si au moins la moitié de sa dose est encore prévue) ; dose inconnue comptée 50 mg.
+// Après 3 h en ultra, les produits avec des protéines passent devant. À égalité, le moins utilisé sur le tronçon (variété).
 // Ultra (6 h et plus) : passé 2 h, on alterne sucré et salé quand le placard a du salé (lassitude du sucré).
 // Le coureur peut remplacer les gels et barres d'un tronçon (r.kitSet) ; boissons et sel restent calculés.
 // Caféine : une dose connue, ou « caféine » dans le nom quand la marque ne publie pas la dose
 function ptHasCaf(x){return +x.caf>0||(x.caf==null&&/caf[ée]in/i.test(x.name||''));}
+function ptCafOf(x){return +x.caf>0?+x.caf:(ptHasCaf(x)?50:0);}
 function pantryActive(r){return isRunner()&&!isMember(r)&&pantryItems().some(x=>(x.qty|0)>0&&+x.carbs>0);}
-const CAF_MIN=240,ULTRA_MIN=360,SALTY_MIN=120;
+const ULTRA_MIN=360,SALTY_MIN=120;
 function ptSalty(x){return /sal[ée]|salt|cacahu|peanut|fromage|cheese|bretzel|pretzel|tomate|olive|chips|cracker|bouillon|soupe|pur[ée]e/i.test((x&&x.name)||'');}
 function pantryPlan(r,segs){
   const all=pantryItems(),stock=all.filter(x=>(x.qty|0)>0).map(x=>({x:x,left:x.qty|0}));
   const total=segs.reduce((a,s)=>a+Math.max(0,s.dur),0),share=Math.max(0,Math.min(100,nutr(r,'gelShare')))/100,ultra=total>=ULTRA_MIN,sets=r.kitSet||{};
   let t=0,lastSalty=false;
   return segs.map(sg=>{
-    const mid=t+Math.max(0,sg.dur)/2,cafOk=mid>=CAF_MIN,alt=ultra&&mid>=SALTY_MIN;t+=Math.max(0,sg.dur);
-    const pick=[];let carbs=0,sodium=0;
+    const mid=t+Math.max(0,sg.dur)/2,alt=ultra&&mid>=SALTY_MIN,N=sg.needs,cafOk=N.caf>0;t+=Math.max(0,sg.dur);
+    const pick=[];let carbs=0,sodium=0,caf=0,prot=0;
     const used=s=>{const e=pick.find(p=>p.s===s);return e?e.n:0;};
-    const take=s=>{s.left--;const e=pick.find(p=>p.s===s);if(e)e.n++;else pick.push({s:s,n:1});carbs+=+s.x.carbs||0;sodium+=+s.x.sodium||0;if(s.x.cat!=='hydra')lastSalty=ptSalty(s.x);};
+    const take=s=>{s.left--;const e=pick.find(p=>p.s===s);if(e)e.n++;else pick.push({s:s,n:1});carbs+=+s.x.carbs||0;sodium+=+s.x.sodium||0;caf+=ptCafOf(s.x);prot+=+ptK(s.x,'protein')||0;if(s.x.cat!=='hydra')lastSalty=ptSalty(s.x);};
     const turn=s=>alt&&ptSalty(s.x)===lastSalty?1:0;
-    const best=cands=>cands.sort((a,b)=>(turn(a)-turn(b))||(used(a)-used(b))||(b.left-a.left))[0];
-    const pool=(cat,carb)=>stock.filter(s=>s.left>0&&s.x.cat===cat&&(carb?+s.x.carbs>0:!(+s.x.carbs>0))&&(cafOk||!ptHasCaf(s.x)));
-    for(let n=Math.floor((sg.needs.water||0)/500);n>0;n--){const s=best(pool('hydra',true));if(!s)break;take(s);}
+    const cafFits=s=>{const d=ptCafOf(s.x);return !d||(N.caf-caf)>=d/2;};
+    const wantCaf=s=>ptCafOf(s.x)>0?0:1,wantProt=s=>N.prot>prot&&+ptK(s.x,'protein')>0?0:1;
+    const best=cands=>cands.sort((a,b)=>(wantCaf(a)-wantCaf(b))||(turn(a)-turn(b))||(wantProt(a)-wantProt(b))||(used(a)-used(b))||(b.left-a.left))[0];
+    const pool=(cat,carb)=>stock.filter(s=>s.left>0&&s.x.cat===cat&&(carb?+s.x.carbs>0:!(+s.x.carbs>0))&&cafFits(s));
+    const vol=x=>+x.ml>0?+x.ml:500;
+    // boissons sucrées : une par flasque, sans dépasser les glucides du tronçon (le reste de l'eau se boit nature)
+    for(let w=0,g=0;g<20;g++){const s=best(pool('hydra',true));if(!s||(N.water||0)-w<vol(s.x)/2||N.carbs-carbs<(+s.x.carbs)/2)break;take(s);w+=vol(s.x);}
     const set=Array.isArray(sets[sg.fromId])?sets[sg.fromId]:null;
     // arrondi au plus proche : on ajoute un produit seulement si ce qui reste à couvrir dépasse la moitié de ce qu'il apporte
     // un « manque » n'est signalé que si le stock est vide alors qu'il reste plus de 10 g à couvrir (pas pour un simple arrondi)
@@ -3695,14 +3768,16 @@ function pantryPlan(r,segs){
       empty=sg.needs.carbs-carbs>10;
     }else{
       const fill=(cat,target)=>{const c0=carbs;let g=0;while(g++<80){const s=best(pool(cat,true));if(!s){if(target-(carbs-c0)>10)empty=true;break;}if(target-(carbs-c0)<=(+s.x.carbs)/2)break;take(s);}return carbs-c0;};
-      const rest=Math.max(0,sg.needs.carbs-carbs),gg=fill('gel',rest*share);
+      // caféine prévue sur le tronçon : les gels d'abord (c'est là qu'elle se trouve le plus souvent)
+      const rest=Math.max(0,sg.needs.carbs-carbs),gg=fill('gel',N.caf-caf>=25?rest:rest*share);
       fill('barre',rest-gg);
       empty=false;
       fill('gel',sg.needs.carbs-carbs);
       if(empty){empty=false;fill('barre',sg.needs.carbs-carbs);}
     }
-    for(let g=0;sg.needs.sodium-sodium>150&&g<20;g++){const s=best(pool('hydra',false).filter(z=>+z.x.sodium>0));if(!s)break;take(s);}
-    return {items:pick.map(p=>({x:p.s.x,n:p.n})),carbs:Math.round(carbs),sodium:Math.round(sodium),miss:empty?Math.max(0,Math.round(sg.needs.carbs-carbs)):0,cafOk:cafOk,alt:alt,set:!!set};
+    // sel : on ajoute tant que ce qui manque dépasse la moitié de ce que le produit apporte
+    for(let g=0;g<20;g++){const s=best(pool('hydra',false).filter(z=>+z.x.sodium>0));if(!s||N.sodium-sodium<(+s.x.sodium)/2)break;take(s);}
+    return {items:pick.map(p=>({x:p.s.x,n:p.n})),carbs:Math.round(carbs),sodium:Math.round(sodium),caf:Math.round(caf),prot:Math.round(prot),miss:empty?Math.max(0,Math.round(sg.needs.carbs-carbs)):0,cafOk:cafOk,alt:alt,set:!!set};
   });
 }
 function kitFood(k){return k.items.filter(i=>i.x.cat!=='hydra');}
@@ -3715,7 +3790,7 @@ function kitChoices(k,cur){
 function kitOptions(k,cur){
   const L=kitChoices(k,cur),o=x=>'<option value="'+esc(x.id)+'"'+(x.id===cur?' selected':'')+'>'+esc(x.name+(x.brandName?' · '+x.brandName:''))+(k.alt&&ptSalty(x)?' (salé)':'')+'</option>';
   const ok=L.filter(x=>kitOk(k,x)),no=L.filter(x=>!kitOk(k,x));
-  return '<optgroup label="Conseillés pour ce tronçon">'+ok.map(o).join('')+'</optgroup>'+(no.length?'<optgroup label="Caféine : plutôt après 4 h d’effort">'+no.map(o).join('')+'</optgroup>':'');
+  return '<optgroup label="Conseillés pour ce tronçon">'+ok.map(o).join('')+'</optgroup>'+(no.length?'<optgroup label="Caféine : pas prévue sur ce tronçon">'+no.map(o).join('')+'</optgroup>':'');
 }
 function kitEditor(sg,k){
   const id=esc(sg.fromId),food=kitFood(k),drinks=k.items.filter(i=>i.x.cat==='hydra');
@@ -3727,7 +3802,7 @@ function kitEditor(sg,k){
       :'<p class="note">Aucun gel ni barre prévu sur ce tronçon.</p>')
     +'<div class="row kit-act"><button type="button" class="btn quiet small" data-act="kit-add" data-id="'+id+'">Ajouter un gel</button>'
     +(k.set?'<button type="button" class="linkbtn" data-act="kit-reset" data-id="'+id+'">Revenir à la suggestion</button>':'')+'</div>'
-    +'<p class="note">'+k.carbs+' g sur '+sg.needs.carbs+' g de glucides'+(k.miss?' · <span class="warn">manque '+k.miss+' g</span>':'')+(k.set?' · choisi par toi':'')+'</p>'
+    +'<p class="note">'+k.carbs+' g sur '+sg.needs.carbs+' g de glucides'+(k.miss?' · <span class="warn">manque '+k.miss+' g</span>':'')+(k.caf?' · '+k.caf+' mg de caféine':'')+(k.set?' · choisi par toi':'')+'</p>'
     +(drinks.length?'<p class="as-kit">À boire : <b>'+esc(kitText({items:drinks}))+'</b></p>':'')+'</div>';
 }
 function kitFor(r,id){
@@ -3752,8 +3827,13 @@ function pantryKcal(kits,segs){
 }
 function pantrySummary(kits,segs){
   const miss=kits.reduce((a,k)=>a+k.miss,0),en=pantryKcal(kits,segs||[]);
-  if(!miss)return '<div class="card pt-plan ok"><b>Ton placard couvre toute la course.</b> <button class="linkbtn" data-tab="pantry">Mon placard</button>'+en+'</div>';
-  return '<div class="card pt-plan"><b>Il manque environ '+nf(miss)+' g de glucides dans ton placard</b>, soit à peu près '+Math.ceil(miss/25)+(Math.ceil(miss/25)>1?' gels':' gel')+' de 25 g. <button class="linkbtn" data-tab="pantry">Compléter mon placard</button>'+en+'</div>';
+  // sodium : signalé quand le placard en couvre moins des trois quarts
+  const sNeed=(segs||[]).reduce((a,s)=>a+(s.needs.sodium||0),0),sGot=kits.reduce((a,k)=>a+k.sodium,0);
+  const sod=sNeed>0&&sGot<sNeed*0.75?'<p class="pt-kcal">Sodium : '+nf(sGot)+' mg sur '+nf(sNeed)+' mg prévus. Ajoute des pastilles ou des gélules de sel à ton placard.</p>':'';
+  const cNeed=(segs||[]).reduce((a,s)=>a+(s.needs.caf||0),0),cGot=kits.reduce((a,k)=>a+(k.caf||0),0);
+  const cf=cNeed>0?'<p class="pt-kcal">Caféine : '+nf(cGot)+' mg sur '+nf(cNeed)+' mg prévus'+(cGot<cNeed*0.5?', ajoute des gels caféinés à ton placard':'')+'.</p>':'';
+  if(!miss)return '<div class="card pt-plan ok"><b>Ton placard couvre les glucides de toute la course.</b> <button class="linkbtn" data-tab="pantry">Mon placard</button>'+en+sod+cf+'</div>';
+  return '<div class="card pt-plan"><b>Il manque environ '+nf(miss)+' g de glucides dans ton placard</b>, soit à peu près '+Math.ceil(miss/25)+(Math.ceil(miss/25)>1?' gels':' gel')+' de 25 g. <button class="linkbtn" data-tab="pantry">Compléter mon placard</button>'+en+sod+cf+'</div>';
 }
 function renderHome(){
   const pf=state.profile||defaultProfile(),r=state.race,has=profileHasData(pf),tot=r?planTotals(r):null;
@@ -3842,22 +3922,36 @@ function secStations(r,m,tl){
   +'<div class="stn-times"><span>Arrivée '+clk(fin.adjArr)+'</span>'+(fin.margin!=null?'<span class="'+mcls(fin.margin)+'">Marge '+mfmt(fin.margin)+'</span>':'')+'</div></li></ul>'
   +'<button class="btn" data-act="add-station">Ajouter un ravitaillement</button></section>';
 }
+// Repères du plan : les taux utilisés, d'où ils viennent, et ce que le profil coureur pourrait affiner
+function nutBasis(r,R,total){
+  if(isMember(r))return '';
+  const P=nutProfile(),man=NUT_AUTO.filter(k=>R.man[k]),tp=raceTemp(r);
+  const why=['course de '+fmtDur(total),tp==null?'15 °C par défaut':tp+' °C prévus'];
+  if(P.w)why.push(nf(P.w)+' kg');
+  const caf=R.caf?R.caf+' mg de caféine pendant la course'+(P.w?' ('+String(Math.round(R.caf/P.w*10)/10).replace('.',',')+' mg/kg)':'')+(total<150?', le reste avant le départ':', en seconde partie'):'pas de caféine';
+  return '<div class="card nut-basis"><p><b>'+R.carbs+' g/h</b> de glucides · <b>'+nf(R.water)+' ml/h</b> d’eau · '+(R.sodium?'<b>'+nf(R.sodium)+' mg/h</b> de sodium':'pas de sel nécessaire')+' · '+caf+(R.prot?' · protéines conseillées après 3 h ('+R.prot+' g/h)':'')+'.</p>'
+    +'<p class="note">'+(man.length?'Réglé à la main : '+man.map(k=>({carbs:'glucides',water:'eau',sodium:'sodium'})[k]).join(', ')+'. <button class="linkbtn" data-act="nut-auto">Revenir au calcul</button>':'Calculé pour toi : '+why.join(', ')+(carbsTarget()?', ta cible de glucides':'')+'.')
+    +(P.w?'':' <button class="linkbtn" data-tab="runner">Renseigne ton poids et ta digestion</button> pour affiner.')+'</p></div>';
+}
 function secNutrition(r,m,tl){
-  const segs=assistSegments(r,m,tl),kits=pantryActive(r)?pantryPlan(r,segs):null;
+  const segs=assistSegments(r,m,tl),kits=pantryActive(r)?pantryPlan(r,segs):null,total=segs.length?segs[0].total:planMinutes(r),R=segs.length?segs[0].rates:nutRates(r,total);
   const segRows=segs.map((sg,i)=>{
     const n=sg.needs,k=kits&&kits[i];
     const carbTxt=k?'<span class="pt-kit">'+esc(kitText(k))+'</span><small>'+k.carbs+' g sur '+n.carbs+' g de glucides'+(k.miss?' · <span class="warn">manque '+k.miss+' g</span>':'')+'</small>'
       :n.gels+' gel'+(n.gels>1?'s':'')+' + '+n.bars+' barre'+(n.bars>1?'s':'')+'<small>'+n.carbs+' g de glucides</small>';
-    return '<tr><td>'+esc(sg.from)+' – '+esc(sg.to)+'<small>'+km1(sg.km)+' km, +'+sg.up+' m'+(sg.via.length?'. Sans assistance : '+sg.via.map(esc).join(', '):'')+'</small></td><td>'+fmtDur(sg.dur)+'</td><td>'+carbTxt+'</td><td>'+nf(n.water)+' ml<small>'+n.sodium+' mg de sodium</small></td></tr>';
+    const sod=k&&n.sodium?k.sodium+' sur '+n.sodium+' mg de sodium':(k?k.sodium:n.sodium)+' mg de sodium',cf=k?(k.caf?k.caf+' mg de caféine':''):(n.caf?n.caf+' mg de caféine':'');
+    return '<tr><td>'+esc(sg.from)+' – '+esc(sg.to)+'<small>'+km1(sg.km)+' km, +'+sg.up+' m'+(sg.via.length?'. Sans assistance : '+sg.via.map(esc).join(', '):'')+'</small></td><td>'+fmtDur(sg.dur)+'</td><td>'+carbTxt+'</td><td>'+nf(n.water)+' ml<small>'+sod+(cf?' · '+cf:'')+'</small></td></tr>';
   }).join('');
-  return '<section class="sec-panel" id="sec-nutrition">'+carbsHint(r)+(kits?pantrySummary(kits,segs):(isRunner()&&!isMember(r)?'<p class="pt-hint"><button class="linkbtn" data-tab="pantry">Utiliser les produits de mon placard</button></p>':''))
-  +'<div class="grid3"><label class="fld"><span>Glucides (g/h)</span><input type="number" inputmode="numeric" min="0" data-r="carbs" data-num value="'+r.carbs+'"></label>'
-  +'<label class="fld"><span>Eau (ml/h)</span><input type="number" inputmode="numeric" min="0" step="50" data-r="water" data-num value="'+r.water+'"></label>'
-  +'<label class="fld"><span>Sodium (mg/h)</span><input type="number" inputmode="numeric" min="0" step="50" data-r="sodium" data-num value="'+nutr(r,'sodium')+'"></label>'
+  const tv=raceTemp(r);
+  return '<section class="sec-panel" id="sec-nutrition">'+carbsHint(r,R)+nutBasis(r,R,total)+(kits?pantrySummary(kits,segs):(isRunner()&&!isMember(r)?'<p class="pt-hint"><button class="linkbtn" data-tab="pantry">Utiliser les produits de mon placard</button></p>':''))
+  +'<div class="grid3"><label class="fld"><span>Glucides (g/h)</span><input type="number" inputmode="numeric" min="0" data-r="carbs" data-num value="'+R.carbs+'"></label>'
+  +'<label class="fld"><span>Eau (ml/h)</span><input type="number" inputmode="numeric" min="0" step="50" data-r="water" data-num value="'+R.water+'"></label>'
+  +'<label class="fld"><span>Sodium (mg/h)</span><input type="number" inputmode="numeric" min="0" step="50" data-r="sodium" data-num value="'+R.sodium+'"></label>'
+  +'<label class="fld"><span>Température prévue (°C)</span><input type="number" inputmode="numeric" min="-30" max="50" data-r="temp" value="'+(tv==null?'':tv)+'" placeholder="15"></label>'
   +'<label class="fld"><span>Un gel (g)</span><input type="number" inputmode="numeric" min="0" data-r="gelG" data-num value="'+r.gelG+'"></label>'
   +'<label class="fld"><span>Une barre (g)</span><input type="number" inputmode="numeric" min="0" data-r="barG" data-num value="'+nutr(r,'barG')+'"></label>'
   +'<label class="fld"><span>Part en gels (%)</span><input type="number" inputmode="numeric" min="0" max="100" data-r="gelShare" data-num value="'+nutr(r,'gelShare')+'"></label></div>'
-  +'<div class="tblwrap" style="margin-top:16px"><table><thead><tr><th>Tronçon</th><th>Durée</th><th>'+(kits?'Depuis ton placard':'Gels et barres')+'</th><th>Eau et sel</th></tr></thead><tbody>'+segRows+'</tbody></table></div></section>';
+  +'<div class="tblwrap" style="margin-top:16px"><table><thead><tr><th>Tronçon</th><th>Durée</th><th>'+(kits?'Depuis ton placard':'Gels et barres')+'</th><th>Eau, sel, caféine</th></tr></thead><tbody>'+segRows+'</tbody></table></div></section>';
 }
 function planSeg(sec){
   return '<div class="seg" role="tablist" aria-label="Sections du plan"><span class="seg-ind" id="segind" aria-hidden="true"></span>'
@@ -4593,11 +4687,15 @@ function act(b){
     if(!rr||!est){flash('Renseigne ta performance de référence.');return;}
     rr.target=fmtHM(est.total);commit();flash('Temps visé mis à jour : '+rr.target+'.');return;
   }
+  if(a==='nut-auto'){
+    const rr=state.race;if(!rr||isMember(rr))return;
+    rr.nutMan={};commit();flash('Glucides, eau et sodium recalculés pour ton profil.');return;
+  }
   if(a==='apply-carbs'){
     const rr=state.race,t=carbsTarget();
     if(!rr||!t){flash('Renseigne ta cible de glucides dans ton profil coureur.');return;}
     if(rr.sync&&rr.sync.role==='member')return;
-    rr.carbs=t;commit();flash('Cible appliquée : '+t+' g/h.');return;
+    rr.nutMan=rr.nutMan||{};delete rr.nutMan.carbs;rr.carbs=t;commit();flash('Cible appliquée : '+t+' g/h.');return;
   }
   if(a==='sync-test'){flash('Test de connexion…');getToken().then(()=>flash('Connexion Firebase OK.')).catch(e=>flash(fbErr(e)));return;}
   if(a==='del-journal'){state.journal=(state.journal||[]).filter(x=>x.id!==b.dataset.id);state.journalDel=(state.journalDel||[]).concat(String(b.dataset.id)).slice(-200);commit();return;}
@@ -4857,6 +4955,8 @@ document.addEventListener('change',e=>{
     if(rf==='target'){v=fmtTyped(v,true);t.value=v;}
     if(rf==='trackUrl'){const u=cleanUrl(v);if(u===null){flash('Lien invalide : il doit commencer par https://');t.value=r.trackUrl||'';return;}v=u;t.value=u;}
     if(t.dataset.num!==undefined){v=parseFloat(v);if(isNaN(v)||v<0)v=0;}
+    if(rf==='temp'){v=parseFloat(String(t.value).replace(',','.'));v=isFinite(v)?Math.max(-30,Math.min(50,Math.round(v))):'';t.value=v;}
+    if(NUT_AUTO.includes(rf)){r.nutMan=r.nutMan||{};r.nutMan[rf]=1;}
     if(rf==='crewMargin'){v=Math.max(0,Math.min(60,Math.round(v)));t.value=v;}
     r[rf]=v;
     if(rf==='finishBarrier')r.finishBarrierAuto=!v;
