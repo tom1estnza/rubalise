@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-JvoELQhnt8b1ANQLsxgD/bIbyQWa9YFBivEPRZEsez4=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-mwMb0EAUL7a1EmzHasaNyQH9S+h7GyrXvRY1J72Rs/M=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -186,6 +186,8 @@ a.btn{text-decoration:none}
 .pt-sh-tab{width:100%;border-collapse:collapse;font-size:15px}
 .pt-sh-tab thead th{text-align:left;font-size:13px;color:var(--ink2);font-weight:600;padding:0 0 6px;border-bottom:2px solid var(--ink)}
 .pt-sh-tab tbody th{text-align:left;font-weight:500;padding:8px 0;border-bottom:1px solid var(--line)}
+.pt-sh-tab tr.sub th{padding-left:14px;color:var(--ink2);font-size:14px}
+.pt-sh-tab tr.sub td{font-weight:500;font-size:14px}
 .pt-sh-tab td{text-align:right;padding:8px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;font-weight:600}
 .pt-na{color:var(--ink2);font-weight:400;font-style:italic}
 .pt-sh-act{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:14px 0 4px}
@@ -3561,7 +3563,9 @@ function ptSheetHTML(){
   const val=k=>k==='carbs'||k==='sodium'||k==='caf'?o[k]:ptK(o,k);
   const ml=(p&&p.ml)||o.ml;
   const caf=val('caf');
-  const rows=[['Glucides',val('carbs'),'g'],['Sodium',val('sodium'),'mg'],['Caféine',caf,'mg'],['Calories',val('kcal'),'kcal'],['Lipides',val('fat'),'g'],['Protéines',val('protein'),'g'],['Fibres',val('fiber'),'g']];
+  // 4e case : ligne « dont … » rattachée à la précédente
+  const rows=[['Glucides',val('carbs'),'g'],['dont sucres',val('sugars'),'g',1],['Sodium',val('sodium'),'mg'],['Électrolytes',val('elec'),'mg'],['Caféine',caf,'mg'],['Calories',val('kcal'),'kcal'],['Lipides',val('fat'),'g'],['dont acides gras saturés',val('satfat'),'g',1],['Protéines',val('protein'),'g'],['Fibres',val('fiber'),'g'],['Sel',val('salt'),'g'],
+    ['Potassium',val('potassium'),'mg'],['Calcium',val('calcium'),'mg'],['Fer',val('iron'),'mg'],['BCAA',val('bcaa'),'mg'],['Vitamine C',val('vitc'),'mg'],['Vitamine B6',val('vitb6'),'mg'],['Vitamine B12',val('vitb12'),'µg'],['Extrait de sureau',val('elder'),'mg']];
   if(ml)rows.push(['Eau conseillée',ml,'ml']);
   const shown=rows.filter(r=>typeof r[1]==='number'&&r[1]>0);
   const fmt=(v,u)=>v==null?'<span class="pt-na">non publié</span>':typeof v==='string'?esc(v):esc(String(v).replace('.',','))+' '+u;
@@ -3570,7 +3574,7 @@ function ptSheetHTML(){
     +(img?'<div class="pt-sh-img"><img src="'+esc(img)+'" alt="'+esc(o.name)+'" width="160" height="200"></div>':'')
     +'<h2 id="ptsT">'+esc(o.name)+'</h2>'+((p&&p.unit)||o.unit?'<p class="pt-sh-unit">'+esc((p&&p.unit)||o.unit)+'</p>':'')
     +(shown.length?'<table class="pt-sh-tab"><caption class="sr">Valeurs pour une portion</caption><thead><tr><th scope="col">Pour une portion</th><th scope="col"></th></tr></thead><tbody>'
-    +shown.map(r=>'<tr><th scope="row">'+r[0]+'</th><td>'+fmt(r[1],r[2])+'</td></tr>').join('')+'</tbody></table>':'')
+    +shown.map(r=>'<tr'+(r[3]?' class="sub"':'')+'><th scope="row">'+r[0]+'</th><td>'+fmt(r[1],r[2])+'</td></tr>').join('')+'</tbody></table>':'')
     +'<div class="pt-sh-act">'+(x?'<span class="pt-sh-qty">Dans ton placard</span>'+ptStepper(x):(p?'<button class="btn primary" data-act="pt-add" data-id="'+esc(p.id)+'">Ajouter au placard</button>':''))
     +(src?'<a class="pt-link" href="'+esc(src)+'" target="_blank" rel="noopener noreferrer" aria-label="Recharger '+esc(o.name)+' sur le site de la marque">Recharger</a>':'')+'</div>'
     +(p?'<p class="pt-src">Valeurs relevées sur le site de la marque'+(ptCatalog().checked?' le '+esc(ptCatalog().checked.split('-').reverse().join('/')):'')+', complétées par Open Food Facts quand la marque ne les publie pas en texte.</p>':'');
