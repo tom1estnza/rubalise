@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-/FAqsMVXx1JWe0UUIXqroA9FKFwoRxyXNWreYELGcQs=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-a08sVS+XOXnIGFsJ7cyofqvSEzI2TyTlTGodRIQUbdY=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -3828,10 +3828,19 @@ function kitSetOf(r,id){
   const P=pantryItems();r.kitSet[id]=r.kitSet[id].filter(e=>P.some(x=>x.id===e.id));
   return r.kitSet[id];
 }
-// Produits d'un tronçon en liste (onglet Nutrition)
+// Produits d'un tronçon en liste (onglet Nutrition) ; les boissons sucrées vont dans la colonne des flasques
+function kitMix(i){return i.x.cat==='hydra'&&+i.x.carbs>0;}
 function kitList(k){
-  if(!k.items.length)return '<span class="pt-kit">rien dans ton placard</span>';
-  return '<ul class="pt-kit-list">'+k.items.map(i=>'<li><b>'+i.n+' ×</b> '+esc(i.x.name)+(i.x.brandName?' <small>'+esc(i.x.brandName)+'</small>':'')+'</li>').join('')+'</ul>';
+  const L=k.items.filter(i=>!kitMix(i));
+  if(!L.length)return '<span class="pt-kit">'+(k.items.length?'Seulement la boisson':'rien dans ton placard')+'</span>';
+  return '<ul class="pt-kit-list">'+L.map(i=>'<li><b>'+i.n+' ×</b> '+esc(i.x.name)+(i.x.brandName?' <small>'+esc(i.x.brandName)+'</small>':'')+'</li>').join('')+'</ul>';
+}
+// Contenu des flasques de 500 ml : une portion de boisson par flasque, le reste à l'eau
+function flaskList(k,water){
+  const fl=Math.round((water||0)/NUT_FLASK);if(!fl)return 'Pas de flasque';
+  const mix=k?k.items.filter(kitMix):[],nMix=mix.reduce((a,i)=>a+i.n,0),plain=Math.max(0,fl-nMix);
+  const li=(n,t,b)=>'<li><b>'+n+' ×</b> '+t+(b?' <small>'+esc(b)+'</small>':'')+'</li>';
+  return '<ul class="pt-kit-list">'+mix.map(i=>li(i.n,'flasque'+(i.n>1?'s':'')+' avec '+esc(i.x.name),i.x.brandName)).join('')+(plain?li(plain,'flasque'+(plain>1?'s':'')+' d’eau'):'')+'</ul>';
 }
 function kitText(k){return k.items.length?k.items.map(i=>i.n+' × '+i.x.name+(i.x.brandName?' ('+i.x.brandName+')':'')).join(', '):'rien dans ton placard';}
 // Énergie du plan : somme des calories connues, et par heure sur la durée des tronçons
@@ -3957,7 +3966,7 @@ function secNutrition(r,m,tl){
     const carbTxt=k?kitList(k)+'<small>'+k.carbs+' g sur '+n.carbs+' g de glucides'+(k.miss?' · <span class="warn">manque '+k.miss+' g</span>':'')+'</small>'
       :n.gels+' gel'+(n.gels>1?'s':'')+' + '+n.bars+' barre'+(n.bars>1?'s':'')+'<small>'+n.carbs+' g de glucides</small>';
     const sod=k&&n.sodium?k.sodium+' sur '+n.sodium+' mg de sodium':(k?k.sodium:n.sodium)+' mg de sodium',cf=k?(k.caf?k.caf+' mg de caféine':''):(n.caf?n.caf+' mg de caféine':'');
-    return '<tr><td>'+esc(sg.from)+' – '+esc(sg.to)+'<small>'+km1(sg.km)+' km, +'+sg.up+' m'+(sg.via.length?'. Sans assistance : '+sg.via.map(esc).join(', '):'')+'</small></td><td>'+fmtDur(sg.dur)+'</td><td>'+carbTxt+'</td><td>'+(n.water?n.water/NUT_FLASK+' flasque'+(n.water>NUT_FLASK?'s':'')+' de 500 ml':'Pas de flasque')+'<small>'+sod+(cf?' · '+cf:'')+'</small></td></tr>';
+    return '<tr><td>'+esc(sg.from)+' – '+esc(sg.to)+'<small>'+km1(sg.km)+' km, +'+sg.up+' m'+(sg.via.length?'. Sans assistance : '+sg.via.map(esc).join(', '):'')+'</small></td><td>'+fmtDur(sg.dur)+'</td><td>'+carbTxt+'</td><td>'+(k?flaskList(k,n.water):(n.water?n.water/NUT_FLASK+' flasque'+(n.water>NUT_FLASK?'s':'')+' de 500 ml':'Pas de flasque'))+'<small>'+sod+(cf?' · '+cf:'')+'</small></td></tr>';
   }).join('');
   const tv=raceTemp(r);
   return '<section class="sec-panel" id="sec-nutrition">'+carbsHint(r,R)+nutBasis(r,R,total)+(kits?pantrySummary(kits,segs):(isRunner()&&!isMember(r)?'<p class="pt-hint"><button class="linkbtn" data-tab="pantry">Utiliser les produits de mon placard</button></p>':''))
@@ -3968,7 +3977,7 @@ function secNutrition(r,m,tl){
   +'<label class="fld"><span>Un gel (g)</span><input type="number" inputmode="numeric" min="0" data-r="gelG" data-num value="'+r.gelG+'"></label>'
   +'<label class="fld"><span>Une barre (g)</span><input type="number" inputmode="numeric" min="0" data-r="barG" data-num value="'+nutr(r,'barG')+'"></label>'
   +'<label class="fld"><span>Part en gels (%)</span><input type="number" inputmode="numeric" min="0" max="100" data-r="gelShare" data-num value="'+nutr(r,'gelShare')+'"></label></div>'
-  +'<div class="tblwrap" style="margin-top:16px"><table><thead><tr><th>Tronçon</th><th>Durée</th><th>'+(kits?'Depuis ton placard':'Gels et barres')+'</th><th>Eau, sel, caféine</th></tr></thead><tbody>'+segRows+'</tbody></table></div></section>';
+  +'<div class="tblwrap" style="margin-top:16px"><table><thead><tr><th>Tronçon</th><th>Durée</th><th>'+(kits?'Depuis ton placard':'Gels et barres')+'</th><th>Flasques de 500 ml, sel, caféine</th></tr></thead><tbody>'+segRows+'</tbody></table></div></section>';
 }
 function planSeg(sec){
   return '<div class="seg" role="tablist" aria-label="Sections du plan"><span class="seg-ind" id="segind" aria-hidden="true"></span>'
