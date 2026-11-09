@@ -330,7 +330,7 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 ## Archiver une course (9 novembre 2026)
 
 - « Archiver dans le carnet » : la course part dans le carnet (temps, ressenti, ralentissement mesuré, lien `plan` vers le plan) et le plan n'est plus actif (`r.archived` = date). Il n'apparaît plus dans « Mes plans » ; le dernier plan actif s'ouvre à sa place. Le plan archivé reste dans le compte (synchronisé comme les autres) avec ses pointages et ses notes.
-- Carnet : chaque course liée à un plan a « Consulter » (lecture : résumé, passages prévus et réels, ressenti et notes) et « Modifier » (rouvre le plan, qui redevient actif). Archiver à nouveau remplace l'entrée du carnet ; une entrée d'avant cette version, sans lien, est remplacée si elle a le même nom et la même date.
+- Carnet : chaque course liée à un plan a « Consulter » (lecture : résumé, passages prévus et réels, ressenti et notes) et « Modifier ». « Modifier » ouvre une page à part, avec un bandeau « Course passée, archivée le … » : nom, date, temps visé, départ prévu et réel, heure de passage à chaque ravito, ressenti et notes. Rien n'est gardé avant « Enregistrer » ; la course reste archivée, le carnet est recalculé (temps réel, ralentissement mesuré). « Réutiliser ce plan pour une nouvelle course » le remet dans les plans actifs. Archiver à nouveau remplace l'entrée du carnet ; une entrée d'avant cette version, sans lien, est remplacée si elle a le même nom et la même date.
 - Supprimer une course du carnet supprime aussi son plan archivé (après confirmation).
 
 ## Estimation des temps : pente, fatigue et pointages (9 novembre 2026)

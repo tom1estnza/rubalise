@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-9hhapKUJRPb0EYb+rM9AbGSQjQAZ4ry40EEKVawpat0=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-SeRC9hCYLGM1uQkvTONdyrGVKWFkVSu/Fz2Z5nUuxeE=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -460,6 +460,19 @@ td small{display:block}
 .rating button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .journal{list-style:none;padding:0;margin:0}
 .jr-act{margin-top:8px;gap:8px}
+.je-banner{display:flex;gap:12px;align-items:flex-start;margin:4px 0 16px;padding:12px 14px;border-radius:12px;background:var(--fill);border-left:4px solid var(--ink2);color:var(--ink)}
+.je-banner svg{flex:none;margin-top:1px;color:var(--ink2)}
+.je-banner b{display:block;font-size:15px}
+.je-banner small{display:block;color:var(--ink2);font-size:14px;margin-top:2px}
+.je-full{grid-column:1/-1}
+.je-list{list-style:none;margin:0;padding:0}
+.je-pass{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.je-pt b{display:block}
+.je-pt small{color:var(--ink2)}
+.je-time .in{width:7.5em;min-height:44px}
+.je-foot{display:flex;justify-content:flex-end;gap:10px;margin:8px 0 6px;padding-top:14px;border-top:1px solid var(--line)}
+.je-foot .btn{min-height:44px}
+.je-reopen{margin:4px 0 24px;text-align:right}
 .jr-note{margin:4px 0 0;white-space:pre-wrap}
 .journal li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
 .code{font-family:ui-monospace,Menlo,monospace;font-size:12px;min-height:96px}
@@ -1390,7 +1403,7 @@ window.addEventListener('unhandledrejection',e=>errLogAdd((e.reason&&e.reason.me
 function prefv(k){return (state.prefs&&state.prefs[k]!=null)?state.prefs[k]:defaultPrefs()[k];}
 function applyTheme(){const t=state.prefs.theme,el=document.documentElement;if(t==='light'||t==='dark')el.setAttribute('data-theme',t);else el.removeAttribute('data-theme');}
 applyTheme();
-let jView=null,tab='plan',animateNext=true,importOpen=false,gpxPasteOpen=false,shareCode='',toastTimer=null,renderTimer=null;
+let jView=null,jEdit=null,tab='plan',animateNext=true,importOpen=false,gpxPasteOpen=false,shareCode='',toastTimer=null,renderTimer=null;
 
 // ---------- utilitaires ----------
 const root=document.getElementById('view');
@@ -4472,6 +4485,7 @@ function renderLive(){
   +'</div></section>';
 }
 function renderDiary(){
+  if(jEdit){const v=journalEdit(jEdit);if(v)return v;jEdit=null;}
   if(jView){const v=journalView(jView);if(v)return v;jView=null;}
   const r=state.race;if(!r)return needRace()+renderJournal();
   const m=model(r),tl=timeline(r,m,{}),plan=timeline(r,m,{plan:true});
@@ -4508,15 +4522,67 @@ function journalView(id){
   return '<section class="empty"><p style="margin:0 0 8px"><button class="linkbtn" data-act="jr-back" style="padding-left:0">‹ Carnet</button></p><h1>'+esc(r.name||'Course')+'</h1>'
     +'<p class="lead">'+esc(planInfoLine(r))+(r.archived?' · archivée le '+new Date(r.archived).toLocaleDateString('fr-FR'):'')+'</p>'
     +(act!=null?'<dl class="sum"><div><dt>Temps réel</dt><dd>'+fmtDur(act)+'</dd></div><div><dt>Objectif</dt><dd>'+fmtDur(m.target)+'</dd></div><div><dt>Écart</dt><dd class="'+(act-m.target>5?'warn':'ok')+'">'+dsign(act-m.target)+'</dd></div></dl>':'')
-    +'<div class="row">'+(r.archived?'<button class="btn" data-act="jr-edit" data-plan="'+esc(r.id)+'">Modifier ce plan</button>':'<button class="btn" data-act="plan-open" data-id="'+esc(r.id)+'">Ouvrir le plan</button>')+'</div></section>'
+    +'<div class="row">'+(r.archived?'<button class="btn" data-act="je-open" data-id="'+esc(e.id)+'">Modifier la course</button>':'<button class="btn" data-act="plan-open" data-id="'+esc(r.id)+'">Ouvrir le plan</button>')+'</div></section>'
     +'<section class="sec"><h2>Prévu et réel</h2><div class="tblwrap"><table><thead><tr><th>Point</th><th>Prévu</th><th>Réel</th><th>Écart</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
     +(e.fat!=null?'<p class="note">Ralentissement mesuré sur cette course : '+nf(e.fat)+' % entre le début et la fin. Il sert à tes prochains plans.</p>':'')+'</section>'
     +((d.rating||d.nutrition||d.gear||d.learn)?'<section class="sec"><h2>Ton ressenti</h2>'+(d.rating?'<p>'+d.rating+'/5</p>':'')+note('Ce que tu as vraiment mangé et bu',d.nutrition)+note('Matériel utilisé',d.gear)+note('Ce que tu referas ou changeras',d.learn)+'</section>':'');
 }
+// Modifier une course archivée : page à part, la course reste passée et archivée ; rien n'est gardé avant « Enregistrer »
+const ICON_ARCHIVE='<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/></svg>';
+function journalEdit(id){
+  const e=(state.journal||[]).find(x=>x.id===id),r=journalPlan(e);if(!e||!r||!r.archived)return '';
+  let m,tl;try{m=model(r);tl=timeline(r,m,{});}catch(err){return '';}
+  const d=r.diary||{},pts=r.points||{},hm=v=>v==null?'':fmtClock(v).s;
+  const fld=(l,html,full)=>'<label class="fld'+(full?' je-full':'')+'"><span>'+l+'</span>'+html+'</label>';
+  const tin=(k,v)=>'<input class="in" type="time" data-je="'+k+'" value="'+esc(v)+'">';
+  const pass=tl.rows.map(x=>'<li class="je-pass"><span class="je-pt"><b>'+esc(x.name)+'</b><small>km '+km1(x.km)+' · prévu '+clk(x.plannedArr)+'</small></span>'
+    +'<label class="je-time"><span class="sr">Passage réel à '+esc(x.name)+'</span>'+tin('p-'+x.id,hm(pts[x.id]))+'</label></li>').join('');
+  const rate=['Dur','Moyen','Bien','Très bien','Top'].map((t,i)=>'<button type="button" data-act="je-rate" data-v="'+(i+1)+'" aria-pressed="'+(d.rating===i+1)+'" aria-label="'+(i+1)+' sur 5, '+t+'">'+(i+1)+'</button>').join('');
+  return '<section class="empty"><p style="margin:0 0 8px"><button class="linkbtn" data-act="je-cancel" data-id="'+esc(id)+'" style="padding-left:0">‹ Retour à la course</button></p>'
+    +'<div class="je-banner" role="note">'+ICON_ARCHIVE+'<div><b>Course passée, archivée le '+new Date(r.archived).toLocaleDateString('fr-FR')+'</b><small>Tu modifies son carnet. Elle reste archivée et n’apparaît pas dans tes plans.</small></div></div>'
+    +'<h1>Modifier la course</h1><p class="lead">'+esc(r.name||'Course')+' · '+km1(m.tot)+' km</p></section>'
+    +'<section class="sec"><h2>La course</h2><div class="grid2">'
+    +fld('Nom','<input class="in" data-je="name" maxlength="80" value="'+esc(r.name||'')+'">',true)
+    +fld('Date','<input class="in" type="date" data-je="date" value="'+esc(r.date||'')+'">')
+    +fld('Temps visé (h:mm)','<input class="in" data-je="target" inputmode="numeric" maxlength="6" value="'+esc(r.target||'')+'">')
+    +fld('Départ prévu',tin('start',r.start||''))
+    +fld('Départ réel',tin('startAt',r.startAt!=null?hm(r.startAt):''))
+    +'</div></section>'
+    +'<section class="sec"><h2>Passages réels</h2><p class="hint">Heures où tu es passé à chaque ravito. Laisse vide un ravito non pointé.</p><ol class="je-list">'+pass+'</ol></section>'
+    +'<section class="sec"><h2>Ressenti et notes</h2><div class="rating" role="group" aria-label="Ressenti de 1 à 5">'+rate+'</div>'
+    +fld('Ce que tu as vraiment mangé et bu','<textarea class="in" data-je="nutrition">'+esc(d.nutrition||'')+'</textarea>')
+    +'<div style="margin-top:12px">'+fld('Matériel utilisé','<textarea class="in" data-je="gear">'+esc(d.gear||'')+'</textarea>')+'</div>'
+    +'<div style="margin-top:12px">'+fld('Ce que tu referas ou changeras','<textarea class="in" data-je="learn">'+esc(d.learn||'')+'</textarea>')+'</div></section>'
+    +'<div class="je-foot"><button class="btn quiet" data-act="je-cancel" data-id="'+esc(id)+'">Annuler</button><button class="btn primary" data-act="je-save" data-id="'+esc(id)+'">Enregistrer</button></div>'
+    +'<p class="je-reopen"><button class="linkbtn" data-act="jr-edit" data-plan="'+esc(r.id)+'">Réutiliser ce plan pour une nouvelle course</button></p>';
+}
+// Enregistre la page de modification dans le plan archivé, puis met à jour la course du carnet (nouvel identifiant : synchro)
+function journalSave(id){
+  const e=(state.journal||[]).find(x=>x.id===id),r=journalPlan(e);if(!e||!r)return false;
+  const q=k=>{const el=document.querySelector('[data-je="'+k+'"]');return el?String(el.value).trim():'';};
+  const bad=(k,msg)=>{flash(msg);const el=document.querySelector('[data-je="'+k+'"]');if(el)el.focus();return false;};
+  const tg=q('target'),tgm=parseHM(tg),st=q('start');
+  if(tg&&!tgm)return bad('target','Temps visé invalide : écris-le en h:mm, par exemple 14:00.');
+  if(st&&parseClock(st)==null)return bad('start','Heure de départ prévue invalide.');
+  r.name=q('name').slice(0,80)||r.name;r.date=/^\d{4}-\d{2}-\d{2}$/.test(q('date'))?q('date'):'';
+  if(tgm)r.target=fmtHM(tgm);if(st)r.start=st;
+  const m=model(r);let prev=m.startMin-360;
+  const toMin=v=>{let x=parseClock(v);if(x==null)return null;while(x<prev)x+=1440;prev=x;return x;};
+  const sa=q('startAt');r.startAt=sa?toMin(sa):null;if(r.startAt==null)prev=m.startMin-1;
+  const pts={};
+  for(const x of timeline(r,model(r),{plan:true}).rows){const v=q('p-'+x.id);if(!v)continue;const t=toMin(v);if(t==null)return bad('p-'+x.id,'Heure de passage invalide à '+x.name+'.');pts[x.id]=t;}
+  r.points=pts;
+  const rb=document.querySelector('[data-act="je-rate"][aria-pressed="true"]');
+  r.diary={rating:rb?+rb.dataset.v:0,nutrition:q('nutrition').slice(0,2000),gear:q('gear').slice(0,2000),learn:q('learn').slice(0,2000)};
+  const m2=model(r),tl=timeline(r,m2,{}),fin=tl.rows[tl.rows.length-1],sts=profileStats(m2.p),ff=fatigueFit(r);
+  const n=Object.assign({},e,{id:uid(),name:r.name,date:r.date,km:sts.km,up:sts.up,planned:m2.target,actual:fin.actual!=null?fin.actual-m2.start0:null,rating:r.diary.rating,learn:r.diary.learn.slice(0,160),fat:ff?ff.fat:null,dur:ff?ff.dur:null});
+  state.journal=(state.journal||[]).map(x=>x.id===id?n:x);state.journalDel=(state.journalDel||[]).concat(String(id)).slice(-200);
+  return n.id;
+}
 function renderJournal(){
   const j=state.journal||[];if(!j.length)return '';
   return '<section class="sec"><h2>Courses archivées</h2><ul class="journal">'+j.map(e=>'<li><div><b>'+esc(e.name)+'</b><br><small>'+(e.date?esc(e.date)+', ':'')+km1(e.km)+' km, +'+nf(e.up)+' m'+(e.actual!=null?', réel '+fmtDur(e.actual)+' pour un objectif de '+fmtDur(e.planned):', objectif '+fmtDur(e.planned))+(e.rating?', ressenti '+e.rating+'/5':'')+'</small>'+(e.learn?'<br><small>'+esc(e.learn)+'</small>':'')
-    +(journalPlan(e)?'<div class="row jr-act"><button class="btn quiet small" data-act="jr-view" data-id="'+esc(e.id)+'">Consulter</button>'+(journalPlan(e).archived?'<button class="btn quiet small" data-act="jr-edit" data-plan="'+esc(e.plan)+'">Modifier</button>':'')+'</div>':'')+'</div><button class="icon" data-act="del-journal" data-id="'+e.id+'" aria-label="Supprimer '+esc(e.name)+' du carnet">×</button></li>').join('')+'</ul></section>';
+    +(journalPlan(e)?'<div class="row jr-act"><button class="btn quiet small" data-act="jr-view" data-id="'+esc(e.id)+'">Consulter</button>'+(journalPlan(e).archived?'<button class="btn quiet small" data-act="je-open" data-id="'+esc(e.id)+'">Modifier</button>':'')+'</div>':'')+'</div><button class="icon" data-act="del-journal" data-id="'+e.id+'" aria-label="Supprimer '+esc(e.name)+' du carnet">×</button></li>').join('')+'</ul></section>';
 }
 
 // ---------- rendu ----------
@@ -4791,10 +4857,14 @@ function act(b){
     drop();commit();return;
   }
   if(a==='jr-view'){jView=b.dataset.id;commit();window.scrollTo(0,0);return;}
+  if(a==='je-open'){jEdit=b.dataset.id;jView=null;commit();window.scrollTo(0,0);return;}
+  if(a==='je-cancel'){jView=b.dataset.id;jEdit=null;commit();window.scrollTo(0,0);return;}
+  if(a==='je-rate'){const on=b.getAttribute('aria-pressed')!=='true';b.parentNode.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(on&&x===b)));return;}
+  if(a==='je-save'){const nid=journalSave(b.dataset.id);if(!nid)return;jEdit=null;jView=nid;commit();window.scrollTo(0,0);flash('Course mise à jour dans le carnet.');return;}
   if(a==='jr-back'){jView=null;commit();window.scrollTo(0,0);return;}
   if(a==='jr-edit'){
     const pl=(state.plans||[]).find(x=>x.id===b.dataset.plan);if(!pl){flash('Ce plan n’est plus sur cet appareil.');return;}
-    delete pl.archived;openPlan(pl.id);jView=null;flash('Plan rouvert : tu peux le modifier.');return;
+    delete pl.archived;openPlan(pl.id);jView=null;jEdit=null;flash('Plan rouvert dans tes plans actifs.');return;
   }
   if(!r)return;
   if(a==='share-live'){
@@ -4989,7 +5059,7 @@ document.addEventListener('click',e=>{
   }
   if(menuOpen&&!e.target.closest('#menu')&&!e.target.closest('#acct'))closeMenu();
   const tb=e.target.closest('[data-tab]');
-  if(tb){if(MAIN_TABS.indexOf(tab)>=0&&tb.dataset.tab!==tab)prevTab=tab;tab=tb.dataset.tab;jView=null;shareCode='';importOpen=false;gpxPasteOpen=false;clearTimeout(renderTimer);render(true);return;}
+  if(tb){if(MAIN_TABS.indexOf(tab)>=0&&tb.dataset.tab!==tab)prevTab=tab;tab=tb.dataset.tab;jView=null;jEdit=null;shareCode='';importOpen=false;gpxPasteOpen=false;clearTimeout(renderTimer);render(true);return;}
   const b=e.target.closest('button[data-act]');
   if(b)act(b);
 });
