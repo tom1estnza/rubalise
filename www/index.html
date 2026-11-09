@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-a08sVS+XOXnIGFsJ7cyofqvSEzI2TyTlTGodRIQUbdY=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-9hhapKUJRPb0EYb+rM9AbGSQjQAZ4ry40EEKVawpat0=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -459,6 +459,8 @@ td small{display:block}
 .rating button{flex:1;min-height:48px;border-radius:8px;border:1.5px solid var(--line);background:transparent;font:600 18px var(--f-num);cursor:pointer}
 .rating button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .journal{list-style:none;padding:0;margin:0}
+.jr-act{margin-top:8px;gap:8px}
+.jr-note{margin:4px 0 0;white-space:pre-wrap}
 .journal li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
 .code{font-family:ui-monospace,Menlo,monospace;font-size:12px;min-height:96px}
 
@@ -883,18 +885,51 @@ function fmtHM(min){const m=Math.round(min);return Math.floor(m/60)+':'+pad2(m%6
 function fmtDur(min){const m=Math.round(Math.max(0,min));return Math.floor(m/60)+'h'+pad2(m%60);}
 function fmtClock(min){const m=Math.round(min);const day=Math.floor(m/1440);const r=((m%1440)+1440)%1440;return {s:pad2(Math.floor(r/60))+':'+pad2(r%60),day};}
 function fmtPace(x){let m=Math.floor(x),s=Math.round((x-m)*60);if(s===60){m++;s=0;}return m+':'+pad2(s);}
+// ---------- fatigue : on ralentit au fil de la course ----------
+// Allure « équivalent plat » multipliée par 1 + d·x^1,5 (x = part du parcours), le temps visé restant le même :
+// on part un peu plus vite que la moyenne et on finit plus lentement. d dépend de la durée prévue : le ralentissement
+// grandit avec la durée, les coureurs les plus rapides en perdent moins (Renfree et al. 2014 sur 100 km : les plus
+// rapides finissent à moins de 15 % de leur vitesse de départ ; ralentissement progressif après ~50 km).
+// Repère : 2,5 points par heure au-delà de la première, au plus 40 % (marathon en 4 h ≈ 8 %, 100 km en 12 h ≈ 28 %).
+// Puis chaque coureur s'en rapproche avec ses courses archivées (ralentissement mesuré sur ses pointages).
+function fatigueDefault(min){return Math.max(0,Math.min(40,2.5*(min/60-1)));}
+function fatigueOf(race,target){
+  if(isMember(race))return isFinite(+race.fatigue)&&race.fatigue!==''&&race.fatigue!=null?Math.max(0,Math.min(60,+race.fatigue)):fatigueDefault(target);
+  const d0=fatigueDefault(target);
+  // courses archivées de plus de 3 h avec un ralentissement mesuré : écart du coureur au repère de sa durée (médiane)
+  const rs=(state.journal||[]).filter(x=>x.fat!=null&&isFinite(+x.fat)&&+x.dur>=180).map(x=>(+x.fat+5)/(fatigueDefault(+x.dur)+5)).sort((a,b)=>a-b);
+  if(!rs.length)return d0;
+  const med=rs[Math.floor(rs.length/2)],w=rs.length/(rs.length+2);
+  return Math.max(0,Math.min(60,(d0+5)*(1+w*(med-1))-5));
+}
+// Ralentissement réel d'une course terminée : le d qui colle le mieux aux heures pointées (arrêts déduits)
+function fatigueFit(race){
+  const m=model(race),stop=Math.max(0,+race.stopMin||0),pts=race.points||{},fin=pts.finish;
+  if(fin==null)return null;
+  const seq=m.stations,obs=[];
+  seq.forEach((s,i)=>{if(pts[s.id]!=null)obs.push({km:s.km,t:pts[s.id]-m.start0-i*stop});});
+  const totT=fin-m.start0-seq.length*stop;
+  if(!obs.length||totT<60)return null;
+  let best=null;
+  for(let d=0;d<=80;d+=2){
+    const U=unitCum(m.p,d),Ut=U[U.length-1];let e=0;
+    obs.forEach(o=>{const x=interp(m.p.d,U,o.km)/Ut-o.t/totT;e+=x*x;});
+    if(!best||e<best.e)best={d:d,e:e};
+  }
+  return {fat:best.d,dur:Math.round(fin-m.start0)};
+}
 function model(race){
   const p=race.profile,tot=p.d[p.d.length-1];
-  const U=unitCum(p,0);
+  const target=parseHM(race.target)||0,fatigue=fatigueOf(race,target);
+  const U=unitCum(p,fatigue);
   const stations=race.stations.slice().sort((a,b)=>a.km-b.km).filter(s=>s.km>0&&s.km<tot);
-  const target=parseHM(race.target)||0;
   const stopsTotal=stations.length*(+race.stopMin||0);
   const moving=Math.max(1,target-stopsTotal);
   const basePace=moving/U[U.length-1];
   const M=km=>interp(p.d,U,km)*basePace;
   const startMin=parseClock(race.start)||0;
   const start0=(race.startAt!=null&&isFinite(+race.startAt))?+race.startAt:startMin;
-  return {p,tot,U,stations,target,basePace,M,moving,stopsTotal,startMin,start0};
+  return {p,tot,U,stations,target,basePace,M,moving,stopsTotal,startMin,start0,fatigue};
 }
 function timeline(race,m,opts){
   opts=opts||{};
@@ -902,7 +937,7 @@ function timeline(race,m,opts){
   const pts=opts.plan?{}:(race.points||{});
   const fx=opts.plan?null:race.fix;
   const stop=Math.max(0,+race.stopMin||0);
-  const s0=opts.plan?m.startMin:m.start0;
+  const s0=m.start0;   // départ réel s'il est donné, sinon l'heure prévue
   const seq=m.stations.map(s=>({id:s.id,name:s.name||'Ravito',km:s.km,stop:stop,st:s,isFinish:false}))
     .concat([{id:'finish',name:'Arrivée',km:m.tot,stop:0,st:null,isFinish:true}]);
   let ref=-1;seq.forEach((s,i)=>{if(pts[s.id]!=null)ref=i;});
@@ -940,7 +975,7 @@ function timeline(race,m,opts){
   }
   const stopsBetween=km=>{let c=0;for(const s of seq){if(!s.isFinish&&s.km>dref&&s.km<km)c++;}return c*stop;};
   const T=km=>Dref+(m.M(km)-Mref)*f*mult+stopsBetween(km);
-  const Tplan=km=>{let c=0;for(const s of seq){if(!s.isFinish&&s.km<km)c++;}return m.startMin+m.M(km)+c*stop;};
+  const Tplan=km=>{let c=0;for(const s of seq){if(!s.isFinish&&s.km<km)c++;}return m.start0+m.M(km)+c*stop;};
   const rows=seq.map((s,i)=>{
     const plannedArr=Tplan(s.km);
     const actual=pts[s.id]!=null?pts[s.id]:null;
@@ -962,7 +997,7 @@ function timeline(race,m,opts){
 }
 function legs(race,m){
   const tl=timeline(race,m,{plan:true}),out=[];
-  let pk=0,pd=m.startMin,pn='Départ';
+  let pk=0,pd=m.start0,pn='Départ';
   tl.rows.forEach(r=>{out.push(Object.assign({from:pn,to:r.name,km0:pk,km1:r.km,km:r.km-pk,dur:r.adjArr-pd},legStats(m.p,pk,r.km)));pk=r.km;pd=r.dep;pn=r.name;});
   return out;
 }
@@ -1017,7 +1052,7 @@ function nutRates(r,totalMin){
   NUT_AUTO.forEach(k=>{if(man[k]&&r[k]!==''&&r[k]!=null&&isFinite(+r[k]))a[k]=+r[k];});
   a.man=man;return a;
 }
-function planMinutes(r){try{const m=model(r),rows=timeline(r,m,{plan:true}).rows,f=rows[rows.length-1];return f?Math.max(0,f.adjArr-m.startMin):0;}catch(e){return 0;}}
+function planMinutes(r){try{const m=model(r),rows=timeline(r,m,{plan:true}).rows,f=rows[rows.length-1];return f?Math.max(0,f.adjArr-m.start0):0;}catch(e){return 0;}}
 function nutOver(a0,a1,b0,b1){return Math.max(0,Math.min(a1,b1)-Math.max(a0,b0));}
 // Besoins d'un tronçon qui part t0 minutes après le départ : on mange à partir de 20 min, la caféine suit sa fenêtre
 function needsFor(r,R,t0,durMin,total){
@@ -1037,13 +1072,13 @@ function needsFor(r,R,t0,durMin,total){
   };
 }
 function assistSegments(race,m,tl){
-  const pts=[{id:'start',name:'Départ',km:0,arr:m.startMin,dep:m.startMin,access:true}];
+  const pts=[{id:'start',name:'Départ',km:0,arr:m.start0,dep:m.start0,access:true}];
   tl.rows.forEach(r=>{pts.push({id:r.id,name:r.name,km:r.km,arr:r.adjArr,dep:r.dep,access:r.isFinish||!!(r.st&&r.st.access)});});
-  const acc=pts.filter(x=>x.access),out=[],total=Math.max(0,pts[pts.length-1].arr-m.startMin),R=nutRates(race,total);
+  const acc=pts.filter(x=>x.access),out=[],total=Math.max(0,pts[pts.length-1].arr-m.start0),R=nutRates(race,total);
   for(let i=0;i<acc.length-1;i++){
     const a=acc[i],b=acc[i+1],dur=b.arr-a.dep;
     out.push(Object.assign({from:a.name,fromId:a.id,to:b.name,toId:b.id,km:b.km-a.km,dur:dur,
-      via:pts.filter(x=>!x.access&&x.km>a.km&&x.km<b.km).map(x=>x.name),needs:needsFor(race,R,a.dep-m.startMin,dur,total),rates:R,total:total},legStats(m.p,a.km,b.km)));
+      via:pts.filter(x=>!x.access&&x.km>a.km&&x.km<b.km).map(x=>x.name),needs:needsFor(race,R,a.dep-m.start0,dur,total),rates:R,total:total},legStats(m.p,a.km,b.km)));
   }
   return out;
 }
@@ -1355,7 +1390,7 @@ window.addEventListener('unhandledrejection',e=>errLogAdd((e.reason&&e.reason.me
 function prefv(k){return (state.prefs&&state.prefs[k]!=null)?state.prefs[k]:defaultPrefs()[k];}
 function applyTheme(){const t=state.prefs.theme,el=document.documentElement;if(t==='light'||t==='dark')el.setAttribute('data-theme',t);else el.removeAttribute('data-theme');}
 applyTheme();
-let tab='plan',animateNext=true,importOpen=false,gpxPasteOpen=false,shareCode='',toastTimer=null,renderTimer=null;
+let jView=null,tab='plan',animateNext=true,importOpen=false,gpxPasteOpen=false,shareCode='',toastTimer=null,renderTimer=null;
 
 // ---------- utilitaires ----------
 const root=document.getElementById('view');
@@ -1738,11 +1773,11 @@ function importGPX(file){
 }
 
 // ---------- plan partageable ----------
-const PLAN_KEYS=['name','date','start','target','stopMin','finishBarrier','finishBarrierAuto','minSpeed','carbs','water','sodium','gelG','barG','gelShare','trackUrl','crewMargin','temp','cafTot'];
+const PLAN_KEYS=['name','date','start','target','stopMin','finishBarrier','finishBarrierAuto','minSpeed','carbs','water','sodium','gelG','barG','gelShare','trackUrl','crewMargin','temp','cafTot','fatigue'];
 function planObj(r,withItems){
   const o={};PLAN_KEYS.forEach(k=>{o[k]=r[k];});
   // l'assistance n'a pas le profil du coureur : on lui envoie les taux calculés
-  if(!isMember(r))try{const R=nutRates(r,planMinutes(r));o.carbs=R.carbs;o.water=R.water;o.sodium=R.sodium;o.cafTot=R.caf;}catch(e){}
+  if(!isMember(r))try{const R=nutRates(r,planMinutes(r));o.carbs=R.carbs;o.water=R.water;o.sodium=R.sodium;o.cafTot=R.caf;o.fatigue=Math.round(fatigueOf(r,parseHM(r.target)||0)*10)/10;}catch(e){}
   o.profile=r.profile;
   o.stations=r.stations.map(s=>{const x={id:s.id,name:s.name,km:s.km,access:!!s.access,barrier:s.barrier||'',barrierAuto:s.barrierAuto!==false};if(s.parking)x.parking=s.parking;if(s.parkLat!=null&&s.parkLon!=null){x.parkLat=s.parkLat;x.parkLon=s.parkLon;}if(s.meetLat!=null&&s.meetLon!=null){x.meetLat=s.meetLat;x.meetLon=s.meetLon;}if(s.walkMin!=null)x.walkMin=s.walkMin;if(s.driveMin!=null)x.driveMin=s.driveMin;if(s.watch)x.watch=true;if(s.parkList&&s.parkList.length)x.parkList=s.parkList;if(withItems)x.items=(s.items||[]).map(i=>({id:i.id,t:i.t,q:i.q||1,cat:i.cat||'autre'}));return x;});
   if(withItems&&r.sync&&r.sync.role==='owner'){const fn=String((state.profile&&state.profile.first)||'').trim().slice(0,40);if(fn)o.runner=fn;}
@@ -1783,7 +1818,7 @@ function sanitizeRace(r){
     finishBarrier:hm.test(r.finishBarrier||'')?r.finishBarrier:'',finishBarrierAuto:r.finishBarrierAuto===undefined?!r.finishBarrier:!!r.finishBarrierAuto,
     minSpeed:(+r.minSpeed>=3&&+r.minSpeed<=12)?+r.minSpeed:5.5,crewMargin:crewMarginOf(r),sodium:Math.max(0,Math.min(3000,r.sodium===undefined?400:(+r.sodium||0))),barG:Math.max(0,Math.min(100,r.barG===undefined?30:(+r.barG||0))),gelShare:Math.max(0,Math.min(100,r.gelShare===undefined?70:(+r.gelShare||0))),startAt:null,
     trackUrl:/^https?:\/\/[^\s<>"']{3,280}$/i.test(r.trackUrl||'')?String(r.trackUrl):'',
-    carbs:Math.max(0,Math.min(200,+r.carbs||0)),water:Math.max(0,Math.min(2000,+r.water||0)),cafTot:Math.max(0,Math.min(1200,+r.cafTot||0)),temp:(r.temp!==''&&r.temp!=null&&isFinite(+r.temp)&&+r.temp>=-30&&+r.temp<=50)?Math.round(+r.temp):'',gelG:Math.max(0,Math.min(100,+r.gelG||0)),
+    carbs:Math.max(0,Math.min(200,+r.carbs||0)),water:Math.max(0,Math.min(2000,+r.water||0)),cafTot:Math.max(0,Math.min(1200,+r.cafTot||0)),fatigue:(r.fatigue!==''&&r.fatigue!=null&&isFinite(+r.fatigue))?Math.max(0,Math.min(60,+r.fatigue)):'',temp:(r.temp!==''&&r.temp!=null&&isFinite(+r.temp)&&+r.temp>=-30&&+r.temp<=50)?Math.round(+r.temp):'',gelG:Math.max(0,Math.min(100,+r.gelG||0)),
     profile:prof,kits:cleanKits(r.kits),points:{},extras:{},done:{},diary:{rating:0,nutrition:'',learn:'',gear:''},
     stations:r.stations.slice(0,30).map(s=>({id:String(s.id||uid()).replace(/[^A-Za-z0-9]/g,'').slice(0,12)||uid(),name:String(s.name||'Ravito').slice(0,80),km:Math.max(0,+s.km||0),access:!!s.access,barrier:hm.test(s.barrier||'')?s.barrier:'',barrierAuto:s.barrierAuto===undefined?!s.barrier:!!s.barrierAuto,
        parking:String(s.parking||'').slice(0,80),parkLat:okCoord(s.parkLat,90),parkLon:okCoord(s.parkLon,180),meetLat:okCoord(s.meetLat,90),meetLon:okCoord(s.meetLon,180),walkMin:okMin(s.walkMin,180),driveMin:okMin(s.driveMin,600),watch:!!s.watch,parkList:cleanParkList(s.parkList),
@@ -2703,7 +2738,7 @@ function cleanJournalItem(x){
   if(!x||typeof x!=='object')return null;
   const id=safeId(x.id);if(!id)return null;
   const n=v=>{v=+v;return isFinite(v)?v:0;},nn=v=>(v==null||v==='')?null:(isFinite(+v)?+v:null);
-  return {id:id,name:String(x.name||'').slice(0,120),date:String(x.date||'').slice(0,20),km:n(x.km),up:n(x.up),planned:nn(x.planned),actual:nn(x.actual),rating:Math.max(0,Math.min(5,Math.round(n(x.rating)))),learn:String(x.learn||'').slice(0,160),ts:n(x.ts)};
+  return {id:id,name:String(x.name||'').slice(0,120),date:String(x.date||'').slice(0,20),km:n(x.km),up:n(x.up),planned:nn(x.planned),actual:nn(x.actual),rating:Math.max(0,Math.min(5,Math.round(n(x.rating)))),learn:String(x.learn||'').slice(0,160),ts:n(x.ts),plan:safeId(x.plan)||'',fat:nn(x.fat)==null?null:Math.max(0,Math.min(80,nn(x.fat))),dur:nn(x.dur)};
 }
 async function syncAccountData(uid){
   const c=state.cloud;let changed=false,f={};
@@ -2780,7 +2815,8 @@ async function syncPlans(opts){
       }
       await pushPlan(r);
     }
-    if(!state.race&&(state.plans||[]).length){if(c.lastRemote)state.lastPlanId=c.lastRemote;openLastPlan();changed=true;}
+    if(state.race&&state.race.archived){stashPlan();changed=true;}   // archivé depuis un autre appareil
+    if(!state.race&&activePlans().length){if(c.lastRemote)state.lastPlanId=c.lastRemote;openLastPlan();changed=true;}
     if(state.race&&!isMember(state.race)&&planId(state.race)&&c.lastPushed!==state.race.id&&c.synced[state.race.id]!==undefined){
       await fsReq('PATCH','users/'+uid,{fields:{lastPlan:{stringValue:state.race.id}}},'?updateMask.fieldPaths=lastPlan');c.lastPushed=state.race.id;
     }
@@ -2810,6 +2846,8 @@ function planSyncLine(){
 }
 // ---------- plusieurs plans ----------
 // state.race = le plan ouvert. state.plans = les autres plans, du plus récent au plus ancien.
+// Un plan archivé (r.archived = date) reste dans state.plans et dans le compte, mais n'est plus un plan actif :
+// il n'apparaît que dans le carnet, en lecture, avec un bouton pour le rouvrir.
 // Chaque plan garde ses propres ravitos, pointages, nutrition et partage. Un plan partagé en direct ne se met à jour que lorsqu’il est ouvert.
 let plansOpen=false;
 function planId(r){if(!r.id)r.id=uid();return r.id;}
@@ -2821,9 +2859,11 @@ function stashPlan(){   // range le plan ouvert dans la liste, sans le supprimer
   planId(r);state.plans=(state.plans||[]).filter(p=>p.id!==r.id);state.plans.unshift(r);state.lastPlanId=r.id;state.race=null;
 }
 function leavePlanView(){crewRun.cancel=true;shareCode='';importOpen=false;gpxPasteOpen=false;exportText='';if(landOpen)closeLand();}
-function openLastPlan(){   // rouvre le dernier plan ouvert quand aucun ne l’est
-  if(state.race||!(state.plans||[]).length)return false;
-  const p=state.plans.find(x=>x.id===state.lastPlanId)||state.plans[0];
+function activePlans(){return (state.plans||[]).filter(x=>!x.archived);}
+function openLastPlan(){   // rouvre le dernier plan ouvert quand aucun ne l’est (jamais un plan archivé)
+  const L=activePlans();
+  if(state.race||!L.length)return false;
+  const p=L.find(x=>x.id===state.lastPlanId)||L[0];
   state.plans=state.plans.filter(x=>x!==p);state.race=p;state.lastPlanId=planId(p);
   try{migrateRace(p);ensureItems(p);}catch(e){}
   return true;
@@ -2837,7 +2877,7 @@ function openPlan(id){
 }
 function newPlanNow(){if(!needAccount())return;stashPlan();leavePlanView();closePlans();tab='plan';animateNext=true;commit();window.scrollTo(0,0);}
 function planBar(){
-  const n=(state.plans||[]).length+(state.race?1:0);
+  const n=activePlans().length+(state.race?1:0);
   if(!n)return '';
   const cur=state.race;
   return '<div class="planbar"><button class="planbtn" data-act="plans-open" aria-haspopup="dialog"><span class="planbtn-l">Mes plans</span><b>'+(cur?esc(cur.name||'Plan sans nom'):'Aucun plan ouvert')+'</b>'+(n>1?'<span class="planbtn-n" aria-label="'+n+' plans">'+n+'</span>':'')+'<span aria-hidden="true">▾</span></button>'
@@ -2845,7 +2885,7 @@ function planBar(){
 }
 function plansHTML(){
   const list=[];if(state.race)list.push({r:state.race,open:true});
-  (state.plans||[]).forEach(p=>list.push({r:p,open:false}));
+  activePlans().forEach(p=>list.push({r:p,open:false}));
   const rows=list.map(x=>{const r=x.r,id=planId(r);
     return '<li class="plan-item'+(x.open?' on':'')+'"><button class="plan-main" data-act="plan-open" data-id="'+esc(id)+'"'+(x.open?' aria-current="true"':'')+'><b>'+esc(r.name||'Plan sans nom')+'</b><small>'+esc(planInfoLine(r))+'</small></button>'
       +(x.open?'<span class="plan-badge">Ouvert</span>':'')
@@ -3902,7 +3942,7 @@ function planTimes(r,m,tl){
   const li=stn.map((x,i)=>'<tr><td><div class="pt-cell"><span class="pt-n">'+(i+1)+'</span><span class="pt-txt">'+esc(x.name||'Ravito')+'<small>km '+km1(x.km)+'</small></span></div></td><td>'+clk(x.adjArr)+'</td><td>'+marg(x)+'</td></tr>').join('');
   return '<div class="card pt-card"><h2>Heures de passage</h2>'
     +'<table class="pt-table"><thead><tr><th scope="col">Ravito</th><th scope="col">Passage</th><th scope="col">Marge sur la barrière</th></tr></thead><tbody>'
-    +'<tr><td><div class="pt-cell"><span class="pt-n pt-flag" aria-hidden="true"></span><span class="pt-txt">Départ<small>km 0</small></span></div></td><td>'+clk(m.startMin)+'</td><td><span class="pt-none">–</span></td></tr>'
+    +'<tr><td><div class="pt-cell"><span class="pt-n pt-flag" aria-hidden="true"></span><span class="pt-txt">Départ<small>km 0</small></span></div></td><td>'+clk(m.start0)+'</td><td><span class="pt-none">–</span></td></tr>'
     +li
     +'<tr class="pt-fin"><td><div class="pt-cell"><span class="pt-n pt-flag" aria-hidden="true"></span><span class="pt-txt">Arrivée<small>km '+km1(m.tot)+'</small></span></div></td><td>'+clk(fin.adjArr)+'</td><td>'+marg(fin)+'</td></tr>'
     +'</tbody></table>'
@@ -4187,7 +4227,7 @@ function renderAssist(){
   const stop=(id,cls,num,title,km,body)=>'<li'+(id?' id="crew-'+id+'"':'')+' class="as-stop'+cls+'"><span class="as-node" aria-hidden="true">'+num+'</span><div class="as-card"><h3><span>'+title+'</span>'+(km!=null?'<span class="km">km '+km1(km)+'</span>':'')+'</h3>'+body+'</div></li>';
   let list='',n=0;
   if(segs.length&&segs[0].fromId==='start')
-    list+=stop('',' start','D','Départ',null,'<p class="as-time"><b>'+clk(m.startMin)+'</b></p><p class="as-kit">Jusqu’à '+esc(segs[0].to)+' ('+km1(segs[0].km)+' km, environ '+fmtDur(segs[0].dur)+')</p>'+kitBox(segs[0]));
+    list+=stop('',' start','D','Départ',null,'<p class="as-time"><b>'+clk(m.start0)+'</b></p><p class="as-kit">Jusqu’à '+esc(segs[0].to)+' ('+km1(segs[0].km)+' km, environ '+fmtDur(segs[0].dur)+')</p>'+kitBox(segs[0]));
   stops.forEach(x=>{
     n++;
     const passed=x.actual!=null,sg=segs.find(z=>z.fromId===x.id),st=x.st;
@@ -4316,7 +4356,7 @@ function renderCpRoute(){
   });
   list+=card({},' finish'+(fin.actual!=null?' passed':''),'<div class="cp-top"><h2 class="cp-name">Arrivée</h2><span class="cp-km">km '+km1(m.tot)+'</span></div>'+eta(fi,fin.actual,'Arrivé à'));
   const now=nowMin(r),started=(r.startAt!=null)?now>=m.start0:now>=m.startMin,kmNow=started?d.tl.kmAt(now):null;
-  return cpHead(r,'Départ à '+clk(m.startMin)+'<span id="syncstat" class="cp-sync">'+esc(syncText(r))+'</span>')
+  return cpHead(r,'Départ à '+clk(m.start0)+'<span id="syncstat" class="cp-sync">'+esc(syncText(r))+'</span>')
     +(safeHttpUrl(r.trackUrl)?'<div class="row cp-watch">'+trackLink(r,'')+'</div>':'')
     +(fin.actual!=null?'':startCard(r,m))
     +'<section class="cp-prof"><div class="chart">'+profileSVG(m,d.tl,{w:chartW(),kmNow:kmNow})+'</div>'
@@ -4332,7 +4372,7 @@ function renderCpFood(){
   if(!sg)sg=segs.find(s=>s.fromId===d.nextId)||segs.find(s=>s.fromId!=='start')||segs[0];
   const pick='<div class="cp-pick" role="group" aria-label="Choisir le ravito">'+segs.map(s=>'<button type="button" class="chip" data-act="cp-pick" data-id="'+esc(s.fromId)+'" aria-pressed="'+(s===sg)+'">'+esc(s.from)+'</button>').join('')+'</div>';
   const row=d.rows.find(x=>x.id===sg.fromId),st=row&&row.st;
-  const when=sg.fromId==='start'?'Départ à '+clk(d.m.startMin):(row?(row.actual!=null?'Passé à '+clk(row.actual):'Arrivée estimée '+clk(row.adjArr))+' · km '+km1(row.km):'');
+  const when=sg.fromId==='start'?'Départ à '+clk(d.m.start0):(row?(row.actual!=null?'Passé à '+clk(row.actual):'Arrivée estimée '+clk(row.adjArr))+' · km '+km1(row.km):'');
   const kit=r.kits&&r.kits[sg.fromId],it=kit?kit.it:null,n=sg.needs,chk=r.cpChk||{};
   // une case par ligne : cochée sur ce téléphone quand c'est prêt (le matériel demandé reste partagé avec le coureur)
   const li=(x,key,iid)=>'<li><label class="cp-chk"><input type="checkbox" '+(iid?'data-act="item-done" data-iid="'+esc(iid)+'"'+(r.done&&r.done[iid]?' checked':''):'data-cpchk="'+esc(sg.fromId+'|'+key)+'"'+(chk[sg.fromId+'|'+key]?' checked':''))+'>'
@@ -4432,6 +4472,7 @@ function renderLive(){
   +'</div></section>';
 }
 function renderDiary(){
+  if(jView){const v=journalView(jView);if(v)return v;jView=null;}
   const r=state.race;if(!r)return needRace()+renderJournal();
   const m=model(r),tl=timeline(r,m,{}),plan=timeline(r,m,{plan:true});
   const done=tl.rows.filter(x=>x.actual!=null);
@@ -4440,7 +4481,7 @@ function renderDiary(){
   const table=done.length?'<div class="tblwrap"><table><thead><tr><th>Point</th><th>Prévu</th><th>Réel</th><th>Écart</th></tr></thead><tbody>'
     +done.map(x=>'<tr><td>'+esc(x.name)+'<small>km '+km1(x.km)+'</small></td><td>'+clk(x.plannedArr)+'</td><td>'+clk(x.actual)+'</td><td class="'+(x.actual-x.plannedArr>5?'warn':'ok')+'">'+dsign(x.actual-x.plannedArr)+'</td></tr>').join('')
     +'</tbody></table></div>':'<p class="note">Les passages pointés dans « En course » apparaîtront ici, comparés au plan.</p>';
-  const actualTotal=finRow.actual!=null?finRow.actual-m.startMin:null;
+  const actualTotal=finRow.actual!=null?finRow.actual-m.start0:null;
   const rate=['Dur','Moyen','Bien','Très bien','Top'].map((t,i)=>'<button data-act="rating" data-v="'+(i+1)+'" aria-pressed="'+(d.rating===i+1)+'" aria-label="'+(i+1)+' sur 5, '+t+'">'+(i+1)+'</button>').join('');
   return '<section class="empty"><h1>Carnet de course</h1><p class="lead">'+esc(r.name)+'</p>'
   +(actualTotal!=null?'<dl class="sum"><div><dt>Temps réel</dt><dd>'+fmtDur(actualTotal)+'</dd></div><div><dt>Objectif</dt><dd>'+fmtDur(m.target)+'</dd></div><div><dt>Écart</dt><dd class="'+(actualTotal-m.target>5?'warn':'ok')+'">'+dsign(actualTotal-m.target)+'</dd></div></dl>':'')
@@ -4454,9 +4495,28 @@ function renderDiary(){
   +'</section>'
   +renderJournal();
 }
+// Plan lié à une course du carnet (archivé, ou rouvert depuis)
+function journalPlan(e){if(!e||!e.plan)return null;if(state.race&&state.race.id===e.plan)return state.race;return (state.plans||[]).find(x=>x.id===e.plan)||null;}
+// Lecture d'une course archivée : résumé, passages prévus et réels, ressenti et notes ; « Modifier » rouvre le plan
+function journalView(id){
+  const e=(state.journal||[]).find(x=>x.id===id),r=journalPlan(e);if(!e||!r)return '';
+  let m,tl;try{m=model(r);tl=timeline(r,m,{});}catch(err){return '';}
+  const d=r.diary||{},fin=tl.rows[tl.rows.length-1],act=fin.actual!=null?fin.actual-m.start0:e.actual;
+  const rows='<tr><td>Départ<small>km 0</small></td><td>'+clk(m.startMin)+'</td><td>'+(r.startAt!=null?clk(m.start0):'–')+'</td><td></td></tr>'
+    +tl.rows.map(x=>'<tr><td>'+esc(x.name)+'<small>km '+km1(x.km)+'</small></td><td>'+clk(x.plannedArr)+'</td><td>'+(x.actual!=null?clk(x.actual):'–')+'</td><td'+(x.actual!=null?' class="'+(x.actual-x.plannedArr>5?'warn':'ok')+'">'+dsign(x.actual-x.plannedArr):'>')+'</td></tr>').join('');
+  const note=(t,v)=>v?'<h3 style="margin-top:14px">'+t+'</h3><p class="jr-note">'+esc(v)+'</p>':'';
+  return '<section class="empty"><p style="margin:0 0 8px"><button class="linkbtn" data-act="jr-back" style="padding-left:0">‹ Carnet</button></p><h1>'+esc(r.name||'Course')+'</h1>'
+    +'<p class="lead">'+esc(planInfoLine(r))+(r.archived?' · archivée le '+new Date(r.archived).toLocaleDateString('fr-FR'):'')+'</p>'
+    +(act!=null?'<dl class="sum"><div><dt>Temps réel</dt><dd>'+fmtDur(act)+'</dd></div><div><dt>Objectif</dt><dd>'+fmtDur(m.target)+'</dd></div><div><dt>Écart</dt><dd class="'+(act-m.target>5?'warn':'ok')+'">'+dsign(act-m.target)+'</dd></div></dl>':'')
+    +'<div class="row">'+(r.archived?'<button class="btn" data-act="jr-edit" data-plan="'+esc(r.id)+'">Modifier ce plan</button>':'<button class="btn" data-act="plan-open" data-id="'+esc(r.id)+'">Ouvrir le plan</button>')+'</div></section>'
+    +'<section class="sec"><h2>Prévu et réel</h2><div class="tblwrap"><table><thead><tr><th>Point</th><th>Prévu</th><th>Réel</th><th>Écart</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+    +(e.fat!=null?'<p class="note">Ralentissement mesuré sur cette course : '+nf(e.fat)+' % entre le début et la fin. Il sert à tes prochains plans.</p>':'')+'</section>'
+    +((d.rating||d.nutrition||d.gear||d.learn)?'<section class="sec"><h2>Ton ressenti</h2>'+(d.rating?'<p>'+d.rating+'/5</p>':'')+note('Ce que tu as vraiment mangé et bu',d.nutrition)+note('Matériel utilisé',d.gear)+note('Ce que tu referas ou changeras',d.learn)+'</section>':'');
+}
 function renderJournal(){
   const j=state.journal||[];if(!j.length)return '';
-  return '<section class="sec"><h2>Courses archivées</h2><ul class="journal">'+j.map(e=>'<li><div><b>'+esc(e.name)+'</b><br><small>'+(e.date?esc(e.date)+', ':'')+km1(e.km)+' km, +'+nf(e.up)+' m'+(e.actual!=null?', réel '+fmtDur(e.actual)+' pour un objectif de '+fmtDur(e.planned):', objectif '+fmtDur(e.planned))+(e.rating?', ressenti '+e.rating+'/5':'')+'</small>'+(e.learn?'<br><small>'+esc(e.learn)+'</small>':'')+'</div><button class="icon" data-act="del-journal" data-id="'+e.id+'" aria-label="Supprimer '+esc(e.name)+' du carnet">×</button></li>').join('')+'</ul></section>';
+  return '<section class="sec"><h2>Courses archivées</h2><ul class="journal">'+j.map(e=>'<li><div><b>'+esc(e.name)+'</b><br><small>'+(e.date?esc(e.date)+', ':'')+km1(e.km)+' km, +'+nf(e.up)+' m'+(e.actual!=null?', réel '+fmtDur(e.actual)+' pour un objectif de '+fmtDur(e.planned):', objectif '+fmtDur(e.planned))+(e.rating?', ressenti '+e.rating+'/5':'')+'</small>'+(e.learn?'<br><small>'+esc(e.learn)+'</small>':'')
+    +(journalPlan(e)?'<div class="row jr-act"><button class="btn quiet small" data-act="jr-view" data-id="'+esc(e.id)+'">Consulter</button>'+(journalPlan(e).archived?'<button class="btn quiet small" data-act="jr-edit" data-plan="'+esc(e.plan)+'">Modifier</button>':'')+'</div>':'')+'</div><button class="icon" data-act="del-journal" data-id="'+e.id+'" aria-label="Supprimer '+esc(e.name)+' du carnet">×</button></li>').join('')+'</ul></section>';
 }
 
 // ---------- rendu ----------
@@ -4724,7 +4784,18 @@ function act(b){
     rr.nutMan=rr.nutMan||{};delete rr.nutMan.carbs;rr.carbs=t;commit();flash('Cible appliquée : '+t+' g/h.');return;
   }
   if(a==='sync-test'){flash('Test de connexion…');getToken().then(()=>flash('Connexion Firebase OK.')).catch(e=>flash(fbErr(e)));return;}
-  if(a==='del-journal'){state.journal=(state.journal||[]).filter(x=>x.id!==b.dataset.id);state.journalDel=(state.journalDel||[]).concat(String(b.dataset.id)).slice(-200);commit();return;}
+  if(a==='del-journal'){
+    const id=b.dataset.id,e=(state.journal||[]).find(x=>x.id===id),pl=e&&e.plan?(state.plans||[]).find(x=>x.id===e.plan&&x.archived):null;
+    const drop=()=>{state.journal=(state.journal||[]).filter(x=>x.id!==id);state.journalDel=(state.journalDel||[]).concat(String(id)).slice(-200);if(jView===id)jView=null;};
+    if(pl){askConfirm({title:'Supprimer « '+(e.name||'cette course')+' » du carnet ?',text:'Le plan archivé (tracé GPX, ravitos, pointages) sera aussi supprimé.',okLabel:'Supprimer',danger:true,onOk:()=>{drop();deletePlanNow(pl.id);}});return;}
+    drop();commit();return;
+  }
+  if(a==='jr-view'){jView=b.dataset.id;commit();window.scrollTo(0,0);return;}
+  if(a==='jr-back'){jView=null;commit();window.scrollTo(0,0);return;}
+  if(a==='jr-edit'){
+    const pl=(state.plans||[]).find(x=>x.id===b.dataset.plan);if(!pl){flash('Ce plan n’est plus sur cet appareil.');return;}
+    delete pl.archived;openPlan(pl.id);jView=null;flash('Plan rouvert : tu peux le modifier.');return;
+  }
   if(!r)return;
   if(a==='share-live'){
     if(!isRunner()){loginMode='up';tab='login';commit();window.scrollTo(0,0);flash('Crée un compte coureur pour partager une course.');return;}
@@ -4876,11 +4947,18 @@ function act(b){
   }
   if(a==='rating'){r.diary=r.diary||{};r.diary.rating=(r.diary.rating===+b.dataset.v)?0:+b.dataset.v;commit();return;}
   if(a==='archive'){
-    const m=model(r),tl=timeline(r,m,{}),st=profileStats(m.p),fin=tl.rows[tl.rows.length-1],d=r.diary||{};
-    state.journal=state.journal||[];
-    state.journal.unshift({id:uid(),ts:Date.now(),name:r.name,date:r.date,km:st.km,up:st.up,planned:m.target,actual:fin.actual!=null?fin.actual-m.startMin:null,rating:d.rating||0,learn:(d.learn||'').slice(0,160)});
+    const m=model(r),tl=timeline(r,m,{}),st=profileStats(m.p),fin=tl.rows[tl.rows.length-1],d=r.diary||{},ff=fatigueFit(r);
+    const e={id:uid(),ts:Date.now(),name:r.name,date:r.date,km:st.km,up:st.up,planned:m.target,actual:fin.actual!=null?fin.actual-m.start0:null,rating:d.rating||0,learn:(d.learn||'').slice(0,160),fat:ff?ff.fat:null,dur:ff?ff.dur:null,plan:planId(r)};
+    // un archivage précédent de ce plan est remplacé (y compris ceux d'avant, sans lien vers le plan : même nom, même date)
+    state.journal=(state.journal||[]).filter(x=>{
+      const same=x.plan===e.plan||(!x.plan&&x.name===r.name&&(x.date||'')===(r.date||''));if(!same)return true;
+      if(e.actual==null)e.actual=x.actual;if(e.fat==null&&x.fat!=null){e.fat=x.fat;e.dur=x.dur;}if(!e.rating)e.rating=x.rating;if(!e.learn)e.learn=x.learn;
+      state.journalDel=(state.journalDel||[]).concat(String(x.id)).slice(-200);return false;
+    });
+    state.journal.unshift(e);
     if(r.sync){delete r.sync;r.pending={};}
-    r.fix=null;r.startAt=null;r.points={};r.diary={rating:0,nutrition:'',learn:'',gear:''};commit();flash('Course archivée dans le carnet.');return;
+    r.fix=null;r.archived=Date.now();stashPlan();openLastPlan();if(landOpen)closeLand();
+    jView=e.id;tab='diary';commit();window.scrollTo(0,0);flash('Course archivée : elle est dans le carnet, en lecture.');return;
   }
 }
 document.addEventListener('click',e=>{
@@ -4911,7 +4989,7 @@ document.addEventListener('click',e=>{
   }
   if(menuOpen&&!e.target.closest('#menu')&&!e.target.closest('#acct'))closeMenu();
   const tb=e.target.closest('[data-tab]');
-  if(tb){if(MAIN_TABS.indexOf(tab)>=0&&tb.dataset.tab!==tab)prevTab=tab;tab=tb.dataset.tab;shareCode='';importOpen=false;gpxPasteOpen=false;clearTimeout(renderTimer);render(true);return;}
+  if(tb){if(MAIN_TABS.indexOf(tab)>=0&&tb.dataset.tab!==tab)prevTab=tab;tab=tb.dataset.tab;jView=null;shareCode='';importOpen=false;gpxPasteOpen=false;clearTimeout(renderTimer);render(true);return;}
   const b=e.target.closest('button[data-act]');
   if(b)act(b);
 });

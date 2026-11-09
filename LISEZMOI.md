@@ -327,6 +327,21 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - **Ravitos** : « Accès pour l'assistance » et « Accessible au public » côte à côte.
 - **Retirés** : la course démo, les phrases d'explication sous les titres et dans les formulaires, et les bulles de confirmation. Les bulles restent pour les erreurs et ce qui demande une action (temps visé manquant, lien invalide, autorisations…).
 
+## Archiver une course (9 novembre 2026)
+
+- « Archiver dans le carnet » : la course part dans le carnet (temps, ressenti, ralentissement mesuré, lien `plan` vers le plan) et le plan n'est plus actif (`r.archived` = date). Il n'apparaît plus dans « Mes plans » ; le dernier plan actif s'ouvre à sa place. Le plan archivé reste dans le compte (synchronisé comme les autres) avec ses pointages et ses notes.
+- Carnet : chaque course liée à un plan a « Consulter » (lecture : résumé, passages prévus et réels, ressenti et notes) et « Modifier » (rouvre le plan, qui redevient actif). Archiver à nouveau remplace l'entrée du carnet ; une entrée d'avant cette version, sans lien, est remplacée si elle a le même nom et la même date.
+- Supprimer une course du carnet supprime aussi son plan archivé (après confirmation).
+
+## Estimation des temps : pente, fatigue et pointages (9 novembre 2026)
+
+- Plan : chaque morceau du parcours a un coût d'effort selon la pente (`gradeFactor`, petites bosses cachées comprises). Le temps visé, arrêts déduits, est réparti selon ce coût, avec un ralentissement progressif : allure « équivalent plat » × (1 + d·x^1,5), x = part du parcours. On part un peu plus vite que la moyenne et on finit plus lentement, sans changer le temps visé.
+- d (`fatigueOf`) : repère selon la durée prévue, 2,5 points par heure au-delà de la première, au plus 40 % (marathon en 4 h ≈ 8 %, 100 km en 12 h ≈ 28 %, 14 h ≈ 33 %). Sources : ralentissement progressif après ~50 km, les plus rapides perdent moins de 15 % de leur vitesse de départ sur 100 km (Renfree et al. 2014), allure plus irrégulière chez les plus lents (Hoffman 2014).
+- Chaque coureur : à l'archivage, `fatigueFit` mesure son ralentissement réel (le d qui colle le mieux à ses pointages, arrêts déduits ; il faut l'arrivée et au moins un ravito pointés) et le garde dans le carnet (`fat`, `dur`). Ses plans suivants se rapprochent de son écart au repère (médiane de ses courses de plus de 3 h, poids n/(n+2) : un tiers après une course, la moitié après deux, etc.). L'assistance reçoit le d du coureur avec le plan (`fatigue`).
+- En course : chaque pointage (ou position de la montre) sert de point de départ ; le temps réel de chaque tronçon pointé, arrêts déduits, est comparé au plan ; le coefficient qui en sort (tronçons récents plus lourds, entre ×0,6 et ×2,5, plein effet à 10 % de la course) s'applique aux heures restantes. Prolonger la tendance du dernier tronçon a été testé sur la Veni Vici 2026 (87 km) et donnait de moins bonnes estimations : non retenu.
+- Départ réel (« Heure réelle du départ ») : décale les heures prévues du plan, de l'assistance et du carnet (temps réel compté depuis le départ réel).
+- Vérification sur la Veni Vici 2026 (départ réel 7 h 53, arrivée 22 h 33), estimation de l'arrivée rejouée à chaque pointage : écart moyen de 64 min sans fatigue, environ 30 min avec.
+
 ## Besoins nutritionnels calculés (1er novembre 2026)
 
 Glucides, eau, sodium, caféine et protéines sont calculés pour chaque plan à partir de la fiche coureur (poids, digestion à l'effort, transpiration, sel dans la sueur, habitude de la caféine, cible de glucides facultative), de la durée prévue et de la température prévue (champ du plan, 15 °C par défaut). Fonctions `nutCalc`, `nutRates`, `needsFor` dans `www/index.html`.
