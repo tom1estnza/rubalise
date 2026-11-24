@@ -350,6 +350,13 @@ Si l'ancienne appli installée a été signée avec une autre clé, il faut la d
 - Vérifiés et gardés tels quels : glucides (ACSM 2016 : jusqu'à 90 g/h au-delà de 2 h 30 ; aucun gain prouvé au-delà de 90 à 100 g/h, *Sports Med* 2025), sodium (ISSN 2019 : plus de 575 mg/L en ultra ; trop boire reste le principal risque d'hyponatrémie, Hoffman 2015), caféine (ISSN 2021), protéines (ISSN 2019 : 5 à 10 g/h), fatigue (même ordre de grandeur que le ralentissement d'environ 10 % mesuré par Jaén-Carrillo et Pattis).
 - Pas encore rejoué sur les pointages de la Veni Vici 2026 (écart moyen de 30 min avant ces changements).
 
+## Catalogue relevé à nouveau sur les sites des marques (24 novembre 2026)
+
+- 41 produits complétés depuis les tableaux nutritionnels officiels (calories, sodium, caféine, eau conseillée) : Näak, Overstims, Meltonic, GU, SiS, Tailwind, Isostar, Powerbar. Sodium tiré du sel quand seul le sel est donné (sel ÷ 2,5). Tä : caféine des boissons iso Cola et Fruits des bois (40 mg), Maltode6x pour 1 L d'eau, vitamine B6 des boissons iso à 0,21 mg.
+- Corrigés : caféine de Tailwind Endurance caféiné (70 mg par sachet, au lieu de 35), sodium d'Hydrixir antioxydant (302 mg, au lieu de 26).
+- Restent inconnus : calories de Näak et de Tä (non publiées par les marques), eau conseillée de GU Roctane Drink Mix.
+- Énergie du plan (onglet Nutrition) : affichée seulement si tous les produits du plan publient leurs calories.
+
 ## Besoins nutritionnels calculés (1er novembre 2026)
 
 Glucides, eau, sodium, caféine et protéines sont calculés pour chaque plan à partir de la fiche coureur (poids, digestion à l'effort, transpiration, sel dans la sueur, habitude de la caféine, cible de glucides facultative), de la durée prévue et de la température prévue (champ du plan, 15 °C par défaut). Fonctions `nutCalc`, `nutRates`, `needsFor` dans `www/index.html`.

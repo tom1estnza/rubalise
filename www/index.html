@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-RuC2pTe0tx5pFB6t+EjW9ICLkg3atJPXT5WtuhZPJv8=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-m3xlsS9TJku50xkUswZ/h+kNrKnzuJr/2Iz8td1H9OY=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -3910,9 +3910,10 @@ function kitText(k){return k.items.length?k.items.map(i=>i.n+' × '+i.x.name+(i.
 function pantryKcal(kits,segs){
   let kcal=0,unk=false,any=false;
   kits.forEach(k=>k.items.forEach(i=>{const c=ptK(i.x,'kcal');if(c==null)unk=true;else{any=true;kcal+=c*i.n;}}));
-  if(!any)return '';
+  // calories affichées seulement si tous les produits du plan les publient
+  if(!any||unk)return '';
   const h=segs.reduce((a,s)=>a+Math.max(0,s.dur),0)/60;
-  return '<p class="pt-kcal">Énergie apportée : '+(unk?'au moins ':'environ ')+nf(Math.round(kcal))+' kcal'+(h>0?', soit '+nf(Math.round(kcal/h))+' kcal/h':'')+(unk?'<small>Calories inconnues pour une partie des produits : complète-les dans ton placard.</small>':'')+'</p>';
+  return '<p class="pt-kcal">Énergie apportée : environ '+nf(Math.round(kcal))+' kcal'+(h>0?', soit '+nf(Math.round(kcal/h))+' kcal/h':'')+'</p>';
 }
 function pantrySummary(kits,segs){
   const miss=kits.reduce((a,k)=>a+k.miss,0),en=pantryKcal(kits,segs||[]);
