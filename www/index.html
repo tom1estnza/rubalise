@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-SeRC9hCYLGM1uQkvTONdyrGVKWFkVSu/Fz2Z5nUuxeE=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-RuC2pTe0tx5pFB6t+EjW9ICLkg3atJPXT5WtuhZPJv8=' 'sha256-DZjKwxFtFnmFMDWW5OVkKiFLqEvElDn/lxyvNQh6Bfg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://data.geopf.fr https://server.arcgisonline.com https://s3.amazonaws.com; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://overpass-api.de https://overpass.kumi.systems https://overpass.private.coffee https://nominatim.openstreetmap.org https://routing.openstreetmap.de; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10312B">
@@ -870,10 +870,19 @@ function legStats(p,a,b){
   const dz=eb-prev;if(dz>0)up+=dz;else down-=dz;
   return {up:Math.round(up),down:Math.round(down)};
 }
+// Coût en temps d'un mètre selon la pente (1 = plat).
+// Modèle Strava 2017 (D. Robb, « An Improved GAP Model ») : allure à fréquence cardiaque égale, ~6 millions de
+// sorties de 240 000 coureurs. Montée : même pente que le coût énergétique de Minetti et al. 2002, courbe décalée
+// d'environ 2 points de pente. Descente : minimum ×0,88 à −9 %, retour à ×1,0 à −18 % (Minetti surestimait la
+// descente jusqu'à un facteur 3) ; au-delà, freinage (peu de données, pente gardée de l'ancien modèle).
+function minettiF(i){const c=155.4*i**5-30.4*i**4-43.3*i**3+46.3*i**2+19.5*i+3.6;return c/3.6;}
 function gradeFactor(i){
-  if(i>=0){const c=155.4*i**5-30.4*i**4-43.3*i**3+46.3*i**2+19.5*i+3.6;return Math.min(3.4,c/3.6);}
-  const a=-i;return a<=0.10?1-1.5*a:0.85+(a-0.10)*2.5;
+  if(i>=0)return Math.min(3.4,Math.max(1,minettiF(i-0.02)));
+  const a=-i;return a<=0.09?1-a*0.12/0.09:a<=0.18?0.88+(a-0.09)*0.12/0.09:1+(a-0.18)*2.5;
 }
+// Altitude : vitesse soutenable relative au niveau de la mer (Jaén-Carrillo et Pattis 2026, Sensors 26:3731),
+// soit −1,6 % à 1 000 m, −5,5 % à 2 000 m, −11,7 % à 3 000 m. VO2max : −6,3 % par 1 000 m (Wehrlin et Hallén 2006).
+function altFactor(a){a=Math.max(0,Math.min(5000,+a||0));return 1-11.7e-9*a*a-4.01e-6*a;}
 function unitCum(p,drift){
   const n=p.d.length,tot=p.d[n-1],U=[0],hid=!!(p.ug&&p.dg&&p.ug.length===n&&p.dg.length===n);
   for(let i=1;i<n;i++){
@@ -883,10 +892,11 @@ function unitCum(p,drift){
     let inc=dk*gradeFactor(g)*(1+(drift/100)*Math.pow(mid,1.5));
     if(hid){
       // dénivelé réel de ce tronçon moins celui que voit le profil lissé = petites bosses cachées
-      // (environ 6,4 m d'effort en plus par mètre grimpé, 1,5 m économisés par mètre descendu, à 8 %)
+      // (environ 4,6 m d'effort en plus par mètre grimpé, 1,3 m économisé par mètre descendu, à 8 %, selon gradeFactor)
       const dz=p.e[i]-p.e[i-1],hu=Math.max(0,(p.ug[i]-p.ug[i-1])-Math.max(dz,0)),hd=Math.max(0,(p.dg[i]-p.dg[i-1])-Math.max(-dz,0));
-      inc=Math.max(dk*0.5,inc+hu*0.0064-hd*0.0015);
+      inc=Math.max(dk*0.5,inc+hu*0.0046-hd*0.0013);
     }
+    inc/=altFactor((p.e[i]+p.e[i-1])/2);
     U.push(U[i-1]+inc);
   }
   return U;
@@ -1028,7 +1038,7 @@ function nutr(r,k){
 // Repères publiés (à tester à l'entraînement, pas un avis médical) :
 // - glucides selon la durée totale (Jeukendrup 2014, ACSM) : 30 à 60 g/h jusqu'à 2 h 30, jusqu'à 90 g/h au-delà
 //   avec un mélange glucose + fructose et un ventre entraîné ; ultra (ISSN 2019, Tiller) : 30 à 50 g/h de base, plus si entraîné ;
-// - eau : 450 à 750 ml/h en ultra (ISSN 2019), plus à la chaleur, sans boire plus que la sueur (risque d'hyponatrémie) ;
+// - eau : 450 à 750 ml/h en ultra (ISSN 2019), 400 à 800 ml/h (ACSM 2007, plancher retenu), plus à la chaleur, sans boire plus que la sueur (risque d'hyponatrémie) ;
 // - sodium : 460 à 690 mg par litre bu (ACSM), plus de 575 mg/L en ultra (ISSN 2019), davantage pour une sueur salée ;
 // - caféine (ISSN 2021) : 3 à 6 mg/kg, effet dès 2 mg/kg, effets indésirables vers 9 mg/kg ; en seconde partie de course,
 //   ou à partir de 4 h et la nuit pour un ultra ;
@@ -1050,7 +1060,7 @@ function nutCalc(r,totalMin){
   // eau : 500 ml/h vers 15 °C, +25 ml/h par degré au-dessus, selon la transpiration et le poids
   let water=(500+Math.max(0,tc-15)*25-Math.max(0,10-tc)*10)*[0.8,1,1.25][P.sweat];
   if(P.w)water*=Math.max(0.85,Math.min(1.2,P.w/70));
-  water=Math.round(Math.max(350,Math.min(tc>=25?1000:800,water))/50)*50;
+  water=Math.round(Math.max(400,Math.min(tc>=25?1000:800,water))/50)*50;
   // sodium : par litre bu, selon le sel de la sueur ; pas nécessaire sous 2 h
   const sodium=T<2?0:Math.round(water/1000*[450,650,950][P.salty]/50)*50;
   // caféine pendant la course : 2, 3 ou 4 mg/kg selon l'habitude, ×1,5 au-delà de 12 h, jamais plus de 6 mg/kg ;
